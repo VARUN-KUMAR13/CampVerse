@@ -26,6 +26,8 @@ import StudentExams from "./pages/student/Exams";
 
 // Faculty Dashboard Pages
 import FacultyDashboard from "./pages/faculty/Dashboard";
+import FacultyStudents from "./pages/faculty/Students";
+import FacultyAssignments from "./pages/faculty/Assignments";
 
 const queryClient = new QueryClient();
 
@@ -150,6 +152,22 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <FacultyDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/faculty/students"
+            element={
+              <ProtectedRoute>
+                <FacultyStudents />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/faculty/assignments"
+            element={
+              <ProtectedRoute>
+                <FacultyAssignments />
               </ProtectedRoute>
             }
           />
