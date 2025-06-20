@@ -1,13 +1,10 @@
 import { Button } from "@/components/ui/button";
-import Navigation from "@/components/Navigation";
 import DeskIllustration from "@/components/DeskIllustration";
 import { ArrowRight } from "lucide-react";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
-      <Navigation />
-
       {/* Hero Section */}
       <main className="relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
