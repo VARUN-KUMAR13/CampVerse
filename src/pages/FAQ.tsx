@@ -8,72 +8,59 @@ import {
 const FAQ = () => {
   const faqs = [
     {
-      question: "What is CampusConnect?",
+      question: "How do I access my courses?",
       answer:
-        "CampusConnect is a comprehensive platform designed to simplify campus life by connecting students, faculty, and staff through integrated tools for communication, course management, events, and more.",
+        "After logging in to your student dashboard, you can access all your enrolled courses from the 'My Courses' section. Each course provides detailed information including syllabus, assignments, and progress tracking.",
     },
     {
-      question: "How do I create an account?",
+      question: "Can I communicate with faculty members?",
       answer:
-        "Simply click the 'Login Now' button and select 'Create Account'. You'll need to use your campus email address to verify your student or faculty status.",
+        "Yes! CampusConnect provides multiple communication channels including direct messaging, discussion forums, and virtual office hours. You can reach out to your instructors directly through the platform.",
     },
     {
-      question: "Is CampusConnect free to use?",
+      question: "How secure is my data?",
       answer:
-        "Yes! CampusConnect is free for all students and faculty members. Your institution may choose to upgrade to premium features for enhanced functionality.",
+        "We take data security very seriously. All student and faculty information is encrypted and stored securely. We comply with educational data privacy standards and regularly update our security measures.",
     },
     {
-      question: "Can I access CampusConnect on my mobile device?",
+      question: "Can I access the platform on mobile?",
       answer:
-        "Absolutely! CampusConnect is fully responsive and works seamlessly on all devices. We also have dedicated mobile apps coming soon.",
-    },
-    {
-      question: "How do I join my campus community?",
-      answer:
-        "After creating your account with your campus email, you'll automatically be added to your institution's community. You can then join specific groups, clubs, and courses.",
-    },
-    {
-      question: "What if I have technical issues?",
-      answer:
-        "Our support team is available 24/7 to help with any technical issues. You can reach us through the help center, live chat, or email support.",
-    },
-    {
-      question: "How is my data protected?",
-      answer:
-        "We take data privacy seriously. All data is encrypted, and we follow strict privacy policies. We never sell your data to third parties.",
-    },
-    {
-      question: "Can faculty use CampusConnect for course management?",
-      answer:
-        "Yes! Faculty can create courses, share resources, communicate with students, schedule office hours, and manage assignments all within the platform.",
+        "Absolutely! CampusConnect is fully responsive and works seamlessly on all devices including smartphones and tablets. You can access all features on the go.",
     },
   ];
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="pt-24 pb-16">
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-20 right-20 w-72 h-72 bg-gradient-to-r from-primary/10 to-purple-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 left-20 w-96 h-96 bg-gradient-to-r from-purple-500/5 to-pink-500/5 rounded-full blur-3xl"></div>
+
+        {/* Floating particles */}
+        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-primary/40 rounded-full animate-pulse"></div>
+        <div className="absolute top-1/3 right-1/3 w-1 h-1 bg-purple-400/50 rounded-full animate-pulse delay-1000"></div>
+        <div className="absolute bottom-1/3 left-1/3 w-1.5 h-1.5 bg-pink-400/30 rounded-full animate-pulse delay-2000"></div>
+      </div>
+
+      <main className="relative z-10 pt-24 pb-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="text-center mb-16">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              Frequently Asked <span className="text-primary">Questions</span>
+              Frequently Asked Questions
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Find answers to common questions about CampusConnect. Can't find
-              what you're looking for? Contact our support team.
-            </p>
           </div>
 
           {/* FAQ Accordion */}
           <div className="space-y-4">
-            <Accordion type="single" collapsible className="w-full">
+            <Accordion type="single" collapsible className="space-y-4">
               {faqs.map((faq, index) => (
                 <AccordionItem
                   key={index}
                   value={`item-${index}`}
-                  className="border-border bg-card rounded-lg px-6 mb-4"
+                  className="bg-card border border-border/50 rounded-lg px-6 hover:border-primary/50 transition-colors"
                 >
-                  <AccordionTrigger className="text-left text-card-foreground hover:text-primary hover:no-underline py-6">
+                  <AccordionTrigger className="text-left font-medium text-foreground hover:text-primary py-6">
                     {faq.question}
                   </AccordionTrigger>
                   <AccordionContent className="text-muted-foreground pb-6">
@@ -82,31 +69,6 @@ const FAQ = () => {
                 </AccordionItem>
               ))}
             </Accordion>
-          </div>
-
-          {/* Contact CTA */}
-          <div className="text-center mt-16 p-8 bg-card rounded-2xl border border-border">
-            <h3 className="text-2xl font-bold text-card-foreground mb-4">
-              Still have questions?
-            </h3>
-            <p className="text-muted-foreground mb-6">
-              Our friendly support team is here to help you get the most out of
-              CampusConnect.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a
-                href="/contact"
-                className="inline-flex items-center justify-center px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
-              >
-                Contact Support
-              </a>
-              <a
-                href="mailto:help@campusconnect.edu"
-                className="inline-flex items-center justify-center px-6 py-3 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors font-medium"
-              >
-                Email Us
-              </a>
-            </div>
           </div>
         </div>
       </main>

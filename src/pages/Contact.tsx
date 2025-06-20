@@ -1,173 +1,174 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, Phone, MapPin, Clock } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Mail, Phone, MapPin } from "lucide-react";
 
 const Contact = () => {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    message: "",
+  });
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Handle form submission here
+    console.log("Form submitted:", formData);
+    // Reset form
+    setFormData({
+      name: "",
+      email: "",
+      message: "",
+    });
+  };
+
   const contactInfo = [
     {
-      icon: Mail,
-      title: "Email",
-      details: "support@campusconnect.edu",
-      description: "Send us an email anytime",
+      icon: <Mail className="w-5 h-5" />,
+      label: "Email",
+      value: "campusconnect@gmail.com",
+      color: "text-blue-400",
     },
     {
-      icon: Phone,
-      title: "Phone",
-      details: "+1 (555) 123-4567",
-      description: "Mon-Fri from 8am to 6pm",
+      icon: <Phone className="w-5 h-5" />,
+      label: "Phone",
+      value: "+91 7416130242",
+      color: "text-blue-400",
     },
     {
-      icon: MapPin,
-      title: "Office",
-      details: "123 Campus Drive, University City",
-      description: "Visit us in person",
-    },
-    {
-      icon: Clock,
-      title: "Support Hours",
-      details: "24/7 Online Support",
-      description: "Always here to help",
+      icon: <MapPin className="w-5 h-5" />,
+      label: "Address",
+      value: "10-1-92/118/A,Kothapet,Hyderabad,Telangana,India",
+      color: "text-blue-400",
     },
   ];
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="pt-24 pb-16">
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-20 right-20 w-72 h-72 bg-gradient-to-r from-primary/10 to-purple-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 left-20 w-96 h-96 bg-gradient-to-r from-purple-500/5 to-pink-500/5 rounded-full blur-3xl"></div>
+      </div>
+
+      <main className="relative z-10 pt-24 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="text-center mb-16">
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              Get in <span className="text-primary">Touch</span>
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Have questions about CampusConnect? We'd love to hear from you.
-              Send us a message and we'll respond as soon as possible.
-            </p>
-          </div>
-
-          <div className="grid lg:grid-cols-3 gap-12">
-            {/* Contact Form */}
-            <div className="lg:col-span-2">
-              <Card className="bg-card border-border">
-                <CardHeader>
-                  <CardTitle className="text-2xl text-card-foreground">
-                    Send us a message
-                  </CardTitle>
-                  <CardDescription>
-                    Fill out the form below and we'll get back to you within 24
-                    hours.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input id="firstName" placeholder="John" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input id="lastName" placeholder="Doe" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="john@university.edu"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="subject">Subject</Label>
-                    <Input id="subject" placeholder="How can we help you?" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="message">Message</Label>
-                    <Textarea
-                      id="message"
-                      placeholder="Tell us more about your question or concern..."
-                      className="min-h-[120px]"
-                    />
-                  </div>
-
-                  <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-                    Send Message
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Contact Information */}
-            <div className="space-y-6">
+          <div className="grid lg:grid-cols-2 gap-16 items-start">
+            {/* Left Content - Contact Info */}
+            <div className="space-y-8">
               <div>
-                <h3 className="text-xl font-semibold text-foreground mb-6">
-                  Contact Information
-                </h3>
-                <div className="space-y-6">
-                  {contactInfo.map((info, index) => (
-                    <Card key={index} className="bg-card border-border">
-                      <CardContent className="p-6">
-                        <div className="flex items-start space-x-4">
-                          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <info.icon className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-card-foreground mb-1">
-                              {info.title}
-                            </h4>
-                            <p className="text-sm text-muted-foreground mb-2">
-                              {info.description}
-                            </p>
-                            <p className="font-medium text-card-foreground">
-                              {info.details}
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+                  Get in Touch
+                </h1>
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  Have questions or need assistance? We're here to help! Reach
+                  out to us through any of the following channels or fill out
+                  the contact form.
+                </p>
               </div>
 
-              {/* Quick Links */}
-              <Card className="bg-card border-border">
-                <CardHeader>
-                  <CardTitle className="text-lg">Quick Links</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <a
-                    href="/faq"
-                    className="block text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    → Frequently Asked Questions
-                  </a>
-                  <a
-                    href="/features"
-                    className="block text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    → Platform Features
-                  </a>
-                  <a
-                    href="/about"
-                    className="block text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    → About CampusConnect
-                  </a>
-                </CardContent>
-              </Card>
+              {/* Contact Information */}
+              <div className="space-y-6">
+                {contactInfo.map((info, index) => (
+                  <div key={index} className="flex items-center space-x-4">
+                    <div
+                      className={`w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center ${info.color}`}
+                    >
+                      {info.icon}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-foreground">
+                        {info.label}
+                      </div>
+                      <div className="text-muted-foreground">{info.value}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
+
+            {/* Right Content - Contact Form */}
+            <Card className="shadow-xl border-border/50">
+              <CardContent className="p-8">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div>
+                    <label
+                      htmlFor="name"
+                      className="block text-sm font-medium text-foreground mb-2"
+                    >
+                      Name
+                    </label>
+                    <Input
+                      id="name"
+                      name="name"
+                      type="text"
+                      placeholder="Your name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      className="h-12"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="email"
+                      className="block text-sm font-medium text-foreground mb-2"
+                    >
+                      Email
+                    </label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      placeholder="Your email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className="h-12"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="message"
+                      className="block text-sm font-medium text-foreground mb-2"
+                    >
+                      Message
+                    </label>
+                    <Textarea
+                      id="message"
+                      name="message"
+                      placeholder="Your message"
+                      value={formData.message}
+                      onChange={handleInputChange}
+                      className="min-h-[120px]"
+                      required
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full h-12 text-lg font-semibold"
+                    size="lg"
+                  >
+                    Send Message
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </main>
