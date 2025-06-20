@@ -1,94 +1,93 @@
+import { Card, CardContent } from "@/components/ui/card";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  BookOpen,
+  GraduationCap,
   Users,
   Calendar,
+  BarChart3,
+  BookOpen,
   MessageSquare,
-  MapPin,
-  GraduationCap,
+  EventIcon as Event,
+  TrendingUp,
 } from "lucide-react";
 
 const Features = () => {
   const features = [
     {
-      icon: BookOpen,
-      title: "Course Management",
+      icon: <GraduationCap className="w-8 h-8" />,
+      title: "Academic Management",
       description:
-        "Organize your classes, assignments, and academic schedule in one place.",
+        "Streamline course management, assignments, and grades in one centralized platform.",
+      gradient: "from-blue-500 to-blue-600",
     },
     {
-      icon: Users,
-      title: "Student Community",
+      icon: <Users className="w-8 h-8" />,
+      title: "Student-Faculty Interaction",
       description:
-        "Connect with classmates, join study groups, and build lasting relationships.",
+        "Enhanced communication channels between students and faculty members.",
+      gradient: "from-blue-500 to-blue-600",
     },
     {
-      icon: Calendar,
-      title: "Event Calendar",
+      icon: <Calendar className="w-8 h-8" />,
+      title: "Event Management",
       description:
-        "Stay updated with campus events, deadlines, and important dates.",
+        "Organize and manage campus events, workshops, and activities efficiently.",
+      gradient: "from-blue-500 to-blue-600",
     },
     {
-      icon: MessageSquare,
-      title: "Campus Chat",
-      description: "Real-time messaging with students, faculty, and staff.",
-    },
-    {
-      icon: MapPin,
-      title: "Campus Navigation",
+      icon: <BarChart3 className="w-8 h-8" />,
+      title: "Analytics Dashboard",
       description:
-        "Interactive maps to help you navigate your campus with ease.",
-    },
-    {
-      icon: GraduationCap,
-      title: "Academic Resources",
-      description:
-        "Access to digital library, research tools, and academic support.",
+        "Track academic progress and campus engagement with detailed analytics.",
+      gradient: "from-blue-500 to-blue-600",
     },
   ];
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="pt-24 pb-16">
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-20 right-20 w-72 h-72 bg-gradient-to-r from-primary/10 to-purple-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 left-20 w-96 h-96 bg-gradient-to-r from-purple-500/5 to-pink-500/5 rounded-full blur-3xl"></div>
+
+        {/* Floating particles */}
+        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-primary/40 rounded-full animate-pulse"></div>
+        <div className="absolute top-1/3 right-1/3 w-1 h-1 bg-purple-400/50 rounded-full animate-pulse delay-1000"></div>
+        <div className="absolute bottom-1/3 left-1/3 w-1.5 h-1.5 bg-pink-400/30 rounded-full animate-pulse delay-2000"></div>
+      </div>
+
+      <main className="relative z-10 pt-24 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="text-center mb-16">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              Powerful Features for
-              <span className="text-primary"> Campus Life</span>
+              Key Features
             </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Discover all the tools and features that make CampusConnect the
-              ultimate platform for students, faculty, and staff to stay
-              connected and organized.
-            </p>
           </div>
 
           {/* Features Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
               <Card
                 key={index}
-                className="bg-card hover:bg-accent/50 transition-colors duration-200 border-border"
+                className="group bg-card border-border/50 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10"
               >
-                <CardHeader>
-                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                    <feature.icon className="h-6 w-6 text-primary" />
+                <CardContent className="p-6 text-center space-y-4">
+                  {/* Icon */}
+                  <div
+                    className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center text-white mx-auto`}
+                  >
+                    {feature.icon}
                   </div>
-                  <CardTitle className="text-xl font-semibold text-card-foreground">
+
+                  {/* Title */}
+                  <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
                     {feature.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-muted-foreground">
+                  </h3>
+
+                  {/* Description */}
+                  <p className="text-muted-foreground leading-relaxed">
                     {feature.description}
-                  </CardDescription>
+                  </p>
                 </CardContent>
               </Card>
             ))}
