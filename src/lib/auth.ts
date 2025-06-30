@@ -119,19 +119,24 @@ const devSignIn = async (
 
   // If user doesn't exist, try to create based on college ID format
   if (validateCollegeId(collegeId)) {
-    const parsedInfo = parseCollegeId(collegeId);
-    const newUser: CollegeUser = {
-      uid: `${collegeId}-uid`,
-      name: `User ${collegeId}`,
-      collegeId,
-      email: collegeIdToEmail(collegeId),
-      ...parsedInfo,
-    };
+    // Check if password matches college ID (default password)
+    if (password === collegeId) {
+      const parsedInfo = parseCollegeId(collegeId);
+      const newUser: CollegeUser = {
+        uid: `${collegeId}-uid`,
+        name: `User ${collegeId}`,
+        collegeId,
+        email: collegeIdToEmail(collegeId),
+        ...parsedInfo,
+      };
 
-    // Add to mock users for future logins
-    mockUsers[collegeId] = newUser;
+      // Add to mock users for future logins
+      mockUsers[collegeId] = newUser;
 
-    return newUser;
+      return newUser;
+    } else {
+      throw new Error("Invalid password");
+    }
   }
 
   throw new Error("User not found");
