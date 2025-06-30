@@ -109,9 +109,8 @@ const devSignIn = async (
 
   // Check if user exists in mock data
   if (mockUsers[collegeId]) {
-    // In development mode, any password works for existing users
-    // Or check if password matches college ID (default password)
-    if (password === collegeId || password === "password") {
+    // In development mode, password should match college ID (default password)
+    if (password === collegeId) {
       return mockUsers[collegeId];
     } else {
       throw new Error("Invalid password");
