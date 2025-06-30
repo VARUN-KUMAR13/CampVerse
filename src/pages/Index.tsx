@@ -106,7 +106,7 @@ const Index = () => {
     {
       question: "Can I communicate with faculty members?",
       answer:
-        "Yes! CampusConnect provides multiple communication channels including direct messaging, discussion forums, and virtual office hours. You can reach out to your instructors directly through the platform.",
+        "Yes! CampVerse provides multiple communication channels including direct messaging, discussion forums, and virtual office hours. You can reach out to your instructors directly through the platform.",
     },
     {
       question: "How secure is my data?",
@@ -116,7 +116,7 @@ const Index = () => {
     {
       question: "Can I access the platform on mobile?",
       answer:
-        "Absolutely! CampusConnect is fully responsive and works seamlessly on all devices including smartphones and tablets. You can access all features on the go.",
+        "Absolutely! CampVerse is fully responsive and works seamlessly on all devices including smartphones and tablets. You can access all features on the go.",
     },
   ];
 
@@ -124,7 +124,7 @@ const Index = () => {
     {
       icon: <Mail className="w-5 h-5" />,
       label: "Email",
-      value: "campusconnect@gmail.com",
+      value: "campverse@gmail.com",
       color: "text-blue-400",
     },
     {
@@ -237,7 +237,7 @@ const Index = () => {
               </h2>
               <div className="space-y-6 text-lg text-muted-foreground leading-relaxed">
                 <p>
-                  CampusConnect is a comprehensive digital platform designed to
+                  CampVerse is a comprehensive digital platform designed to
                   revolutionize the way educational institutions operate. Our
                   mission is to create a seamless, efficient, and engaging
                   environment for both students and faculty members.

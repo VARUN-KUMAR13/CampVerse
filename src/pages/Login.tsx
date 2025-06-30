@@ -37,7 +37,7 @@ const Login = () => {
               <h1 className="text-4xl font-bold text-foreground mb-4">
                 Welcome to
                 <br />
-                CampusConnect
+                CampVerse
               </h1>
               <p className="text-lg text-muted-foreground">
                 "Simplifying campus life, one feature at a time."
