@@ -168,9 +168,9 @@ const Index = () => {
             <div className="relative z-10">
               <div className="space-y-8">
                 <h1 className="hero-title hero-3d-text">
-                  CAMPUS
+                  CAMP
                   <br />
-                  CONNECT.
+                  VERSE.
                 </h1>
                 <p className="text-xl text-muted-foreground max-w-md leading-relaxed">
                   "Simplifying campus life, one feature at a time"
@@ -233,7 +233,7 @@ const Index = () => {
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className="space-y-8">
               <h2 className="text-4xl md:text-5xl font-bold text-foreground">
-                About CampusConnect
+                About CampVerse
               </h2>
               <div className="space-y-6 text-lg text-muted-foreground leading-relaxed">
                 <p>

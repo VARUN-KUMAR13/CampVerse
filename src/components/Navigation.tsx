@@ -31,7 +31,7 @@ const Navigation = () => {
             to="/"
             className="campus-connect-logo text-foreground hover:text-primary transition-colors"
           >
-            CampusConnect.
+            CampVerse.
           </Link>
 
           {/* Navigation Links */}
