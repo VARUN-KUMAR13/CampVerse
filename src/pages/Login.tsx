@@ -248,12 +248,6 @@ const Login = () => {
                   </button>
                 </div>
               </form>
-
-              {/* Bottom Notes */}
-              <div className="text-xs text-muted-foreground text-center space-y-1">
-                <p>🔒 Secure login with Firebase Authentication</p>
-                <p>📱 Works on all devices</p>
-              </div>
             </CardContent>
           </Card>
         </div>
