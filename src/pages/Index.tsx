@@ -160,7 +160,7 @@ const Index = () => {
       {/* Hero Section */}
       <section
         id="home"
-        className="relative z-10 min-h-screen flex items-center"
+        className="relative z-10 min-h-screen flex items-center scroll-mt-16"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -195,7 +195,7 @@ const Index = () => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="relative z-10 py-24">
+      <section id="features" className="relative z-10 py-24 scroll-mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
@@ -228,7 +228,7 @@ const Index = () => {
       </section>
 
       {/* About Section */}
-      <section id="about" className="relative z-10 py-24">
+      <section id="about" className="relative z-10 py-24 scroll-mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className="space-y-8">
@@ -303,7 +303,7 @@ const Index = () => {
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" className="relative z-10 py-24">
+      <section id="faq" className="relative z-10 py-24 scroll-mt-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
@@ -332,7 +332,7 @@ const Index = () => {
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="relative z-10 py-24">
+      <section id="contact" className="relative z-10 py-24 scroll-mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-start">
             <div className="space-y-8">
