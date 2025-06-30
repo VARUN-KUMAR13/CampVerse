@@ -145,21 +145,6 @@ const Login = () => {
               <CardTitle className="text-3xl font-bold">Login</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Development Mode Alert */}
-              {isDevelopment && (
-                <Alert className="border-blue-200 bg-blue-50 text-blue-800">
-                  <Code className="h-4 w-4" />
-                  <AlertDescription>
-                    <strong>Development Mode:</strong> Try these test accounts:
-                    <br />• Admin: <code>admin</code> / <code>admin</code>
-                    <br />• Student: <code>22B81A05C3</code> /{" "}
-                    <code>22B81A05C3</code>
-                    <br />• Faculty: <code>22B81Z05F1</code> /{" "}
-                    <code>22B81Z05F1</code>
-                  </AlertDescription>
-                </Alert>
-              )}
-
               {/* Error Alert */}
               {error && (
                 <Alert variant="destructive">
