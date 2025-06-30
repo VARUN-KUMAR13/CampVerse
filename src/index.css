@@ -4,11 +4,11 @@
 
 @layer base {
   /**
-   * CampusConnect theme - Dark mode focused design
+   * CampVerse theme - Dark mode focused design
    * tailwind.config.ts expects the following color variables to be expressed as HSL values.
-  */
+   */
   :root {
-    /* Dark theme as default for CampusConnect */
+    /* Dark theme as default for CampVerse */
     --background: 222 47% 7%;
     --foreground: 210 40% 98%;
 
