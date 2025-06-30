@@ -28,9 +28,7 @@ const Login = () => {
 
     // Validate college ID format (except for admin)
     if (userId !== "admin" && !validateCollegeId(userId)) {
-      setError(
-        "Invalid ID format. Expected format: 22B81A05C3 (YY + College Code + Section + Branch + Roll)",
-      );
+      setError("Invalid ID format");
       return;
     }
 
@@ -86,7 +84,7 @@ const Login = () => {
     }
 
     if (!validateCollegeId(userId)) {
-      setError("Please enter a valid college ID");
+      setError("Please enter a valid User ID");
       return;
     }
 
@@ -133,14 +131,9 @@ const Login = () => {
                 <br />
                 CampVerse
               </h1>
-              <p className="text-lg text-muted-foreground mb-6">
+              <p className="text-lg text-muted-foreground">
                 "Simplifying campus life, one feature at a time."
               </p>
-              <div className="text-sm text-muted-foreground space-y-2">
-                <p>🔐 Use your college ID to login</p>
-                <p>📧 Format: YourID@cvr.ac.in</p>
-                <p>🔑 Default password is your ID</p>
-              </div>
             </div>
           </div>
         </div>
@@ -150,9 +143,6 @@ const Login = () => {
           <Card className="shadow-2xl border-border/50">
             <CardHeader className="text-center pb-2">
               <CardTitle className="text-3xl font-bold">Login</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Enter your college credentials
-              </p>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Error Alert */}
@@ -203,19 +193,16 @@ const Login = () => {
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    College ID
+                    User ID
                   </label>
                   <Input
                     type="text"
-                    placeholder="e.g., 22B81A05C3 or admin"
+                    placeholder="Enter your User ID"
                     value={userId}
                     onChange={(e) => handleUserIdChange(e.target.value)}
                     className="h-12"
                     required
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Format: YY + College Code + Section + Branch + Roll
-                  </p>
                 </div>
 
                 <div>
@@ -243,9 +230,6 @@ const Login = () => {
                       )}
                     </button>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Default password is your college ID
-                  </p>
                 </div>
 
                 <Button
@@ -276,12 +260,6 @@ const Login = () => {
                   </button>
                 </div>
               </form>
-
-              {/* Additional Info */}
-              <div className="text-xs text-muted-foreground text-center space-y-1">
-                <p>🔒 Secure login with Firebase Authentication</p>
-                <p>📱 Works on all devices</p>
-              </div>
             </CardContent>
           </Card>
         </div>
