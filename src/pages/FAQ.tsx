@@ -15,7 +15,7 @@ const FAQ = () => {
     {
       question: "Can I communicate with faculty members?",
       answer:
-        "Yes! CampusConnect provides multiple communication channels including direct messaging, discussion forums, and virtual office hours. You can reach out to your instructors directly through the platform.",
+        "Yes! CampVerse provides multiple communication channels including direct messaging, discussion forums, and virtual office hours. You can reach out to your instructors directly through the platform.",
     },
     {
       question: "How secure is my data?",
@@ -25,7 +25,7 @@ const FAQ = () => {
     {
       question: "Can I access the platform on mobile?",
       answer:
-        "Absolutely! CampusConnect is fully responsive and works seamlessly on all devices including smartphones and tablets. You can access all features on the go.",
+        "Absolutely! CampVerse is fully responsive and works seamlessly on all devices including smartphones and tablets. You can access all features on the go.",
     },
   ];
 

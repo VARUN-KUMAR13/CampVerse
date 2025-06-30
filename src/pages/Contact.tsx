@@ -38,7 +38,7 @@ const Contact = () => {
     {
       icon: <Mail className="w-5 h-5" />,
       label: "Email",
-      value: "campusconnect@gmail.com",
+      value: "campverse@gmail.com",
       color: "text-blue-400",
     },
     {

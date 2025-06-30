@@ -33,12 +33,12 @@ const About = () => {
             {/* Left Content */}
             <div className="space-y-8">
               <h1 className="text-4xl md:text-5xl font-bold text-foreground">
-                About CampusConnect
+                About CampVerse
               </h1>
 
               <div className="space-y-6 text-lg text-muted-foreground leading-relaxed">
                 <p>
-                  CampusConnect is a comprehensive digital platform designed to
+                  CampVerse is a comprehensive digital platform designed to
                   revolutionize the way educational institutions operate. Our
                   mission is to create a seamless, efficient, and engaging
                   environment for both students and faculty members.
