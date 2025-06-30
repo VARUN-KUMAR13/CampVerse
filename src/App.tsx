@@ -30,6 +30,9 @@ import FacultyDashboard from "./pages/faculty/Dashboard";
 import FacultyStudents from "./pages/faculty/Students";
 import FacultyAssignments from "./pages/faculty/Assignments";
 
+// Admin Dashboard Pages
+import AdminDashboard from "./pages/admin/Dashboard";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -170,6 +173,16 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <FacultyAssignments />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Admin Dashboard Routes (protected, no navigation) */}
+            <Route
+              path="/admin/dashboard"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminDashboard />
                 </ProtectedRoute>
               }
             />
