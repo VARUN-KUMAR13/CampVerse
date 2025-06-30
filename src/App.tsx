@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
 import Navigation from "./components/Navigation";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -33,150 +34,152 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          {/* Public Routes with Navigation */}
-          <Route
-            path="/"
-            element={
-              <>
-                <Navigation />
-                <Index />
-              </>
-            }
-          />
-          <Route
-            path="/features"
-            element={
-              <>
-                <Navigation />
-                <Features />
-              </>
-            }
-          />
-          <Route
-            path="/about"
-            element={
-              <>
-                <Navigation />
-                <About />
-              </>
-            }
-          />
-          <Route
-            path="/faq"
-            element={
-              <>
-                <Navigation />
-                <FAQ />
-              </>
-            }
-          />
-          <Route
-            path="/contact"
-            element={
-              <>
-                <Navigation />
-                <Contact />
-              </>
-            }
-          />
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes with Navigation */}
+            <Route
+              path="/"
+              element={
+                <>
+                  <Navigation />
+                  <Index />
+                </>
+              }
+            />
+            <Route
+              path="/features"
+              element={
+                <>
+                  <Navigation />
+                  <Features />
+                </>
+              }
+            />
+            <Route
+              path="/about"
+              element={
+                <>
+                  <Navigation />
+                  <About />
+                </>
+              }
+            />
+            <Route
+              path="/faq"
+              element={
+                <>
+                  <Navigation />
+                  <FAQ />
+                </>
+              }
+            />
+            <Route
+              path="/contact"
+              element={
+                <>
+                  <Navigation />
+                  <Contact />
+                </>
+              }
+            />
 
-          {/* Login Route (no navigation) */}
-          <Route path="/login" element={<Login />} />
+            {/* Login Route (no navigation) */}
+            <Route path="/login" element={<Login />} />
 
-          {/* Student Dashboard Routes (protected, no navigation) */}
-          <Route
-            path="/student/dashboard"
-            element={
-              <ProtectedRoute>
-                <StudentDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/student/courses"
-            element={
-              <ProtectedRoute>
-                <StudentCourses />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/student/schedule"
-            element={
-              <ProtectedRoute>
-                <StudentSchedule />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/student/results"
-            element={
-              <ProtectedRoute>
-                <StudentResults />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/student/attendance"
-            element={
-              <ProtectedRoute>
-                <StudentAttendance />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/student/assignments"
-            element={
-              <ProtectedRoute>
-                <StudentAssignments />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/student/exams"
-            element={
-              <ProtectedRoute>
-                <StudentExams />
-              </ProtectedRoute>
-            }
-          />
+            {/* Student Dashboard Routes (protected, no navigation) */}
+            <Route
+              path="/student/dashboard"
+              element={
+                <ProtectedRoute>
+                  <StudentDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/courses"
+              element={
+                <ProtectedRoute>
+                  <StudentCourses />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/schedule"
+              element={
+                <ProtectedRoute>
+                  <StudentSchedule />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/results"
+              element={
+                <ProtectedRoute>
+                  <StudentResults />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/attendance"
+              element={
+                <ProtectedRoute>
+                  <StudentAttendance />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/assignments"
+              element={
+                <ProtectedRoute>
+                  <StudentAssignments />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/exams"
+              element={
+                <ProtectedRoute>
+                  <StudentExams />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Faculty Dashboard Routes (protected, no navigation) */}
-          <Route
-            path="/faculty/dashboard"
-            element={
-              <ProtectedRoute>
-                <FacultyDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/faculty/students"
-            element={
-              <ProtectedRoute>
-                <FacultyStudents />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/faculty/assignments"
-            element={
-              <ProtectedRoute>
-                <FacultyAssignments />
-              </ProtectedRoute>
-            }
-          />
+            {/* Faculty Dashboard Routes (protected, no navigation) */}
+            <Route
+              path="/faculty/dashboard"
+              element={
+                <ProtectedRoute>
+                  <FacultyDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/faculty/students"
+              element={
+                <ProtectedRoute>
+                  <FacultyStudents />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/faculty/assignments"
+              element={
+                <ProtectedRoute>
+                  <FacultyAssignments />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Catch-all route */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+            {/* Catch-all route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
