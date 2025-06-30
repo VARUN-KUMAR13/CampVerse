@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, onAuthStateChanged } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, isDevelopment } from "@/lib/firebase";
 import { CollegeUser, getCurrentUserData } from "@/lib/auth";
 
 interface AuthContextType {
@@ -30,6 +30,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (isDevelopment) {
+      // In development mode, check for stored user data
+      const storedUser = localStorage.getItem("dev-user");
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          setUserData(parsedUser);
+          // Create a mock User object
+          setCurrentUser({
+            uid: parsedUser.uid,
+            email: parsedUser.email,
+          } as User);
+        } catch (error) {
+          console.error("Error parsing stored user data:", error);
+          localStorage.removeItem("dev-user");
+        }
+      }
+      setLoading(false);
+      return;
+    }
+
+    // Production mode with Firebase
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
 
@@ -53,10 +75,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   ): Promise<CollegeUser> => {
     const { signInUser } = await import("@/lib/auth");
     const userData = await signInUser(collegeId, password);
+
+    if (isDevelopment) {
+      // Store user data in localStorage for development mode
+      localStorage.setItem("dev-user", JSON.stringify(userData));
+      setUserData(userData);
+      setCurrentUser({
+        uid: userData.uid,
+        email: userData.email,
+      } as User);
+    }
+
     return userData;
   };
 
   const logout = async (): Promise<void> => {
+    if (isDevelopment) {
+      // Clear stored user data in development mode
+      localStorage.removeItem("dev-user");
+      setUserData(null);
+      setCurrentUser(null);
+      return;
+    }
+
     const { signOutUser } = await import("@/lib/auth");
     await signOutUser();
   };

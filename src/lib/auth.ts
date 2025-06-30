@@ -5,7 +5,7 @@ import {
   signOut,
   User,
 } from "firebase/auth";
-import { auth } from "./firebase";
+import { auth, isDevelopment } from "./firebase";
 
 export interface CollegeUser {
   uid: string;
@@ -57,8 +57,107 @@ export const collegeIdToEmail = (id: string): string => {
   return `${id}@cvr.ac.in`;
 };
 
+// Mock users for development
+const mockUsers: Record<string, CollegeUser> = {
+  admin: {
+    uid: "admin-uid",
+    name: "Administrator",
+    collegeId: "admin",
+    email: "admin@cvr.ac.in",
+    role: "admin",
+    year: "",
+    section: "",
+    branch: "",
+    rollNumber: "",
+  },
+  "22B81A05C3": {
+    uid: "student-uid-1",
+    name: "John Doe",
+    collegeId: "22B81A05C3",
+    email: "22B81A05C3@cvr.ac.in",
+    role: "student",
+    year: "22",
+    section: "A",
+    branch: "05",
+    rollNumber: "C3",
+  },
+  "22B81Z05F1": {
+    uid: "faculty-uid-1",
+    name: "Dr. Jane Smith",
+    collegeId: "22B81Z05F1",
+    email: "22B81Z05F1@cvr.ac.in",
+    role: "faculty",
+    year: "22",
+    section: "Z",
+    branch: "05",
+    rollNumber: "F1",
+  },
+};
+
+// Development mode authentication
+const devSignIn = async (
+  collegeId: string,
+  password: string,
+): Promise<CollegeUser> => {
+  // Simulate network delay
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+
+  // Check for admin login
+  if (collegeId === "admin" && password === "admin") {
+    return mockUsers.admin;
+  }
+
+  // Check if user exists in mock data
+  if (mockUsers[collegeId]) {
+    // In development mode, any password works for existing users
+    // Or check if password matches college ID (default password)
+    if (password === collegeId || password === "password") {
+      return mockUsers[collegeId];
+    } else {
+      throw new Error("Invalid password");
+    }
+  }
+
+  // If user doesn't exist, try to create based on college ID format
+  if (validateCollegeId(collegeId)) {
+    const parsedInfo = parseCollegeId(collegeId);
+    const newUser: CollegeUser = {
+      uid: `${collegeId}-uid`,
+      name: `User ${collegeId}`,
+      collegeId,
+      email: collegeIdToEmail(collegeId),
+      ...parsedInfo,
+    };
+
+    // Add to mock users for future logins
+    mockUsers[collegeId] = newUser;
+
+    return newUser;
+  }
+
+  throw new Error("User not found");
+};
+
+// Development mode password reset
+const devResetPassword = async (collegeId: string): Promise<void> => {
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  if (collegeId === "admin") {
+    throw new Error("Admin password cannot be reset");
+  }
+
+  if (!validateCollegeId(collegeId)) {
+    throw new Error("Invalid college ID format");
+  }
+
+  console.log(
+    `Development mode: Password reset email would be sent to ${collegeIdToEmail(collegeId)}`,
+  );
+};
+
 // API base URL (should be environment variable)
-const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
 // Create user account
 export const createUserAccount = async (collegeId: string, name: string) => {
@@ -66,6 +165,20 @@ export const createUserAccount = async (collegeId: string, name: string) => {
     // Validate college ID
     if (!validateCollegeId(collegeId)) {
       throw new Error("Invalid college ID format");
+    }
+
+    if (isDevelopment) {
+      // Development mode - just create mock user
+      const parsedInfo = parseCollegeId(collegeId);
+      const userData: CollegeUser = {
+        uid: `${collegeId}-uid`,
+        name,
+        collegeId,
+        email: collegeIdToEmail(collegeId),
+        ...parsedInfo,
+      };
+      mockUsers[collegeId] = userData;
+      return userData;
     }
 
     const email = collegeIdToEmail(collegeId);
@@ -113,6 +226,11 @@ export const createUserAccount = async (collegeId: string, name: string) => {
 // Sign in user
 export const signInUser = async (collegeId: string, password: string) => {
   try {
+    // Development mode
+    if (isDevelopment) {
+      return await devSignIn(collegeId, password);
+    }
+
     // Handle admin login
     if (collegeId === "admin" && password === "admin") {
       // For admin, we'll use a special email
@@ -168,6 +286,11 @@ export const signInUser = async (collegeId: string, password: string) => {
 // Send password reset email
 export const resetPassword = async (collegeId: string) => {
   try {
+    // Development mode
+    if (isDevelopment) {
+      return await devResetPassword(collegeId);
+    }
+
     if (collegeId === "admin") {
       throw new Error("Admin password cannot be reset");
     }
@@ -187,6 +310,11 @@ export const resetPassword = async (collegeId: string) => {
 // Sign out user
 export const signOutUser = async () => {
   try {
+    if (isDevelopment) {
+      // In development mode, just clear any stored state
+      console.log("Development mode: User signed out");
+      return;
+    }
     await signOut(auth);
   } catch (error) {
     console.error("Error signing out:", error);
@@ -199,6 +327,12 @@ export const getCurrentUserData = async (
   user: User,
 ): Promise<CollegeUser | null> => {
   try {
+    if (isDevelopment) {
+      // Return mock user data based on user object
+      const collegeId = user.email?.split("@")[0] || "admin";
+      return mockUsers[collegeId] || null;
+    }
+
     const response = await fetch(`${API_BASE_URL}/users/${user.uid}`);
     if (!response.ok) {
       return null;
