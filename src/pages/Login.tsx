@@ -6,8 +6,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { validateCollegeId } from "@/lib/auth";
-import { isDevelopment } from "@/lib/firebase";
-import { AlertCircle, Eye, EyeOff, Code } from "lucide-react";
+import { AlertCircle, Eye, EyeOff } from "lucide-react";
 
 const Login = () => {
   const [userType, setUserType] = useState<"Student" | "Faculty">("Student");
@@ -276,6 +275,12 @@ const Login = () => {
                   </button>
                 </div>
               </form>
+
+              {/* Bottom Notes */}
+              <div className="text-xs text-muted-foreground text-center space-y-1">
+                <p>🔒 Secure login with Firebase Authentication</p>
+                <p>📱 Works on all devices</p>
+              </div>
             </CardContent>
           </Card>
         </div>
