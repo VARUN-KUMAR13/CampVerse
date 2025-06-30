@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   BookOpen,
@@ -9,18 +9,22 @@ import {
   GraduationCap,
   User,
   Menu,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
 const StudentSidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const menuItems = [
     {
       icon: <LayoutDashboard className="w-5 h-5" />,
       label: "Dashboard",
-      path: "/student/dashboard",
+      path: "/",
     },
     {
       icon: <BookOpen className="w-5 h-5" />,
@@ -54,8 +58,26 @@ const StudentSidebar = () => {
     },
   ];
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/", { replace: true });
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
+  const isActiveRoute = (path: string) => {
+    if (path === "/") {
+      return (
+        location.pathname === "/" || location.pathname === "/student/dashboard"
+      );
+    }
+    return location.pathname === path;
+  };
+
   return (
-    <div className="w-64 bg-sidebar border-r border-sidebar-border min-h-screen">
+    <div className="w-64 bg-sidebar border-r border-sidebar-border min-h-screen flex flex-col">
       {/* Header */}
       <div className="p-6 border-b border-sidebar-border">
         <div className="flex items-center space-x-3">
@@ -67,14 +89,14 @@ const StudentSidebar = () => {
       </div>
 
       {/* Menu Items */}
-      <nav className="p-4 space-y-2">
+      <nav className="p-4 space-y-2 flex-1">
         {menuItems.map((item) => (
           <Link
             key={item.path}
             to={item.path}
             className={cn(
               "flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors",
-              location.pathname === item.path &&
+              isActiveRoute(item.path) &&
                 "bg-sidebar-primary text-sidebar-primary-foreground font-medium",
             )}
           >
@@ -83,6 +105,18 @@ const StudentSidebar = () => {
           </Link>
         ))}
       </nav>
+
+      {/* Logout Button */}
+      <div className="p-4 border-t border-sidebar-border">
+        <Button
+          onClick={handleLogout}
+          variant="ghost"
+          className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-500/10"
+        >
+          <LogOut className="w-5 h-5 mr-3" />
+          Logout
+        </Button>
+      </div>
     </div>
   );
 };

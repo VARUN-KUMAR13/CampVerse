@@ -17,7 +17,7 @@ const Login = () => {
   const [error, setError] = useState("");
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const navigate = useNavigate();
-  const { login, resetPassword } = useAuth();
+  const { login } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,22 +36,9 @@ const Login = () => {
     setError("");
 
     try {
-      const userData = await login(userId, password);
-
-      // Navigate based on user role
-      switch (userData.role) {
-        case "student":
-          navigate("/student/dashboard");
-          break;
-        case "faculty":
-          navigate("/faculty/dashboard");
-          break;
-        case "admin":
-          navigate("/admin/dashboard");
-          break;
-        default:
-          setError("Unknown user role");
-      }
+      await login(userId, password);
+      // Redirect to homepage - DynamicHomepage will show the appropriate dashboard
+      navigate("/", { replace: true });
     } catch (error: any) {
       console.error("Login error:", error);
 
@@ -92,6 +79,7 @@ const Login = () => {
     setError("");
 
     try {
+      const { resetPassword } = await import("@/lib/auth");
       await resetPassword(userId);
       setResetEmailSent(true);
     } catch (error: any) {
