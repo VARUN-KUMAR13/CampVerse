@@ -125,7 +125,7 @@ const StudentDashboard = () => {
           {/* Welcome Section */}
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              Hello 23BB1A3235 <span className="text-2xl">👋</span>
+              Hello {userData?.collegeId} <span className="text-2xl">👋</span>
             </h1>
             <p className="text-muted-foreground">
               Let's learn something new today!
