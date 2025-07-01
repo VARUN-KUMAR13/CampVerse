@@ -78,7 +78,9 @@ const StudentSchedule = () => {
             <h1 className="text-2xl font-bold text-foreground">
               Weekly Schedule
             </h1>
-            <p className="text-muted-foreground">Welcome back, 23BB1A3235</p>
+            <p className="text-muted-foreground">
+              Welcome back, {userData?.collegeId}
+            </p>
           </div>
 
           {/* Schedule Info */}
