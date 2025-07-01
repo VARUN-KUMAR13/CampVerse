@@ -116,10 +116,7 @@ const StudentDashboard = () => {
       <StudentSidebar />
 
       <div className="flex-1 flex flex-col">
-        <StudentTopbar
-          studentId={userData?.collegeId || ""}
-          currentTime="4:21:17 PM"
-        />
+        <StudentTopbar studentId={userData?.collegeId || ""} />
 
         <main className="flex-1 p-6 space-y-6">
           {/* Welcome Section */}
