@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { TrendingUp, TrendingDown } from "lucide-react";
 
 const StudentResults = () => {
+  const { userData } = useAuth();
   const gradesData = [
     {
       subject: "Data Structures & Algorithms",

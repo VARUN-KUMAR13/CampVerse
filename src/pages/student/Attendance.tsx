@@ -5,6 +5,7 @@ import StudentTopbar from "@/components/StudentTopbar";
 import { useAuth } from "@/contexts/AuthContext";
 
 const StudentAttendance = () => {
+  const { userData } = useAuth();
   const attendanceData = [
     {
       subject: "Data Structures & Algorithms",

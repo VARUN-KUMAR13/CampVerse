@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { User, Clock, FileText } from "lucide-react";
 
 const StudentCourses = () => {
+  const { userData } = useAuth();
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
 
   const courses = [
