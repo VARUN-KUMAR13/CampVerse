@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import StudentSidebar from "@/components/StudentSidebar";
 import StudentTopbar from "@/components/StudentTopbar";
+import { useAuth } from "@/contexts/AuthContext";
 import { User, Clock, FileText } from "lucide-react";
 
 const StudentCourses = () => {

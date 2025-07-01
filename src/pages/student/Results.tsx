@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import StudentSidebar from "@/components/StudentSidebar";
 import StudentTopbar from "@/components/StudentTopbar";
+import { useAuth } from "@/contexts/AuthContext";
 import { TrendingUp, TrendingDown } from "lucide-react";
 
 const StudentResults = () => {
