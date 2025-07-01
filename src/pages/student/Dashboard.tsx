@@ -14,6 +14,7 @@ import {
 import { useState } from "react";
 
 const StudentDashboard = () => {
+  const { userData } = useAuth();
   const [date, setDate] = useState<Date | undefined>(new Date());
 
   const stats = [
