@@ -30,9 +30,14 @@ const StudentTopbar = ({ studentId }: StudentTopbarProps) => {
 
         {/* Right side - Time, Student ID, and Avatar */}
         <div className="flex items-center space-x-4">
-          {currentTime && (
-            <span className="text-sm text-muted-foreground">{currentTime}</span>
-          )}
+          <div className="text-right">
+            <div className="text-sm font-medium text-foreground">
+              {format(currentDateTime, "MMM dd, yyyy")}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {format(currentDateTime, "h:mm:ss a")}
+            </div>
+          </div>
 
           <div className="flex items-center space-x-2">
             <div className="text-xs text-muted-foreground">ID: {studentId}</div>
