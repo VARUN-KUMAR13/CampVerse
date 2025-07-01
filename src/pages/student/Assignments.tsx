@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import StudentSidebar from "@/components/StudentSidebar";
 import StudentTopbar from "@/components/StudentTopbar";
+import { useAuth } from "@/contexts/AuthContext";
 import { Calendar, Eye, Upload, AlertCircle } from "lucide-react";
 
 const StudentAssignments = () => {
