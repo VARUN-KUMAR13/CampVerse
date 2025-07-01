@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Calendar, Eye, Upload, AlertCircle } from "lucide-react";
 
 const StudentAssignments = () => {
+  const { userData } = useAuth();
   const assignments = [
     {
       title: "Data Analysis Project",

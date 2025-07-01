@@ -4,6 +4,7 @@ import StudentTopbar from "@/components/StudentTopbar";
 import { useAuth } from "@/contexts/AuthContext";
 
 const StudentSchedule = () => {
+  const { userData } = useAuth();
   const timeSlots = [
     "9:00 AM to 10:00 AM",
     "10:00 AM to 11:00 AM",

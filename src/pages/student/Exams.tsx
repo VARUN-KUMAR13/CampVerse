@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Calendar, Clock, MapPin } from "lucide-react";
 
 const StudentExams = () => {
+  const { userData } = useAuth();
   const examFilters = ["All", "This Week", "This Month"];
 
   const upcomingExams = [
