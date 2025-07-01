@@ -32,7 +32,7 @@ const StudentAttendance = () => {
       <StudentSidebar />
 
       <div className="flex-1 flex flex-col">
-        <StudentTopbar studentId="23BB1A3235" />
+        <StudentTopbar studentId={userData?.collegeId || ""} />
 
         <main className="flex-1 p-6 space-y-6">
           <div className="mb-6">
