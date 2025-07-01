@@ -1,13 +1,23 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Bell, Search, Menu } from "lucide-react";
+import { format } from "date-fns";
 
 interface StudentTopbarProps {
   studentId: string;
-  currentTime?: string;
 }
 
-const StudentTopbar = ({ studentId, currentTime }: StudentTopbarProps) => {
+const StudentTopbar = ({ studentId }: StudentTopbarProps) => {
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
   return (
     <header className="bg-background border-b border-border px-6 py-4">
       <div className="flex items-center justify-between">
