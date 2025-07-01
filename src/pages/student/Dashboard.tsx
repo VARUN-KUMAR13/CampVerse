@@ -4,6 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { Calendar } from "@/components/ui/calendar";
 import StudentSidebar from "@/components/StudentSidebar";
 import StudentTopbar from "@/components/StudentTopbar";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Clock,
   Users,
