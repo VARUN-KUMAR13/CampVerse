@@ -14,7 +14,7 @@ const StudentTopbar = ({ studentId }: StudentTopbarProps) => {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentDateTime(new Date());
-    }, 1000);
+    }, 60000); // Update every minute
 
     return () => clearInterval(timer);
   }, []);
@@ -35,7 +35,7 @@ const StudentTopbar = ({ studentId }: StudentTopbarProps) => {
               {format(currentDateTime, "MMM dd, yyyy")}
             </div>
             <div className="text-xs text-muted-foreground">
-              {format(currentDateTime, "h:mm:ss a")}
+              {format(currentDateTime, "h:mm a")}
             </div>
           </div>
 
