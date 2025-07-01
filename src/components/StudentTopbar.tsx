@@ -25,9 +25,6 @@ const StudentTopbar = ({ studentId, currentTime }: StudentTopbarProps) => {
           )}
 
           <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium text-muted-foreground">
-              {studentId}
-            </span>
             <div className="text-xs text-muted-foreground">ID: {studentId}</div>
           </div>
 
