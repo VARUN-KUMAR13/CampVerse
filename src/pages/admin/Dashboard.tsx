@@ -181,6 +181,93 @@ const AdminDashboard = () => {
     },
   ];
 
+  const contentHubActions = [
+    {
+      title: "Post New Job",
+      description: "Add placement opportunity",
+      icon: <Building2 className="w-5 h-5" />,
+      color: "bg-blue-600",
+      action: () => setIsJobModalOpen(true),
+    },
+    {
+      title: "Create Event",
+      description: "Schedule campus event",
+      icon: <CalendarDays className="w-5 h-5" />,
+      color: "bg-purple-600",
+      action: () => setIsEventModalOpen(true),
+    },
+    {
+      title: "Add Club",
+      description: "Register new club",
+      icon: <UsersRound className="w-5 h-5" />,
+      color: "bg-green-600",
+      action: () => setIsClubModalOpen(true),
+    },
+    {
+      title: "Send Alert",
+      description: "Push notification",
+      icon: <MessageSquare className="w-5 h-5" />,
+      color: "bg-red-600",
+      action: () => setIsNotificationModalOpen(true),
+    },
+  ];
+
+  // Form handlers
+  const handleJobSubmit = () => {
+    console.log("Job posted:", jobForm);
+    // API call to create job
+    setJobForm({
+      company: "",
+      title: "",
+      type: "",
+      ctc: "",
+      deadline: "",
+      eligibility: "",
+      description: "",
+      targetAudience: "all",
+    });
+    setIsJobModalOpen(false);
+  };
+
+  const handleEventSubmit = () => {
+    console.log("Event created:", eventForm);
+    // API call to create event
+    setEventForm({
+      name: "",
+      date: "",
+      time: "",
+      venue: "",
+      description: "",
+      entryFee: "",
+      notifyAll: true,
+    });
+    setIsEventModalOpen(false);
+  };
+
+  const handleClubSubmit = () => {
+    console.log("Club added:", clubForm);
+    // API call to create club
+    setClubForm({
+      name: "",
+      category: "",
+      description: "",
+      members: "",
+      followers: "",
+    });
+    setIsClubModalOpen(false);
+  };
+
+  const handleNotificationSubmit = () => {
+    console.log("Notification sent:", notificationForm);
+    // API call to send notification
+    setNotificationForm({
+      message: "",
+      urgency: "normal",
+      targetAudience: "all",
+    });
+    setIsNotificationModalOpen(false);
+  };
+
   const getActivityIcon = (type: string) => {
     switch (type) {
       case "user":
