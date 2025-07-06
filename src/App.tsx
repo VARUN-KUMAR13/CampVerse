@@ -31,6 +31,7 @@ import StudentClubs from "./pages/student/Clubs";
 import FacultyCourses from "./pages/faculty/Courses";
 import FacultyStudents from "./pages/faculty/Students";
 import FacultyAssignments from "./pages/faculty/Assignments";
+import FacultyGrades from "./pages/faculty/Grades";
 
 // Admin Dashboard Pages
 import AdminDashboard from "./pages/admin/Dashboard";
