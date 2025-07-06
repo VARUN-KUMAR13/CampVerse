@@ -166,6 +166,14 @@ const App = () => (
 
             {/* Faculty Dashboard Routes (protected, no navigation) */}
             <Route
+              path="/faculty/courses"
+              element={
+                <ProtectedRoute requiredRole="faculty">
+                  <FacultyCourses />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/faculty/students"
               element={
                 <ProtectedRoute requiredRole="faculty">
