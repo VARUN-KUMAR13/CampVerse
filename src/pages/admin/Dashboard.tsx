@@ -1,7 +1,23 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Users,
@@ -16,6 +32,13 @@ import {
   Shield,
   Database,
   Bell,
+  Building2,
+  CalendarDays,
+  UsersRound,
+  MessageSquare,
+  Plus,
+  Upload,
+  Send,
 } from "lucide-react";
 
 const AdminDashboard = () => {
