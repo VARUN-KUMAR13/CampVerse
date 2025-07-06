@@ -44,6 +44,48 @@ import {
 const AdminDashboard = () => {
   const { userData, logout } = useAuth();
 
+  // Modal states
+  const [isJobModalOpen, setIsJobModalOpen] = useState(false);
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [isClubModalOpen, setIsClubModalOpen] = useState(false);
+  const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
+
+  // Form states
+  const [jobForm, setJobForm] = useState({
+    company: "",
+    title: "",
+    type: "",
+    ctc: "",
+    deadline: "",
+    eligibility: "",
+    description: "",
+    targetAudience: "all",
+  });
+
+  const [eventForm, setEventForm] = useState({
+    name: "",
+    date: "",
+    time: "",
+    venue: "",
+    description: "",
+    entryFee: "",
+    notifyAll: true,
+  });
+
+  const [clubForm, setClubForm] = useState({
+    name: "",
+    category: "",
+    description: "",
+    members: "",
+    followers: "",
+  });
+
+  const [notificationForm, setNotificationForm] = useState({
+    message: "",
+    urgency: "normal",
+    targetAudience: "all",
+  });
+
   const stats = [
     {
       label: "Total Students",
