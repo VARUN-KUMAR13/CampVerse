@@ -595,7 +595,9 @@ const AdminDashboard = () => {
               </div>
 
               <div>
-                <label className="text-sm font-medium">Eligibility Criteria</label>
+                <label className="text-sm font-medium">
+                  Eligibility Criteria
+                </label>
                 <Input
                   value={jobForm.eligibility}
                   onChange={(e) =>
@@ -640,7 +642,9 @@ const AdminDashboard = () => {
               </div>
 
               <div>
-                <label className="text-sm font-medium">Attach Files (PDFs)</label>
+                <label className="text-sm font-medium">
+                  Attach Files (PDFs)
+                </label>
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                   <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
                   <p className="text-sm text-gray-500">
@@ -832,7 +836,9 @@ const AdminDashboard = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Initial Followers</label>
+                  <label className="text-sm font-medium">
+                    Initial Followers
+                  </label>
                   <Input
                     type="number"
                     value={clubForm.followers}
@@ -946,8 +952,7 @@ const AdminDashboard = () => {
             </div>
           </DialogContent>
         </Dialog>
-        </main>
-      </div>
+      </main>
     </div>
   );
 };
