@@ -380,9 +380,9 @@ const AdminDashboard = () => {
           ))}
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
+        <div className="grid lg:grid-cols-4 gap-6">
           {/* Quick Actions */}
-          <Card className="lg:col-span-2">
+          <Card className="lg:col-span-1">
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Settings className="w-5 h-5 mr-2" />
@@ -390,11 +390,45 @@ const AdminDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-3">
                 {quickActions.map((action, index) => (
                   <Button
                     key={index}
                     variant="outline"
+                    className="h-16 flex flex-col items-center justify-center space-y-1 hover:shadow-md transition-all"
+                  >
+                    <div
+                      className={`w-6 h-6 ${action.color} rounded-md flex items-center justify-center text-white`}
+                    >
+                      {action.icon}
+                    </div>
+                    <div className="text-center">
+                      <div className="font-medium text-xs">{action.title}</div>
+                    </div>
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Content Hub */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Plus className="w-5 h-5 mr-2" />
+                Content Hub
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Manage placements, events, clubs, and notifications
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                {contentHubActions.map((action, index) => (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    onClick={action.action}
                     className="h-20 flex flex-col items-center justify-center space-y-2 hover:shadow-md transition-all"
                   >
                     <div
@@ -415,7 +449,7 @@ const AdminDashboard = () => {
           </Card>
 
           {/* Recent Activities */}
-          <Card>
+          <Card className="lg:col-span-1">
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Bell className="w-5 h-5 mr-2" />
@@ -423,12 +457,12 @@ const AdminDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {recentActivities.map((activity, index) => (
-                  <div key={index} className="flex items-start space-x-3">
+              <div className="space-y-3">
+                {recentActivities.slice(0, 4).map((activity, index) => (
+                  <div key={index} className="flex items-start space-x-2">
                     <div className="mt-1">{getActivityIcon(activity.type)}</div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground">
+                      <p className="text-xs font-medium text-foreground">
                         {activity.action}
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -438,8 +472,8 @@ const AdminDashboard = () => {
                   </div>
                 ))}
               </div>
-              <Button variant="ghost" className="w-full mt-4" size="sm">
-                View All Activities
+              <Button variant="ghost" className="w-full mt-3" size="sm">
+                View All
               </Button>
             </CardContent>
           </Card>
