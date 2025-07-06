@@ -517,6 +517,441 @@ const AdminDashboard = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Job Posting Modal */}
+        <Dialog open={isJobModalOpen} onOpenChange={setIsJobModalOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Building2 className="w-5 h-5" />
+                Post New Job Opportunity
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Company Name</label>
+                  <Input
+                    value={jobForm.company}
+                    onChange={(e) =>
+                      setJobForm({ ...jobForm, company: e.target.value })
+                    }
+                    placeholder="e.g., Google, Microsoft"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Job Title</label>
+                  <Input
+                    value={jobForm.title}
+                    onChange={(e) =>
+                      setJobForm({ ...jobForm, title: e.target.value })
+                    }
+                    placeholder="Software Engineer, Data Analyst"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Job Type</label>
+                  <Select
+                    value={jobForm.type}
+                    onValueChange={(value) =>
+                      setJobForm({ ...jobForm, type: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Full Time">Full Time</SelectItem>
+                      <SelectItem value="Internship">Internship</SelectItem>
+                      <SelectItem value="Intern + Full Time">
+                        Intern + Full Time
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">CTC</label>
+                  <Input
+                    value={jobForm.ctc}
+                    onChange={(e) =>
+                      setJobForm({ ...jobForm, ctc: e.target.value })
+                    }
+                    placeholder="5.00 LPA - 8.00 LPA"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Deadline</label>
+                  <Input
+                    type="datetime-local"
+                    value={jobForm.deadline}
+                    onChange={(e) =>
+                      setJobForm({ ...jobForm, deadline: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">
+                  Eligibility Criteria
+                </label>
+                <Input
+                  value={jobForm.eligibility}
+                  onChange={(e) =>
+                    setJobForm({ ...jobForm, eligibility: e.target.value })
+                  }
+                  placeholder="CSE, IT, ECE or All Branches"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Job Description</label>
+                <Textarea
+                  value={jobForm.description}
+                  onChange={(e) =>
+                    setJobForm({ ...jobForm, description: e.target.value })
+                  }
+                  placeholder="Detailed job description..."
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Target Audience</label>
+                <Select
+                  value={jobForm.targetAudience}
+                  onValueChange={(value) =>
+                    setJobForm({ ...jobForm, targetAudience: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Students</SelectItem>
+                    <SelectItem value="batch_2024">Batch 2024</SelectItem>
+                    <SelectItem value="batch_2025">Batch 2025</SelectItem>
+                    <SelectItem value="specific_branches">
+                      Specific Branches
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">
+                  Attach Files (PDFs)
+                </label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                  <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                  <p className="text-sm text-gray-500">
+                    Click to upload job description, proposal files
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsJobModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleJobSubmit}>Post Job</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Event Creation Modal */}
+        <Dialog open={isEventModalOpen} onOpenChange={setIsEventModalOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CalendarDays className="w-5 h-5" />
+                Create Campus Event
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Event Name</label>
+                <Input
+                  value={eventForm.name}
+                  onChange={(e) =>
+                    setEventForm({ ...eventForm, name: e.target.value })
+                  }
+                  placeholder="Tech Fest 2025, Cultural Night"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Date</label>
+                  <Input
+                    type="date"
+                    value={eventForm.date}
+                    onChange={(e) =>
+                      setEventForm({ ...eventForm, date: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Time</label>
+                  <Input
+                    type="time"
+                    value={eventForm.time}
+                    onChange={(e) =>
+                      setEventForm({ ...eventForm, time: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Entry Fee</label>
+                  <Input
+                    value={eventForm.entryFee}
+                    onChange={(e) =>
+                      setEventForm({ ...eventForm, entryFee: e.target.value })
+                    }
+                    placeholder="₹200 or Free"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Venue</label>
+                <Input
+                  value={eventForm.venue}
+                  onChange={(e) =>
+                    setEventForm({ ...eventForm, venue: e.target.value })
+                  }
+                  placeholder="Main Auditorium, Sports Complex"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Description</label>
+                <Textarea
+                  value={eventForm.description}
+                  onChange={(e) =>
+                    setEventForm({ ...eventForm, description: e.target.value })
+                  }
+                  placeholder="Event details, activities, prizes..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="notifyAll"
+                  checked={eventForm.notifyAll}
+                  onChange={(e) =>
+                    setEventForm({ ...eventForm, notifyAll: e.target.checked })
+                  }
+                />
+                <label htmlFor="notifyAll" className="text-sm font-medium">
+                  Notify all students
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEventModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleEventSubmit}>Create Event</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Club Addition Modal */}
+        <Dialog open={isClubModalOpen} onOpenChange={setIsClubModalOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <UsersRound className="w-5 h-5" />
+                Add New Club
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Club Name</label>
+                <Input
+                  value={clubForm.name}
+                  onChange={(e) =>
+                    setClubForm({ ...clubForm, name: e.target.value })
+                  }
+                  placeholder="ENIGMA, IEEE Society"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Category</label>
+                <Select
+                  value={clubForm.category}
+                  onValueChange={(value) =>
+                    setClubForm({ ...clubForm, category: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Technical">Technical</SelectItem>
+                    <SelectItem value="Cultural">Cultural</SelectItem>
+                    <SelectItem value="Sports">Sports</SelectItem>
+                    <SelectItem value="Arts">Arts</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Description</label>
+                <Textarea
+                  value={clubForm.description}
+                  onChange={(e) =>
+                    setClubForm({ ...clubForm, description: e.target.value })
+                  }
+                  placeholder="Club objectives, activities..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Initial Members</label>
+                  <Input
+                    type="number"
+                    value={clubForm.members}
+                    onChange={(e) =>
+                      setClubForm({ ...clubForm, members: e.target.value })
+                    }
+                    placeholder="50"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">
+                    Initial Followers
+                  </label>
+                  <Input
+                    type="number"
+                    value={clubForm.followers}
+                    onChange={(e) =>
+                      setClubForm({ ...clubForm, followers: e.target.value })
+                    }
+                    placeholder="100"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsClubModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleClubSubmit}>Add Club</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Notification Modal */}
+        <Dialog
+          open={isNotificationModalOpen}
+          onOpenChange={setIsNotificationModalOpen}
+        >
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5" />
+                Send Notification Alert
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Message</label>
+                <Textarea
+                  value={notificationForm.message}
+                  onChange={(e) =>
+                    setNotificationForm({
+                      ...notificationForm,
+                      message: e.target.value,
+                    })
+                  }
+                  placeholder="Important announcement, deadline reminder..."
+                  rows={4}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Urgency Level</label>
+                  <Select
+                    value={notificationForm.urgency}
+                    onValueChange={(value) =>
+                      setNotificationForm({
+                        ...notificationForm,
+                        urgency: value,
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="priority">Priority</SelectItem>
+                      <SelectItem value="urgent">Urgent</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Target Audience</label>
+                  <Select
+                    value={notificationForm.targetAudience}
+                    onValueChange={(value) =>
+                      setNotificationForm({
+                        ...notificationForm,
+                        targetAudience: value,
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Users</SelectItem>
+                      <SelectItem value="students">Students Only</SelectItem>
+                      <SelectItem value="faculty">Faculty Only</SelectItem>
+                      <SelectItem value="admins">Admins Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsNotificationModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleNotificationSubmit}>
+                  <Send className="w-4 h-4 mr-2" />
+                  Send Alert
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
