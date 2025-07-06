@@ -285,60 +285,43 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Top Bar */}
-      <header className="bg-card border-b border-border px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Shield className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="font-bold text-foreground">CampVerse Admin</h1>
-                <p className="text-xs text-muted-foreground">
-                  System Administration
-                </p>
+    <div className="flex min-h-screen bg-background">
+      <AdminSidebar />
+      <div className="flex-1 flex flex-col">
+        {/* Top Bar */}
+        <header className="bg-card border-b border-border px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder="Search users, courses..."
+                  className="pl-10 w-64"
+                />
               </div>
             </div>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Search users, courses..."
-                className="pl-10 w-64"
-              />
+
+            <div className="flex items-center space-x-4">
+              <Badge
+                variant="outline"
+                className="bg-green-50 text-green-700 border-green-200"
+              >
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                System Online
+              </Badge>
+              <div className="text-right">
+                <div className="font-medium text-foreground">
+                  {userData?.name || "Administrator"}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {userData?.email || "admin@cvr.ac.in"}
+                </div>
+              </div>
             </div>
           </div>
+        </header>
 
-          <div className="flex items-center space-x-4">
-            <Badge
-              variant="outline"
-              className="bg-green-50 text-green-700 border-green-200"
-            >
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-              System Online
-            </Badge>
-            <div className="text-right">
-              <div className="font-medium text-foreground">
-                {userData?.name || "Administrator"}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {userData?.email || "admin@cvr.ac.in"}
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={logout}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              Logout
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="p-6 space-y-6">
+        <main className="flex-1 p-6 space-y-6">
         {/* Welcome Section */}
         <div>
           <h2 className="text-2xl font-bold text-foreground">
@@ -596,9 +579,7 @@ const AdminDashboard = () => {
               </div>
 
               <div>
-                <label className="text-sm font-medium">
-                  Eligibility Criteria
-                </label>
+                <label className="text-sm font-medium">Eligibility Criteria</label>
                 <Input
                   value={jobForm.eligibility}
                   onChange={(e) =>
@@ -643,9 +624,7 @@ const AdminDashboard = () => {
               </div>
 
               <div>
-                <label className="text-sm font-medium">
-                  Attach Files (PDFs)
-                </label>
+                <label className="text-sm font-medium">Attach Files (PDFs)</label>
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
                   <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
                   <p className="text-sm text-gray-500">
@@ -837,9 +816,7 @@ const AdminDashboard = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">
-                    Initial Followers
-                  </label>
+                  <label className="text-sm font-medium">Initial Followers</label>
                   <Input
                     type="number"
                     value={clubForm.followers}
