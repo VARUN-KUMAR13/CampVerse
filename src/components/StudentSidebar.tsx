@@ -40,6 +40,21 @@ const StudentSidebar = () => {
       path: "/student/schedule",
     },
     {
+      icon: <Building2 className="w-5 h-5" />,
+      label: "Placement",
+      path: "/student/placement",
+    },
+    {
+      icon: <CalendarDays className="w-5 h-5" />,
+      label: "Events",
+      path: "/student/events",
+    },
+    {
+      icon: <Users className="w-5 h-5" />,
+      label: "Clubs",
+      path: "/student/clubs",
+    },
+    {
       icon: <BarChart3 className="w-5 h-5" />,
       label: "Results Summary",
       path: "/student/results",
@@ -58,21 +73,6 @@ const StudentSidebar = () => {
       icon: <FileText className="w-5 h-5" />,
       label: "Assignments",
       path: "/student/assignments",
-    },
-    {
-      icon: <Building2 className="w-5 h-5" />,
-      label: "Placement",
-      path: "/student/placement",
-    },
-    {
-      icon: <CalendarDays className="w-5 h-5" />,
-      label: "Events",
-      path: "/student/events",
-    },
-    {
-      icon: <Users className="w-5 h-5" />,
-      label: "Clubs",
-      path: "/student/clubs",
     },
   ];
 
