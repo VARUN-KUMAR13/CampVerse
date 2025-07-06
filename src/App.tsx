@@ -180,6 +180,16 @@ const App = () => (
               }
             />
 
+            {/* Admin Dashboard Routes (protected, no navigation) */}
+            <Route
+              path="/admin/placement"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminPlacement />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Legacy Dashboard Routes - Redirect to Homepage */}
             <Route path="/student/dashboard" element={<DynamicHomepage />} />
             <Route path="/faculty/dashboard" element={<DynamicHomepage />} />
