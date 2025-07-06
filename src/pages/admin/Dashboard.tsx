@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
+import AdminSidebar from "@/components/AdminSidebar";
 import {
   Users,
   GraduationCap,
