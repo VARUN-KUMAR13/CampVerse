@@ -19,6 +19,8 @@ interface StudentTopbarProps {
 }
 
 const StudentTopbar = ({ studentId }: StudentTopbarProps) => {
+  const { userData, logout } = useAuth();
+  const navigate = useNavigate();
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
 
   useEffect(() => {
@@ -28,6 +30,15 @@ const StudentTopbar = ({ studentId }: StudentTopbarProps) => {
 
     return () => clearInterval(timer);
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/", { replace: true });
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
   return (
     <header className="bg-background border-b border-border px-6 py-4">
       <div className="flex items-center justify-between">
