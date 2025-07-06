@@ -199,6 +199,14 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/faculty/schedule"
+              element={
+                <ProtectedRoute requiredRole="faculty">
+                  <FacultySchedule />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Admin Dashboard Routes (protected, no navigation) */}
             <Route
