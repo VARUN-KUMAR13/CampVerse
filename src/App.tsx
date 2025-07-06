@@ -23,6 +23,9 @@ import StudentResults from "./pages/student/Results";
 import StudentAttendance from "./pages/student/Attendance";
 import StudentAssignments from "./pages/student/Assignments";
 import StudentExams from "./pages/student/Exams";
+import StudentPlacement from "./pages/student/Placement";
+import StudentEvents from "./pages/student/Events";
+import StudentClubs from "./pages/student/Clubs";
 
 // Faculty Dashboard Pages
 import FacultyStudents from "./pages/faculty/Students";
