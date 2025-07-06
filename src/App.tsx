@@ -33,6 +33,7 @@ import FacultyAssignments from "./pages/faculty/Assignments";
 
 // Admin Dashboard Pages
 import AdminDashboard from "./pages/admin/Dashboard";
+import AdminPlacement from "./pages/admin/Placement";
 
 const queryClient = new QueryClient();
 
