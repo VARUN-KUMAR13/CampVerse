@@ -31,6 +31,9 @@ import StudentClubs from "./pages/student/Clubs";
 import FacultyStudents from "./pages/faculty/Students";
 import FacultyAssignments from "./pages/faculty/Assignments";
 
+// Admin Dashboard Pages
+import AdminDashboard from "./pages/admin/Dashboard";
+
 const queryClient = new QueryClient();
 
 const App = () => (
