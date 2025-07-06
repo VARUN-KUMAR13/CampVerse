@@ -10,6 +10,9 @@ import {
   User,
   Menu,
   LogOut,
+  Building2,
+  CalendarDays,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
