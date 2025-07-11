@@ -36,61 +36,9 @@ import {
 
 const AdminPlacement = () => {
   const { userData } = useAuth();
+  const { jobs, addJob, deleteJob } = usePlacement();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<any>(null);
-
-  const placementJobs = [
-    {
-      job_id: "APT2025",
-      title: "Technical Consultant I",
-      company: "apty",
-      type: "Intern + Full Time",
-      ctc: "5.00 LPA - 8.00 LPA",
-      stipend: "₹25,000/month",
-      deadline: "2025-07-05T10:00:00",
-      status: "Open",
-      eligibility: ["CSE", "IT", "ECE"],
-      appliedCount: 45,
-      shortlistedCount: 12,
-      selectedCount: 0,
-      postedDate: "2025-01-20T10:00:00",
-      attachments: ["CVR_APTY_Proposal.pdf"],
-    },
-    {
-      job_id: "TCS2025",
-      title: "Assistant System Engineer",
-      company: "TCS",
-      type: "Full Time",
-      ctc: "3.36 LPA",
-      stipend: "N/A",
-      deadline: "2025-06-15T23:59:00",
-      status: "Open",
-      eligibility: ["All Branches"],
-      appliedCount: 156,
-      shortlistedCount: 45,
-      selectedCount: 8,
-      postedDate: "2025-01-15T09:00:00",
-      attachments: ["TCS_JD.pdf"],
-    },
-    {
-      job_id: "WIPRO2025",
-      title: "Project Engineer",
-      company: "Wipro",
-      type: "Full Time",
-      ctc: "4.50 LPA",
-      stipend: "N/A",
-      deadline: "2025-05-20T18:00:00",
-      status: "Closed",
-      eligibility: ["CSE", "IT"],
-      appliedCount: 89,
-      shortlistedCount: 25,
-      selectedCount: 15,
-      postedDate: "2025-01-10T14:00:00",
-      attachments: ["Wipro_Details.pdf"],
-    },
-  ];
-
-  const [jobs, setJobs] = useState(placementJobs);
   const [newJob, setNewJob] = useState({
     job_id: "",
     title: "",
