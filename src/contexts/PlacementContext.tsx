@@ -124,6 +124,8 @@ export const PlacementProvider: React.FC<{ children: ReactNode }> = ({
       | "postedDate"
       | "attachments"
       | "status"
+      | "applied"
+      | "eligible"
     >,
   ) => {
     const job: PlacementJob = {
@@ -135,9 +137,26 @@ export const PlacementProvider: React.FC<{ children: ReactNode }> = ({
       postedDate: new Date().toISOString(),
       attachments: [],
       applied: false,
-      eligible: true,
+      eligible: true, // All students can see all jobs by default
+      // Ensure eligibility is an array
+      eligibility: Array.isArray(newJobData.eligibility)
+        ? newJobData.eligibility
+        : newJobData.eligibility
+          ? [newJobData.eligibility as any]
+          : ["All Branches"],
+      // Ensure rounds is an array
+      rounds: Array.isArray(newJobData.rounds)
+        ? newJobData.rounds
+        : newJobData.rounds
+          ? [newJobData.rounds as any]
+          : [],
     };
-    setJobs((prevJobs) => [job, ...prevJobs]);
+    console.log("Adding new job:", job); // Debug log
+    setJobs((prevJobs) => {
+      const updatedJobs = [job, ...prevJobs];
+      console.log("Updated jobs list:", updatedJobs); // Debug log
+      return updatedJobs;
+    });
   };
 
   const updateJob = (jobId: string, updates: Partial<PlacementJob>) => {
