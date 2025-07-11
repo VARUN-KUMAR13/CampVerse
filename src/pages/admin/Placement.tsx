@@ -54,16 +54,14 @@ const AdminPlacement = () => {
   });
 
   const handleAddJob = () => {
-    const job = {
+    addJob({
       ...newJob,
-      status: "Open",
-      appliedCount: 0,
-      shortlistedCount: 0,
-      selectedCount: 0,
-      postedDate: new Date().toISOString(),
-      attachments: [],
-    };
-    setJobs([job, ...jobs]);
+      eligibility:
+        newJob.eligibility.length > 0 ? newJob.eligibility : ["All Branches"],
+      rounds: newJob.rounds
+        ? newJob.rounds.split(",").map((r) => r.trim())
+        : [],
+    });
     setNewJob({
       job_id: "",
       title: "",
