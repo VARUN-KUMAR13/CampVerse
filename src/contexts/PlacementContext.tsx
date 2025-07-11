@@ -113,7 +113,31 @@ const initialJobs: PlacementJob[] = [
 export const PlacementProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [jobs, setJobs] = useState<PlacementJob[]>(initialJobs);
+  const [jobs, setJobs] = useState<PlacementJob[]>(() => {
+    // Try to load jobs from localStorage first
+    try {
+      const savedJobs = localStorage.getItem("placement_jobs");
+      if (savedJobs) {
+        const parsedJobs = JSON.parse(savedJobs);
+        console.log("Loaded jobs from localStorage:", parsedJobs);
+        return parsedJobs;
+      }
+    } catch (error) {
+      console.error("Error loading jobs from localStorage:", error);
+    }
+    console.log("Using initial jobs:", initialJobs);
+    return initialJobs;
+  });
+
+  // Save jobs to localStorage whenever jobs change
+  React.useEffect(() => {
+    try {
+      localStorage.setItem("placement_jobs", JSON.stringify(jobs));
+      console.log("Saved jobs to localStorage:", jobs);
+    } catch (error) {
+      console.error("Error saving jobs to localStorage:", error);
+    }
+  }, [jobs]);
 
   const addJob = (
     newJobData: Omit<
