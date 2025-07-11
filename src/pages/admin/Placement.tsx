@@ -231,6 +231,53 @@ const AdminPlacement = () => {
                     />
                   </div>
 
+                  <div>
+                    <label className="text-sm font-medium">
+                      Eligibility (Branches)
+                    </label>
+                    <Select
+                      value={
+                        newJob.eligibility.length > 0
+                          ? newJob.eligibility[0]
+                          : ""
+                      }
+                      onValueChange={(value) =>
+                        setNewJob({
+                          ...newJob,
+                          eligibility:
+                            value === "All Branches"
+                              ? ["All Branches"]
+                              : [value],
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select eligible branches" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="All Branches">
+                          All Branches
+                        </SelectItem>
+                        <SelectItem value="CSE">
+                          Computer Science & Engineering
+                        </SelectItem>
+                        <SelectItem value="IT">
+                          Information Technology
+                        </SelectItem>
+                        <SelectItem value="ECE">
+                          Electronics & Communication
+                        </SelectItem>
+                        <SelectItem value="EEE">
+                          Electrical & Electronics
+                        </SelectItem>
+                        <SelectItem value="MECH">
+                          Mechanical Engineering
+                        </SelectItem>
+                        <SelectItem value="CIVIL">Civil Engineering</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium">Bond Period</label>
