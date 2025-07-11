@@ -30,6 +30,10 @@ const StudentPlacement = () => {
   const [jobTypeFilter, setJobTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
+  // Debug logging
+  console.log("Student Placement - All jobs:", placementData);
+  console.log("Student Placement - Job count:", placementData.length);
+
   const filteredJobs = placementData.filter((job) => {
     const matchesSearch =
       job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
