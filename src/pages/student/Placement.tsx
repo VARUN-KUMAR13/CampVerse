@@ -34,6 +34,10 @@ const StudentPlacement = () => {
   console.log("Student Placement - All jobs:", placementData);
   console.log("Student Placement - Job count:", placementData.length);
 
+  useEffect(() => {
+    console.log("Jobs updated in Student Placement:", placementData);
+  }, [placementData]);
+
   const filteredJobs = placementData.filter((job) => {
     const matchesSearch =
       job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
