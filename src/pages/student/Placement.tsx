@@ -136,20 +136,6 @@ const StudentPlacement = () => {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  onClick={testAddJob}
-                  className="text-sm bg-blue-500 text-white"
-                >
-                  🧪 Test Add Job
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => window.location.reload()}
-                  className="text-sm"
-                >
-                  🔄 Refresh
-                </Button>
                 <div className="text-sm text-muted-foreground">
                   Total Jobs: {placementData.length} | Filtered:{" "}
                   {filteredJobs.length}
