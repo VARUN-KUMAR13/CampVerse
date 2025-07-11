@@ -54,14 +54,16 @@ const AdminPlacement = () => {
   });
 
   const handleAddJob = () => {
-    addJob({
+    const jobData = {
       ...newJob,
       eligibility:
         newJob.eligibility.length > 0 ? newJob.eligibility : ["All Branches"],
       rounds: newJob.rounds
         ? newJob.rounds.split(",").map((r) => r.trim())
         : [],
-    });
+    };
+    console.log("Admin adding job:", jobData);
+    addJob(jobData);
     setNewJob({
       job_id: "",
       title: "",
