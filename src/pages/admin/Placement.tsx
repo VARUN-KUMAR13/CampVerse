@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import AdminSidebar from "@/components/AdminSidebar";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePlacement } from "@/contexts/PlacementContext";
 import {
   Plus,
   Building2,
