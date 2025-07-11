@@ -13,6 +13,7 @@ import {
 import StudentSidebar from "@/components/StudentSidebar";
 import StudentTopbar from "@/components/StudentTopbar";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePlacement } from "@/contexts/PlacementContext";
 import {
   Search,
   Building2,
