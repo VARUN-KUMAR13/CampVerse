@@ -263,7 +263,10 @@ const StudentPlacement = () => {
                           {job.eligible &&
                             !job.applied &&
                             job.status !== "Closed" && (
-                              <Button className="bg-green-600 hover:bg-green-700">
+                              <Button
+                                className="bg-green-600 hover:bg-green-700"
+                                onClick={() => handleApply(job.job_id)}
+                              >
                                 Apply Now
                               </Button>
                             )}
