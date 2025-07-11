@@ -25,7 +25,7 @@ import {
 
 const StudentPlacement = () => {
   const { userData } = useAuth();
-  const { jobs: placementData, applyToJob } = usePlacement();
+  const { jobs: placementData, applyToJob, addJob } = usePlacement();
   const [searchTerm, setSearchTerm] = useState("");
   const [jobTypeFilter, setJobTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
