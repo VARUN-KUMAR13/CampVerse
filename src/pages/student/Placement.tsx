@@ -52,6 +52,13 @@ const StudentPlacement = () => {
     return matchesSearch && matchesType && matchesStatus;
   });
 
+  // Debug logging for filtered jobs
+  console.log("Filtered jobs:", filteredJobs);
+  console.log("Filtered jobs count:", filteredJobs.length);
+  console.log("Search term:", searchTerm);
+  console.log("Job type filter:", jobTypeFilter);
+  console.log("Status filter:", statusFilter);
+
   const getStatusBadge = (job: any) => {
     if (job.status === "Closed") {
       return <Badge variant="destructive">Closed</Badge>;
