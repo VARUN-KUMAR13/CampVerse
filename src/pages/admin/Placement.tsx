@@ -79,7 +79,7 @@ const AdminPlacement = () => {
   };
 
   const handleDeleteJob = (jobId: string) => {
-    setJobs(jobs.filter((job) => job.job_id !== jobId));
+    deleteJob(jobId);
   };
 
   const getStatusBadge = (status: string) => {
