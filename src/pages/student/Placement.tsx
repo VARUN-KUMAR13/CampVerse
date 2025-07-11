@@ -119,6 +119,19 @@ const StudentPlacement = () => {
                   Explore job opportunities and internships posted by companies
                 </p>
               </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.reload()}
+                  className="text-sm"
+                >
+                  🔄 Refresh
+                </Button>
+                <div className="text-sm text-muted-foreground">
+                  Total Jobs: {placementData.length} | Filtered:{" "}
+                  {filteredJobs.length}
+                </div>
+              </div>
             </div>
 
             {/* Filters */}
