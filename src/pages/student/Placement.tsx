@@ -40,6 +40,7 @@ const StudentPlacement = () => {
 
   const filteredJobs = placementData.filter((job) => {
     const matchesSearch =
+      searchTerm === "" ||
       job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType =
@@ -52,6 +53,13 @@ const StudentPlacement = () => {
       (statusFilter === "eligible" && job.eligible && !job.applied) ||
       (statusFilter === "applied" && job.applied) ||
       (statusFilter === "closed" && job.status === "Closed");
+
+    console.log(`Job ${job.job_id}:`, {
+      matchesSearch,
+      matchesType,
+      matchesStatus,
+      job: job,
+    });
 
     return matchesSearch && matchesType && matchesStatus;
   });
