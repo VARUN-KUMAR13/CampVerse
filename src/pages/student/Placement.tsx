@@ -233,9 +233,11 @@ const StudentPlacement = () => {
                               Selection Rounds:
                             </span>
                             <ul className="text-sm text-muted-foreground mt-1">
-                              {job.rounds.map((round, index) => (
-                                <li key={index}>• {round}</li>
-                              ))}
+                              {Array.isArray(job.rounds)
+                                ? job.rounds.map((round, index) => (
+                                    <li key={index}>• {round}</li>
+                                  ))
+                                : job.rounds && <li>• {job.rounds}</li>}
                             </ul>
                           </div>
                         </div>
