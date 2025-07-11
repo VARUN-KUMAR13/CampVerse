@@ -100,6 +100,22 @@ const StudentPlacement = () => {
     }
   };
 
+  const testAddJob = () => {
+    addJob({
+      job_id: `TEST${Date.now()}`,
+      title: "Test Job from Student",
+      company: "Test Company",
+      type: "Full Time",
+      ctc: "5.00 LPA",
+      stipend: "N/A",
+      deadline: "2025-12-31T23:59:00",
+      eligibility: ["All Branches"],
+      description: "This is a test job added from student dashboard",
+      bond: "2 years",
+      rounds: ["Online Test", "Interview"],
+    });
+  };
+
   return (
     <div className="flex min-h-screen bg-background">
       <StudentSidebar />
