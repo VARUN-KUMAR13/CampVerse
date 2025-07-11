@@ -71,6 +71,12 @@ const StudentPlacement = () => {
     });
   };
 
+  const handleApply = (jobId: string) => {
+    if (userData?.collegeId) {
+      applyToJob(jobId, userData.collegeId);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-background">
       <StudentSidebar />
