@@ -28,6 +28,7 @@ import StudentPlacement from "./pages/student/Placement";
 import StudentEvents from "./pages/student/Events";
 import StudentClubs from "./pages/student/Clubs";
 import StudentProfile from "./pages/student/Profile";
+import StudentSettings from "./pages/student/Settings";
 
 // Faculty Dashboard Pages
 import FacultyCourses from "./pages/faculty/Courses";
