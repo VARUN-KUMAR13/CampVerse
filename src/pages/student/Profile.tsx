@@ -371,45 +371,6 @@ const StudentProfile = () => {
               </Card>
             </div>
 
-            {/* Notification Preferences */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="w-5 h-5" />
-                  Notification Preferences
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Email Notifications</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Receive updates about assignments and announcements
-                    </p>
-                  </div>
-                  <Switch defaultChecked disabled={!isEditing} />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Placement Alerts</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Get notified about new job opportunities
-                    </p>
-                  </div>
-                  <Switch defaultChecked disabled={!isEditing} />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Exam Reminders</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Reminders for upcoming exams and deadlines
-                    </p>
-                  </div>
-                  <Switch disabled={!isEditing} />
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Save Button */}
             {isEditing && (
               <div className="flex justify-end">
