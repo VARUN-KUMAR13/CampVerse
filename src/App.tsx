@@ -169,6 +169,14 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/student/profile"
+                element={
+                  <ProtectedRoute requiredRole="student">
+                    <StudentProfile />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Faculty Dashboard Routes (protected, no navigation) */}
               <Route
