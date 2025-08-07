@@ -117,13 +117,17 @@ export const PlacementProvider: React.FC<{ children: ReactNode }> = ({
     // Try to load jobs from localStorage first
     try {
       const savedJobs = localStorage.getItem("placement_jobs");
-      if (savedJobs) {
+      if (savedJobs && savedJobs !== "undefined" && savedJobs !== "null") {
         const parsedJobs = JSON.parse(savedJobs);
-        console.log("Loaded jobs from localStorage:", parsedJobs);
-        return parsedJobs;
+        if (Array.isArray(parsedJobs) && parsedJobs.length > 0) {
+          console.log("Loaded jobs from localStorage:", parsedJobs);
+          return parsedJobs;
+        }
       }
     } catch (error) {
       console.error("Error loading jobs from localStorage:", error);
+      // Clear corrupted data
+      localStorage.removeItem("placement_jobs");
     }
     console.log("Using initial jobs:", initialJobs);
     return initialJobs;
