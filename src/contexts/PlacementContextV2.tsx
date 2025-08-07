@@ -309,29 +309,18 @@ export const PlacementProvider: React.FC<{ children: ReactNode }> = ({ children 
     try {
       setLoading(true);
 
-      const response = await fetch(`/api/placements/${jobId}/apply`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-        },
-        body: JSON.stringify(applicationData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to apply to job');
-      }
-
-      // Update local state
-      setJobs(prev => prev.map(job =>
+      // Update local state and localStorage
+      const updatedJobs = jobs.map(job =>
         job._id === jobId ? {
           ...job,
           applied: true,
           appliedCount: (job.appliedCount || 0) + 1,
           applicationStatus: 'Applied'
         } : job
-      ));
+      );
+
+      setJobs(updatedJobs);
+      localStorage.setItem('placement_jobs', JSON.stringify(updatedJobs));
 
       toast({
         title: "Success",
@@ -341,7 +330,6 @@ export const PlacementProvider: React.FC<{ children: ReactNode }> = ({ children 
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to apply to job';
-      setError(errorMessage);
       toast({
         title: "Error",
         description: errorMessage,
@@ -351,7 +339,7 @@ export const PlacementProvider: React.FC<{ children: ReactNode }> = ({ children 
     } finally {
       setLoading(false);
     }
-  }, [currentUser, userData]);
+  }, [currentUser, userData, jobs]);
 
   // Get job by ID
   const getJobById = useCallback(async (jobId: string): Promise<PlacementJob | null> => {
