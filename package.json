@@ -1,13 +1,31 @@
 {
-  "name": "fusion-starter",
+  "name": "campverse",
+  "version": "1.0.0",
+  "description": "Comprehensive College Campus Management System",
   "private": true,
   "type": "module",
+  "keywords": ["college", "management", "education", "campus", "student"],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "preview": "vite preview",
     "test": "vitest --run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest --coverage",
     "format.fix": "prettier --write .",
-    "typecheck": "tsc"
+    "format.check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint . --ext ts,tsx --fix",
+    "start:backend": "cd backend && npm start",
+    "dev:backend": "cd backend && npm run dev",
+    "install:backend": "cd backend && npm install",
+    "build:backend": "cd backend && npm run build",
+    "deploy": "npm run build && npm run build:backend",
+    "setup": "npm install && npm run install:backend",
+    "start:full": "concurrently \"npm run dev:backend\" \"npm run dev\"",
+    "clean": "rm -rf dist node_modules backend/node_modules",
+    "reset": "npm run clean && npm run setup"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
