@@ -31,6 +31,7 @@ import {
   AlertCircle,
   Filter,
   Calculator,
+  GraduationCap,
 } from "lucide-react";
 
 const StudentFees = () => {
