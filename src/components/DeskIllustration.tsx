@@ -35,8 +35,8 @@ const DeskIllustration = () => {
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full flex items-center justify-center bg-black rounded-lg overflow-hidden"
-      style={{ minHeight: "400px" }}
+      className="relative w-full h-full flex items-center justify-center bg-transparent rounded-lg overflow-hidden"
+      style={{ minHeight: "67px" }}
     >
       <spline-viewer
         url="https://prod.spline.design/rtKBpTMN2JI5IPsj/scene.splinecode"
@@ -45,9 +45,29 @@ const DeskIllustration = () => {
           width: "100%",
           height: "100%",
           display: "block",
-          minHeight: "400px",
+          minHeight: "67px",
+          background: "transparent",
+          mixBlendMode: "multiply",
         }}
       />
+      <style>{`
+        spline-viewer {
+          background: transparent !important;
+        }
+        spline-viewer canvas {
+          background: transparent !important;
+        }
+        /* Hide Spline watermark */
+        spline-viewer .watermark,
+        spline-viewer [class*="watermark"],
+        spline-viewer [id*="watermark"],
+        spline-viewer a[href*="spline.design"] {
+          display: none !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+        }
+      `}</style>
     </div>
   );
 };
