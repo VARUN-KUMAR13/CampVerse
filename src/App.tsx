@@ -8,6 +8,7 @@ import { PlacementProvider } from "@/contexts/PlacementContext";
 import Navigation from "./components/Navigation";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DynamicHomepage from "./components/DynamicHomepage";
+import { AIChatbot } from "./components/AIChatbot";
 
 // Public Pages
 import Features from "./pages/Features";
