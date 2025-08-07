@@ -85,7 +85,7 @@ const StudentTopbar = ({ studentId }: StudentTopbarProps) => {
               <div className="flex items-center justify-start gap-2 p-2">
                 <div className="flex flex-col space-y-1 leading-none">
                   <p className="font-medium">
-                    {userData?.name || `Student ${studentId}`}
+                    {userData?.name || studentId}
                   </p>
                   <p className="w-[200px] truncate text-sm text-muted-foreground">
                     {userData?.email || `${studentId}@cvr.ac.in`}
