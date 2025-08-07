@@ -324,86 +324,79 @@ const StudentFees = () => {
 
               {/* Academic Fees Tab */}
               <TabsContent value="academic" className="space-y-6">
-                <div className="grid gap-6">
+                <div className="space-y-6">
                   {/* Fee Summary Card */}
-                  <Card className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-900 border-blue-200">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-2">
-                          <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100">Academic Fees Summary</h3>
-                          <p className="text-3xl font-bold text-blue-700 dark:text-blue-200">₹{feeStructure.academic.reduce((sum, fee) => sum + fee.totalAmount, 0).toLocaleString()}/-</p>
-                          <p className="text-sm text-blue-600 dark:text-blue-300">Academic Year {selectedYear}</p>
-                        </div>
-                        <div className="p-4 bg-blue-500 rounded-full">
-                          <GraduationCap className="w-8 h-8 text-white" />
-                        </div>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <GraduationCap className="w-6 h-6 text-primary" />
+                        Academic Fees Summary - {selectedYear}
+                      </CardTitle>
+                      <div className="text-2xl font-bold text-foreground">
+                        ₹{feeStructure.academic.reduce((sum, fee) => sum + fee.totalAmount, 0).toLocaleString()}/-
                       </div>
-                    </CardContent>
+                    </CardHeader>
                   </Card>
 
                   {/* Fee Structure Cards */}
-                  <div className="grid gap-4">
+                  <div className="space-y-4">
                     {feeStructure.academic.map((fee, index) => (
-                      <Card key={index} className="overflow-hidden hover:shadow-lg transition-all duration-300 border-l-4 border-l-blue-500">
-                        <CardContent className="p-0">
-                          <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-4 text-white">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-3">
-                                <div className="p-2 bg-white/20 rounded-lg">
-                                  {fee.headType === "Template" ? (
-                                    <FileText className="w-5 h-5" />
-                                  ) : (
-                                    <IndianRupee className="w-5 h-5" />
-                                  )}
-                                </div>
-                                <div>
-                                  <Badge variant="secondary" className="mb-1 bg-white/20 text-white border-white/30">
-                                    {fee.headType}
-                                  </Badge>
-                                  <h4 className="font-semibold text-lg">{fee.name}</h4>
-                                </div>
+                      <Card key={index} className="border-l-4 border-l-primary">
+                        <CardContent className="p-6">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center space-x-3">
+                              <div className="p-2 bg-primary/10 rounded-lg">
+                                {fee.headType === "Template" ? (
+                                  <FileText className="w-5 h-5 text-primary" />
+                                ) : (
+                                  <IndianRupee className="w-5 h-5 text-primary" />
+                                )}
                               </div>
-                              {fee.balanceAmount === 0 && (
-                                <div className="flex items-center space-x-2 bg-green-500 px-3 py-1 rounded-full">
-                                  <CheckCircle className="w-4 h-4" />
-                                  <span className="text-sm font-medium">Paid</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="p-6 bg-white dark:bg-gray-900">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                              <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                                <p className="text-xs text-muted-foreground mb-1">Total Amount</p>
-                                <p className="text-lg font-bold text-gray-900 dark:text-gray-100">₹{fee.totalAmount.toLocaleString()}</p>
-                              </div>
-                              <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                                <p className="text-xs text-muted-foreground mb-1">Paid Amount</p>
-                                <p className="text-lg font-bold text-green-600">₹{(fee.totalAmount - fee.balanceAmount).toLocaleString()}</p>
-                              </div>
-                              <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                                <p className="text-xs text-muted-foreground mb-1">Balance</p>
-                                <p className="text-lg font-bold text-orange-600">₹{fee.balanceAmount}</p>
-                              </div>
-                              <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                                <p className="text-xs text-muted-foreground mb-1">Status</p>
-                                <p className="text-lg font-bold text-blue-600">{fee.balanceAmount === 0 ? "Completed" : "Pending"}</p>
+                              <div>
+                                <Badge variant="outline" className="mb-1">
+                                  {fee.headType}
+                                </Badge>
+                                <h4 className="font-semibold text-lg">{fee.name}</h4>
                               </div>
                             </div>
-
-                            {fee.balanceAmount > 0 && (
-                              <div className="flex justify-end">
-                                <Button
-                                  onClick={() => handlePayment(fee.balanceAmount)}
-                                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-2 shadow-lg"
-                                >
-                                  <CreditCard className="w-4 h-4 mr-2" />
-                                  Pay ₹{fee.balanceAmount.toLocaleString()}
-                                </Button>
-                              </div>
+                            {fee.balanceAmount === 0 && (
+                              <Badge className="bg-green-500">
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                                Paid
+                              </Badge>
                             )}
                           </div>
+
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                            <div className="text-center p-3 bg-muted rounded-lg">
+                              <p className="text-xs text-muted-foreground mb-1">Total Amount</p>
+                              <p className="text-lg font-bold">₹{fee.totalAmount.toLocaleString()}</p>
+                            </div>
+                            <div className="text-center p-3 bg-muted rounded-lg">
+                              <p className="text-xs text-muted-foreground mb-1">Paid Amount</p>
+                              <p className="text-lg font-bold text-green-600">₹{(fee.totalAmount - fee.balanceAmount).toLocaleString()}</p>
+                            </div>
+                            <div className="text-center p-3 bg-muted rounded-lg">
+                              <p className="text-xs text-muted-foreground mb-1">Balance</p>
+                              <p className="text-lg font-bold text-destructive">₹{fee.balanceAmount}</p>
+                            </div>
+                            <div className="text-center p-3 bg-muted rounded-lg">
+                              <p className="text-xs text-muted-foreground mb-1">Status</p>
+                              <p className="text-lg font-bold text-primary">{fee.balanceAmount === 0 ? "Completed" : "Pending"}</p>
+                            </div>
+                          </div>
+
+                          {fee.balanceAmount > 0 && (
+                            <div className="flex justify-end">
+                              <Button
+                                onClick={() => handlePayment(fee.balanceAmount)}
+                                className="bg-primary hover:bg-primary/90"
+                              >
+                                <CreditCard className="w-4 h-4 mr-2" />
+                                Pay ₹{fee.balanceAmount.toLocaleString()}
+                              </Button>
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
                     ))}
