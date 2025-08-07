@@ -55,6 +55,35 @@ const DeskIllustration = () => {
         }
       `;
       document.head.appendChild(style);
+
+      // Set up mutation observer to remove watermarks
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              const element = node as Element;
+              // Remove any watermark elements
+              const watermarks = element.querySelectorAll(
+                'a[href*="spline.design"], a[href*="spline.com"], [class*="watermark"], [class*="logo"], [class*="brand"]'
+              );
+              watermarks.forEach((watermark) => {
+                watermark.remove();
+              });
+            }
+          });
+        });
+      });
+
+      // Start observing
+      if (containerRef.current) {
+        observer.observe(containerRef.current, {
+          childList: true,
+          subtree: true,
+        });
+      }
+
+      // Cleanup observer
+      return () => observer.disconnect();
     };
 
     document.head.appendChild(script);
