@@ -135,11 +135,20 @@ export const PlacementProvider: React.FC<{ children: ReactNode }> = ({
 
   // Save jobs to localStorage whenever jobs change
   React.useEffect(() => {
-    try {
-      localStorage.setItem("placement_jobs", JSON.stringify(jobs));
-      console.log("Saved jobs to localStorage:", jobs);
-    } catch (error) {
-      console.error("Error saving jobs to localStorage:", error);
+    if (jobs && Array.isArray(jobs) && jobs.length > 0) {
+      try {
+        const serializedJobs = JSON.stringify(jobs);
+        localStorage.setItem("placement_jobs", serializedJobs);
+        console.log("Saved jobs to localStorage:", jobs.length, "jobs");
+      } catch (error) {
+        console.error("Error saving jobs to localStorage:", error);
+        // If localStorage is full or unavailable, clear it
+        try {
+          localStorage.removeItem("placement_jobs");
+        } catch (clearError) {
+          console.error("Could not clear localStorage:", clearError);
+        }
+      }
     }
   }, [jobs]);
 
