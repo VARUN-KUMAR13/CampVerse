@@ -158,14 +158,14 @@ export const ChatModal: React.FC<ChatModalProps> = ({
 
         {/* Suggestions */}
         {suggestions.length > 0 && (
-          <div className="p-4 border-t border-gray-200 bg-white">
-            <p className="text-xs text-gray-500 mb-2">Quick suggestions:</p>
+          <div className="p-4 border-t bg-card">
+            <p className="text-xs text-muted-foreground mb-2 font-medium">Quick suggestions:</p>
             <div className="flex flex-wrap gap-2">
               {suggestions.map((suggestion) => (
                 <button
                   key={suggestion.id}
                   onClick={() => onSuggestionClick(suggestion)}
-                  className="text-xs bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full hover:bg-blue-100 transition-colors"
+                  className="text-xs bg-muted text-foreground px-3 py-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors border"
                 >
                   {suggestion.text}
                 </button>
@@ -175,7 +175,7 @@ export const ChatModal: React.FC<ChatModalProps> = ({
         )}
 
         {/* Input */}
-        <div className="p-4 border-t border-gray-200 bg-white">
+        <div className="p-4 border-t bg-card">
           <form onSubmit={handleSubmit} className="flex gap-2">
             <input
               ref={inputRef}
@@ -184,13 +184,13 @@ export const ChatModal: React.FC<ChatModalProps> = ({
               onChange={(e) => onInputChange(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Type your message..."
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              className="flex-1 px-4 py-2 border bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
               disabled={isTyping}
             />
             <button
               type="submit"
               disabled={!inputValue.trim() || isTyping}
-              className="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-10 h-10 bg-primary text-primary-foreground rounded-lg flex items-center justify-center hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isTyping ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
