@@ -228,37 +228,24 @@ export const PlacementProvider: React.FC<{ children: ReactNode }> = ({ children 
     try {
       setLoading(true);
 
-      const response = await fetch(`/api/placements/${jobId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-        },
-        body: JSON.stringify(updates),
-      });
+      // Update local state and localStorage
+      const updatedJobs = jobs.map(job =>
+        job._id === jobId ? { ...job, ...updates, updatedAt: new Date() } : job
+      );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update job');
-      }
+      setJobs(updatedJobs);
+      localStorage.setItem('placement_jobs', JSON.stringify(updatedJobs));
 
-      const data = await response.json();
-      const updatedJob = data.job;
-
-      // Update local state
-      setJobs(prev => prev.map(job =>
-        job._id === jobId ? { ...job, ...updatedJob } : job
-      ));
+      const updatedJob = updatedJobs.find(job => job._id === jobId);
 
       toast({
         title: "Success",
         description: "Job updated successfully",
       });
 
-      return updatedJob;
+      return updatedJob || null;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update job';
-      setError(errorMessage);
       toast({
         title: "Error",
         description: errorMessage,
@@ -268,7 +255,7 @@ export const PlacementProvider: React.FC<{ children: ReactNode }> = ({ children 
     } finally {
       setLoading(false);
     }
-  }, [currentUser, userData]);
+  }, [currentUser, userData, jobs]);
 
   // Delete job
   const deleteJob = useCallback(async (jobId: string): Promise<boolean> => {
