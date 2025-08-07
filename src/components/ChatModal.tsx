@@ -88,10 +88,10 @@ export const ChatModal: React.FC<ChatModalProps> = ({
         </div>
 
         {/* Messages */}
-        <div className="h-80 overflow-y-auto p-4 space-y-4 bg-gray-50">
+        <div className="h-80 overflow-y-auto p-4 space-y-4 bg-background">
           {messages.length === 0 && (
-            <div className="text-center text-gray-500 py-8">
-              <Bot className="w-12 h-12 mx-auto mb-4 text-blue-500" />
+            <div className="text-center text-muted-foreground py-8">
+              <Bot className="w-12 h-12 mx-auto mb-4 text-primary" />
               <p className="text-sm">
                 Hi! I'm your CampVerse AI assistant. How can I help you today?
               </p>
@@ -104,16 +104,16 @@ export const ChatModal: React.FC<ChatModalProps> = ({
               className={`flex gap-3 ${message.isBot ? 'justify-start' : 'justify-end'}`}
             >
               {message.isBot && (
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-4 h-4 text-white" />
+                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                  <Bot className="w-4 h-4 text-primary-foreground" />
                 </div>
               )}
 
               <div
-                className={`max-w-[80%] p-3 rounded-2xl ${
+                className={`max-w-[80%] p-3 rounded-lg ${
                   message.isBot
-                    ? 'bg-white text-gray-800 rounded-bl-md'
-                    : 'bg-blue-500 text-white rounded-br-md'
+                    ? 'bg-muted text-foreground border'
+                    : 'bg-primary text-primary-foreground'
                 }`}
               >
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">
@@ -128,8 +128,8 @@ export const ChatModal: React.FC<ChatModalProps> = ({
               </div>
 
               {!message.isBot && (
-                <div className="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center flex-shrink-0">
-                  <User className="w-4 h-4 text-white" />
+                <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
+                  <User className="w-4 h-4 text-muted-foreground" />
                 </div>
               )}
             </div>
