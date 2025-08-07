@@ -412,41 +412,92 @@ const StudentFees = () => {
 
               {/* Hostel Fees Tab */}
               <TabsContent value="hostel" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Hostel Fees - {selectedYear}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {feeStructure.hostel.map((fee, index) => (
-                      <div key={index} className={`p-4 rounded-lg ${fee.color} border`}>
-                        <div className="flex justify-between items-center mb-2">
-                          <div>
-                            <Badge variant="outline" className="mb-2">{fee.headType}</Badge>
-                            <h4 className="font-medium">{fee.name}</h4>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-sm text-muted-foreground">Balance Amount</p>
-                            <p className="text-lg font-bold">₹{fee.balanceAmount}/-</p>
-                          </div>
+                <div className="grid gap-6">
+                  {/* Hostel Summary Card */}
+                  <Card className="bg-gradient-to-br from-orange-50 to-red-100 dark:from-orange-950 dark:to-red-900 border-orange-200">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-2">
+                          <h3 className="text-lg font-semibold text-orange-900 dark:text-orange-100">Hostel Accommodation</h3>
+                          <p className="text-3xl font-bold text-orange-700 dark:text-orange-200">₹{feeStructure.hostel.reduce((sum, fee) => sum + fee.totalAmount, 0).toLocaleString()}/-</p>
+                          <p className="text-sm text-orange-600 dark:text-orange-300">Academic Year {selectedYear}</p>
                         </div>
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="text-sm text-muted-foreground">Total Amount</p>
-                            <p className="font-semibold">₹{fee.totalAmount.toLocaleString()}/-</p>
-                          </div>
-                          {fee.balanceAmount > 0 && (
-                            <Button
-                              onClick={() => handlePayment(fee.balanceAmount)}
-                              className="bg-blue-600 hover:bg-blue-700"
-                            >
-                              Pay Now
-                            </Button>
-                          )}
+                        <div className="p-4 bg-orange-500 rounded-full">
+                          <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                          </svg>
                         </div>
                       </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Hostel Fee Cards */}
+                  <div className="grid gap-4">
+                    {feeStructure.hostel.map((fee, index) => (
+                      <Card key={index} className="overflow-hidden hover:shadow-xl transition-all duration-300 border-l-4 border-l-orange-500">
+                        <CardContent className="p-0">
+                          <div className="bg-gradient-to-r from-orange-500 to-red-500 p-6 text-white">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-4">
+                                <div className="p-3 bg-white/20 rounded-xl">
+                                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                                  </svg>
+                                </div>
+                                <div>
+                                  <Badge variant="secondary" className="mb-2 bg-white/20 text-white border-white/30">
+                                    {fee.headType}
+                                  </Badge>
+                                  <h4 className="font-bold text-xl">{fee.name}</h4>
+                                  <p className="text-orange-100 text-sm">Room & Board Charges</p>
+                                </div>
+                              </div>
+                              {fee.balanceAmount === 0 && (
+                                <div className="flex items-center space-x-2 bg-green-500 px-4 py-2 rounded-full">
+                                  <CheckCircle className="w-5 h-5" />
+                                  <span className="font-medium">Fully Paid</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="p-6 bg-gradient-to-br from-orange-50 to-red-50 dark:from-gray-900 dark:to-gray-800">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                              <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+                                <div className="text-2xl mb-2">🏠</div>
+                                <p className="text-xs text-muted-foreground mb-1">Total Amount</p>
+                                <p className="text-xl font-bold text-gray-900 dark:text-gray-100">₹{fee.totalAmount.toLocaleString()}</p>
+                              </div>
+                              <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+                                <div className="text-2xl mb-2">✅</div>
+                                <p className="text-xs text-muted-foreground mb-1">Paid Amount</p>
+                                <p className="text-xl font-bold text-green-600">₹{(fee.totalAmount - fee.balanceAmount).toLocaleString()}</p>
+                              </div>
+                              <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+                                <div className="text-2xl mb-2">⏳</div>
+                                <p className="text-xs text-muted-foreground mb-1">Pending</p>
+                                <p className="text-xl font-bold text-orange-600">₹{fee.balanceAmount}</p>
+                              </div>
+                            </div>
+
+                            {fee.balanceAmount > 0 && (
+                              <div className="flex justify-center">
+                                <Button
+                                  onClick={() => handlePayment(fee.balanceAmount)}
+                                  className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white px-10 py-3 text-lg shadow-xl rounded-xl"
+                                  size="lg"
+                                >
+                                  <CreditCard className="w-5 h-5 mr-3" />
+                                  Pay Hostel Fee ₹{fee.balanceAmount.toLocaleString()}
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
                     ))}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </TabsContent>
 
               {/* Transport Fees Tab */}
