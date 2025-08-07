@@ -1,34 +1,40 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { config, validateConfig, logConfig } from "@/config/environment";
+
+// Validate configuration on startup
+const validation = validateConfig();
+if (!validation.valid) {
+  console.error('Firebase configuration errors:', validation.errors);
+  if (config.IS_PRODUCTION) {
+    throw new Error('Invalid Firebase configuration for production environment');
+  }
+}
+
+// Log configuration in development
+if (config.IS_DEVELOPMENT) {
+  logConfig();
+}
 
 // Check if we're in development mode without Firebase credentials
-const isDevelopment =
-  import.meta.env.DEV && !import.meta.env.VITE_FIREBASE_API_KEY;
+const isDevelopment = config.IS_DEVELOPMENT && !import.meta.env.VITE_FIREBASE_API_KEY;
 
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "demo-api-key",
-  authDomain:
-    import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "demo-project.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "demo-project",
-  storageBucket:
-    import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "demo-project.appspot.com",
-  messagingSenderId:
-    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "123456789",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:123456789:web:abcdef",
-};
-
-// Initialize Firebase only if not in development mode
+// Initialize Firebase
 let app: any;
 let auth: any;
 
-if (!isDevelopment) {
-  try {
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-  } catch (error) {
-    console.warn("Firebase initialization failed, running in development mode");
+try {
+  app = initializeApp(config.FIREBASE_CONFIG);
+  auth = getAuth(app);
+} catch (error) {
+  console.warn("Firebase initialization failed, running in development mode");
+  if (config.IS_PRODUCTION) {
+    throw error;
   }
 }
+
+// Export environment flags
+export const isProduction = config.IS_PRODUCTION;
 
 export { auth, isDevelopment };
 export default app;
