@@ -76,6 +76,9 @@ const DeskIllustration = () => {
       <spline-viewer
         url="https://prod.spline.design/rtKBpTMN2JI5IPsj/scene.splinecode"
         className="w-full h-full block"
+        data-background="transparent"
+        data-logo="false"
+        data-watermark="false"
         style={{
           width: "100%",
           height: "100%",
@@ -83,6 +86,8 @@ const DeskIllustration = () => {
           minHeight: "67px",
           background: "transparent",
           mixBlendMode: "multiply",
+          "--spline-background": "transparent",
+          "--background": "transparent",
         }}
       />
       <style>{`
