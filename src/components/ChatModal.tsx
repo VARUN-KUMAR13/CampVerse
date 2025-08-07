@@ -60,24 +60,27 @@ export const ChatModal: React.FC<ChatModalProps> = ({
 
   return (
     <div className="fixed bottom-24 right-6 z-50 w-96 max-w-[calc(100vw-3rem)] animate-in slide-in-from-bottom-4 duration-300">
-      <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
+      <div className="bg-card rounded-xl shadow-xl border overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 text-white">
+        <div className="bg-sidebar text-sidebar-foreground p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                <Bot className="w-4 h-4" />
+              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                <Bot className="w-4 h-4 text-primary-foreground" />
               </div>
               <div>
-                <h3 className="font-semibold">CampVerse AI Assistant</h3>
-                <p className="text-xs text-white/80">
-                  {isTyping ? 'Typing...' : 'Online'}
-                </p>
+                <h3 className="font-semibold text-sm">CampVerse AI Assistant</h3>
+                <div className="flex items-center gap-1">
+                  <div className={`w-2 h-2 rounded-full ${isTyping ? 'bg-green-400 animate-pulse' : 'bg-green-400'}`} />
+                  <p className="text-xs text-muted-foreground">
+                    {isTyping ? 'Typing...' : 'Online'}
+                  </p>
+                </div>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors"
+              className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -94,7 +97,7 @@ export const ChatModal: React.FC<ChatModalProps> = ({
               </p>
             </div>
           )}
-          
+
           {messages.map((message) => (
             <div
               key={message.id}
@@ -105,7 +108,7 @@ export const ChatModal: React.FC<ChatModalProps> = ({
                   <Bot className="w-4 h-4 text-white" />
                 </div>
               )}
-              
+
               <div
                 className={`max-w-[80%] p-3 rounded-2xl ${
                   message.isBot
@@ -117,13 +120,13 @@ export const ChatModal: React.FC<ChatModalProps> = ({
                   {message.content}
                 </p>
                 <p className="text-xs opacity-60 mt-1">
-                  {message.timestamp.toLocaleTimeString([], { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
+                  {message.timestamp.toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit'
                   })}
                 </p>
               </div>
-              
+
               {!message.isBot && (
                 <div className="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center flex-shrink-0">
                   <User className="w-4 h-4 text-white" />
@@ -131,7 +134,7 @@ export const ChatModal: React.FC<ChatModalProps> = ({
               )}
             </div>
           ))}
-          
+
           {isTyping && (
             <div className="flex gap-3 justify-start">
               <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
@@ -146,7 +149,7 @@ export const ChatModal: React.FC<ChatModalProps> = ({
               </div>
             </div>
           )}
-          
+
           <div ref={messagesEndRef} />
         </div>
 
