@@ -54,6 +54,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <AIChatbot />
             <Routes>
               {/* Dynamic Homepage - shows landing page or dashboard based on auth */}
               <Route path="/" element={<DynamicHomepage />} />
