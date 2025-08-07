@@ -161,25 +161,39 @@ export const PlacementProvider: React.FC<{ children: ReactNode }> = ({ children 
     try {
       setLoading(true);
 
-      const response = await fetch('/api/placements', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+      // Create new job with mock data
+      const newJob: PlacementJob = {
+        _id: Date.now().toString(),
+        job_id: jobData.job_id || '',
+        title: jobData.title || '',
+        company: jobData.company || '',
+        type: jobData.type || 'Full Time',
+        ctc: jobData.ctc || '',
+        deadline: jobData.deadline || '',
+        status: 'Open',
+        eligibility: jobData.eligibility || ['All Branches'],
+        appliedCount: 0,
+        shortlistedCount: 0,
+        selectedCount: 0,
+        postedDate: new Date().toISOString(),
+        attachments: [],
+        applied: false,
+        canApply: true,
+        description: jobData.description,
+        rounds: jobData.rounds || [],
+        postedBy: {
+          _id: userData?._id || '',
+          name: userData?.name || '',
+          collegeId: userData?.collegeId || '',
         },
-        body: JSON.stringify(jobData),
-      });
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create job');
-      }
-
-      const data = await response.json();
-      const newJob = data.job;
-
-      // Add to local state
-      setJobs(prev => [newJob, ...prev]);
+      // Add to local state and localStorage
+      const updatedJobs = [newJob, ...jobs];
+      setJobs(updatedJobs);
+      localStorage.setItem('placement_jobs', JSON.stringify(updatedJobs));
 
       toast({
         title: "Success",
@@ -189,7 +203,6 @@ export const PlacementProvider: React.FC<{ children: ReactNode }> = ({ children 
       return newJob;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to add job';
-      setError(errorMessage);
       toast({
         title: "Error",
         description: errorMessage,
@@ -199,7 +212,7 @@ export const PlacementProvider: React.FC<{ children: ReactNode }> = ({ children 
     } finally {
       setLoading(false);
     }
-  }, [currentUser, userData]);
+  }, [currentUser, userData, jobs]);
 
   // Update job
   const updateJob = useCallback(async (jobId: string, updates: Partial<PlacementJob>): Promise<PlacementJob | null> => {
