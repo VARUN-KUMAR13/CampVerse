@@ -4,13 +4,7 @@
   "description": "Comprehensive College Campus Management System",
   "private": true,
   "type": "module",
-  "keywords": [
-    "college",
-    "management",
-    "education",
-    "campus",
-    "student"
-  ],
+  "keywords": ["college", "management", "education", "campus", "student"],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -26,8 +20,7 @@
     "start:backend": "cd backend && npm start",
     "dev:backend": "cd backend && npm run dev",
     "install:backend": "cd backend && npm install",
-    "build:backend": "cd backend && npm run build",
-    "deploy": "npm run build && npm run build:backend",
+    "deploy": "npm run build",
     "setup": "npm install && npm run install:backend",
     "start:full": "concurrently \"npm run dev:backend\" \"npm run dev\"",
     "clean": "rm -rf dist node_modules backend/node_modules",
@@ -99,7 +92,6 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "autoprefixer": "^10.4.20",
-    "concurrently": "^9.2.0",
     "globals": "^15.9.0",
     "postcss": "^8.4.47",
     "prettier": "^3.5.3",
