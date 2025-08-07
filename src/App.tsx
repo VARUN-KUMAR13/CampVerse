@@ -9,6 +9,9 @@ import Navigation from "./components/Navigation";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DynamicHomepage from "./components/DynamicHomepage";
 import { AIChatbot } from "./components/AIChatbot";
+import ErrorBoundary from "./components/ErrorBoundary";
+import { LoadingPage } from "./components/LoadingSystem";
+import { useAuth } from "./contexts/AuthContext";
 
 // Public Pages
 import Features from "./pages/Features";
