@@ -271,20 +271,10 @@ export const PlacementProvider: React.FC<{ children: ReactNode }> = ({ children 
     try {
       setLoading(true);
 
-      const response = await fetch(`/api/placements/${jobId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete job');
-      }
-
-      // Remove from local state
-      setJobs(prev => prev.filter(job => job._id !== jobId));
+      // Remove from local state and localStorage
+      const updatedJobs = jobs.filter(job => job._id !== jobId);
+      setJobs(updatedJobs);
+      localStorage.setItem('placement_jobs', JSON.stringify(updatedJobs));
 
       toast({
         title: "Success",
@@ -294,7 +284,6 @@ export const PlacementProvider: React.FC<{ children: ReactNode }> = ({ children 
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete job';
-      setError(errorMessage);
       toast({
         title: "Error",
         description: errorMessage,
@@ -304,7 +293,7 @@ export const PlacementProvider: React.FC<{ children: ReactNode }> = ({ children 
     } finally {
       setLoading(false);
     }
-  }, [currentUser, userData]);
+  }, [currentUser, userData, jobs]);
 
   // Apply to job
   const applyToJob = useCallback(async (jobId: string, applicationData: any = {}): Promise<boolean> => {
