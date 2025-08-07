@@ -38,44 +38,25 @@ const DeskIllustration = () => {
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full flex items-center justify-center bg-transparent rounded-lg overflow-hidden"
+      className="w-full h-full flex items-center justify-center bg-transparent overflow-hidden"
       style={{ minHeight: "67px" }}
     >
-      <spline-viewer
-        url="https://prod.spline.design/rtKBpTMN2JI5IPsj/scene.splinecode"
-        className="w-full h-full block"
-        data-background="transparent"
-        data-logo="false"
-        data-watermark="false"
+      <dotlottie-wc
+        src="https://lottie.host/5f83f544-8cb1-45f0-b094-428872fd8469/wsB4CBtzq0.lottie"
+        className="w-full h-full"
+        autoplay
+        loop
+        speed="1"
         style={{
           width: "100%",
           height: "100%",
-          display: "block",
-          minHeight: "67px",
+          maxWidth: "500px",
+          maxHeight: "500px",
           background: "transparent",
-          mixBlendMode: "multiply",
-          "--spline-background": "transparent",
-          "--background": "transparent",
+          border: "none",
+          boxShadow: "none",
         }}
       />
-      <style>{`
-        spline-viewer {
-          background: transparent !important;
-        }
-        spline-viewer canvas {
-          background: transparent !important;
-        }
-        /* Hide Spline watermark */
-        spline-viewer .watermark,
-        spline-viewer [class*="watermark"],
-        spline-viewer [id*="watermark"],
-        spline-viewer a[href*="spline.design"] {
-          display: none !important;
-          visibility: hidden !important;
-          opacity: 0 !important;
-          pointer-events: none !important;
-        }
-      `}</style>
     </div>
   );
 };
