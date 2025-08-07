@@ -485,98 +485,88 @@ const StudentFees = () => {
 
               {/* Transport Fees Tab */}
               <TabsContent value="transport" className="space-y-6">
-                <div className="grid gap-6">
+                <div className="space-y-6">
                   {/* Transport Summary Card */}
-                  <Card className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950 dark:to-emerald-900 border-green-200">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-2">
-                          <h3 className="text-lg font-semibold text-green-900 dark:text-green-100">Transportation Services</h3>
-                          <p className="text-3xl font-bold text-green-700 dark:text-green-200">₹{feeStructure.transport.reduce((sum, fee) => sum + fee.totalAmount, 0).toLocaleString()}/-</p>
-                          <p className="text-sm text-green-600 dark:text-green-300">Academic Year {selectedYear}</p>
-                        </div>
-                        <div className="p-4 bg-green-500 rounded-full">
-                          <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clipRule="evenodd" />
-                          </svg>
-                        </div>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <svg className="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                          <path d="M3 4a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 14.846 4.632 16 6.414 16H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 6H6.28l-.31-1.243A1 1 0 005 4H3z" />
+                        </svg>
+                        Transportation Services - {selectedYear}
+                      </CardTitle>
+                      <div className="text-2xl font-bold text-foreground">
+                        ₹{feeStructure.transport.reduce((sum, fee) => sum + fee.totalAmount, 0).toLocaleString()}/-
                       </div>
-                    </CardContent>
+                    </CardHeader>
                   </Card>
 
                   {/* Transport Fee Cards */}
-                  <div className="grid gap-4">
+                  <div className="space-y-4">
                     {feeStructure.transport.map((fee, index) => (
-                      <Card key={index} className="overflow-hidden hover:shadow-xl transition-all duration-300 border-l-4 border-l-green-500">
-                        <CardContent className="p-0">
-                          <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 text-white">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-4">
-                                <div className="p-3 bg-white/20 rounded-xl">
-                                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
-                                    <path d="M3 4a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 14.846 4.632 16 6.414 16H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 6H6.28l-.31-1.243A1 1 0 005 4H3z" />
-                                  </svg>
-                                </div>
-                                <div>
-                                  <Badge variant="secondary" className="mb-2 bg-white/20 text-white border-white/30">
-                                    {fee.headType}
-                                  </Badge>
-                                  <h4 className="font-bold text-xl">{fee.name}</h4>
-                                  <p className="text-green-100 text-sm">College Bus Service</p>
-                                </div>
+                      <Card key={index} className="border-l-4 border-l-primary">
+                        <CardContent className="p-6">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center space-x-3">
+                              <div className="p-2 bg-primary/10 rounded-lg">
+                                <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                                  <path d="M3 4a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 14.846 4.632 16 6.414 16H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 6H6.28l-.31-1.243A1 1 0 005 4H3z" />
+                                </svg>
                               </div>
-                              {fee.balanceAmount === 0 && (
-                                <div className="flex items-center space-x-2 bg-green-600 px-4 py-2 rounded-full">
-                                  <CheckCircle className="w-5 h-5" />
-                                  <span className="font-medium">Active</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-900 dark:to-gray-800">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                              <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
-                                <div className="text-2xl mb-2">🚌</div>
-                                <p className="text-xs text-muted-foreground mb-1">Annual Fee</p>
-                                <p className="text-xl font-bold text-gray-900 dark:text-gray-100">₹{fee.totalAmount.toLocaleString()}</p>
-                              </div>
-                              <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
-                                <div className="text-2xl mb-2">💳</div>
-                                <p className="text-xs text-muted-foreground mb-1">Paid</p>
-                                <p className="text-xl font-bold text-green-600">₹{(fee.totalAmount - fee.balanceAmount).toLocaleString()}</p>
-                              </div>
-                              <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
-                                <div className="text-2xl mb-2">🎫</div>
-                                <p className="text-xs text-muted-foreground mb-1">Status</p>
-                                <p className="text-xl font-bold text-green-600">{fee.balanceAmount === 0 ? "Active" : "Pending"}</p>
+                              <div>
+                                <Badge variant="outline" className="mb-1">
+                                  {fee.headType}
+                                </Badge>
+                                <h4 className="font-semibold text-lg">{fee.name}</h4>
+                                <p className="text-sm text-muted-foreground">College Bus Service</p>
                               </div>
                             </div>
-
-                            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg mb-4">
-                              <h5 className="font-semibold mb-2 text-green-700 dark:text-green-300">Transport Benefits</h5>
-                              <ul className="text-sm text-muted-foreground space-y-1">
-                                <li>• Daily pickup and drop service</li>
-                                <li>• Air-conditioned buses</li>
-                                <li>• GPS tracking for safety</li>
-                                <li>• Multiple route options</li>
-                              </ul>
-                            </div>
-
-                            {fee.balanceAmount > 0 && (
-                              <div className="flex justify-center">
-                                <Button
-                                  onClick={() => handlePayment(fee.balanceAmount)}
-                                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-10 py-3 text-lg shadow-xl rounded-xl"
-                                  size="lg"
-                                >
-                                  <CreditCard className="w-5 h-5 mr-3" />
-                                  Pay Transport Fee ₹{fee.balanceAmount.toLocaleString()}
-                                </Button>
-                              </div>
+                            {fee.balanceAmount === 0 && (
+                              <Badge className="bg-green-500">
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                                Active
+                              </Badge>
                             )}
                           </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div className="text-center p-3 bg-muted rounded-lg">
+                              <p className="text-xs text-muted-foreground mb-1">Annual Fee</p>
+                              <p className="text-lg font-bold">₹{fee.totalAmount.toLocaleString()}</p>
+                            </div>
+                            <div className="text-center p-3 bg-muted rounded-lg">
+                              <p className="text-xs text-muted-foreground mb-1">Paid</p>
+                              <p className="text-lg font-bold text-green-600">₹{(fee.totalAmount - fee.balanceAmount).toLocaleString()}</p>
+                            </div>
+                            <div className="text-center p-3 bg-muted rounded-lg">
+                              <p className="text-xs text-muted-foreground mb-1">Status</p>
+                              <p className="text-lg font-bold text-primary">{fee.balanceAmount === 0 ? "Active" : "Pending"}</p>
+                            </div>
+                          </div>
+
+                          <div className="bg-muted p-4 rounded-lg mb-4">
+                            <h5 className="font-semibold mb-2">Transport Benefits</h5>
+                            <ul className="text-sm text-muted-foreground space-y-1">
+                              <li>• Daily pickup and drop service</li>
+                              <li>• Air-conditioned buses</li>
+                              <li>• GPS tracking for safety</li>
+                              <li>• Multiple route options</li>
+                            </ul>
+                          </div>
+
+                          {fee.balanceAmount > 0 && (
+                            <div className="flex justify-end">
+                              <Button
+                                onClick={() => handlePayment(fee.balanceAmount)}
+                                className="bg-primary hover:bg-primary/90"
+                              >
+                                <CreditCard className="w-4 h-4 mr-2" />
+                                Pay Transport Fee ₹{fee.balanceAmount.toLocaleString()}
+                              </Button>
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
                     ))}
