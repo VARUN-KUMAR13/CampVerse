@@ -61,13 +61,13 @@ export const ChatbotIcon: React.FC<ChatbotIconProps> = ({ onClick, isOpen }) => 
       {/* Floating tooltip */}
       <div
         className={`
-          absolute bottom-16 right-0 bg-gray-900 text-white text-sm px-3 py-2
-          rounded-lg whitespace-nowrap transition-all duration-300 transform
+          absolute bottom-16 right-0 bg-popover text-popover-foreground text-sm px-3 py-2
+          rounded-md whitespace-nowrap transition-all duration-300 transform border shadow-md
           ${isOpen ? 'opacity-0 translate-y-2 pointer-events-none' : 'opacity-0 group-hover:opacity-100 translate-y-0'}
         `}
       >
         Ask me anything!
-        <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900" />
+        <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-popover" />
       </div>
 
       <style jsx>{`
