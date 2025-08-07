@@ -1,7 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const admin = require("firebase-admin");
+const bcrypt = require("bcryptjs");
 const User = require("../models/User");
+const { generateToken, authenticateToken, adminOnly } = require("../middleware/auth");
 
 // Verify token and get user data
 router.post("/verify", async (req, res) => {
