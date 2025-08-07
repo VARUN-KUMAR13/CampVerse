@@ -578,132 +578,92 @@ const StudentFees = () => {
               <TabsContent value="optional" className="space-y-6">
                 <div className="space-y-6">
                   {/* Optional Fees Header */}
-                  <Card className="bg-gradient-to-br from-purple-50 to-pink-100 dark:from-purple-950 dark:to-pink-900 border-purple-200">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-2">
-                          <h3 className="text-lg font-semibold text-purple-900 dark:text-purple-100">Optional Services</h3>
-                          <p className="text-purple-700 dark:text-purple-200">Additional services and requirements</p>
-                          <p className="text-sm text-purple-600 dark:text-purple-300">Pay only what you need</p>
-                        </div>
-                        <div className="p-4 bg-purple-500 rounded-full">
-                          <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                      </div>
-                    </CardContent>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <svg className="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                        </svg>
+                        Optional Services
+                      </CardTitle>
+                      <p className="text-muted-foreground">Additional services and requirements - Pay only what you need</p>
+                    </CardHeader>
                   </Card>
 
                   {/* Optional Fees Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {optionalFees.map((fee, index) => {
-                      const isHighAmount = fee.amount >= 1000;
-                      const isMediumAmount = fee.amount >= 500 && fee.amount < 1000;
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {optionalFees.map((fee, index) => (
+                      <Card key={index} className="hover:shadow-lg transition-shadow">
+                        <CardContent className="p-6">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                              {fee.name.includes('ID CARD') ? (
+                                <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clipRule="evenodd" />
+                                </svg>
+                              ) : fee.name.includes('Bus') ? (
+                                <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                                </svg>
+                              ) : fee.name.includes('Fine') ? (
+                                <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                              ) : (
+                                <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 01-1.447.894L10 15.118l-4.553 1.776A1 1 0 014 16V4zm2 3a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 2a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </div>
+                            <Badge variant={fee.amount >= 1000 ? "destructive" : fee.amount >= 500 ? "default" : "secondary"}>
+                              {fee.amount >= 1000 ? 'High' : fee.amount >= 500 ? 'Medium' : 'Low'}
+                            </Badge>
+                          </div>
 
-                      return (
-                        <Card
-                          key={index}
-                          className={`
-                            group overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105
-                            ${isHighAmount ? 'border-red-200 hover:border-red-400' :
-                              isMediumAmount ? 'border-orange-200 hover:border-orange-400' :
-                              'border-green-200 hover:border-green-400'}
-                          `}
-                        >
-                          <CardContent className="p-0">
-                            <div className={`
-                              p-4 text-white
-                              ${isHighAmount ? 'bg-gradient-to-br from-red-500 to-pink-600' :
-                                isMediumAmount ? 'bg-gradient-to-br from-orange-500 to-yellow-600' :
-                                'bg-gradient-to-br from-green-500 to-emerald-600'}
-                            `}>
-                              <div className="flex items-center justify-between">
-                                <div className="p-2 bg-white/20 rounded-lg">
-                                  {fee.name.includes('ID CARD') ? (
-                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clipRule="evenodd" />
-                                    </svg>
-                                  ) : fee.name.includes('Bus') ? (
-                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                      <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
-                                    </svg>
-                                  ) : fee.name.includes('Fine') ? (
-                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                    </svg>
-                                  ) : (
-                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 01-1.447.894L10 15.118l-4.553 1.776A1 1 0 014 16V4zm2 3a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 2a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                                    </svg>
-                                  )}
-                                </div>
-                                <div className={`
-                                  px-3 py-1 rounded-full text-xs font-medium
-                                  ${isHighAmount ? 'bg-red-600' :
-                                    isMediumAmount ? 'bg-orange-600' :
-                                    'bg-green-600'}
-                                `}>
-                                  {isHighAmount ? 'High' : isMediumAmount ? 'Medium' : 'Low'}
-                                </div>
-                              </div>
+                          <div className="space-y-3">
+                            <div>
+                              <h4 className="font-semibold text-lg">{fee.name}</h4>
+                              <p className="text-sm text-muted-foreground">
+                                {fee.name.includes('ID CARD') ? 'Identity card services' :
+                                 fee.name.includes('Fine') ? 'Penalty charges' :
+                                 fee.name.includes('Bus') ? 'Transport services' :
+                                 fee.name.includes('Hostel') ? 'Accommodation charges' :
+                                 'Administrative services'}
+                              </p>
                             </div>
 
-                            <div className="p-6 space-y-4">
-                              <div>
-                                <h4 className="font-semibold text-lg mb-1 group-hover:text-purple-600 transition-colors">
-                                  {fee.name}
-                                </h4>
-                                <p className="text-sm text-muted-foreground">
-                                  {fee.name.includes('ID CARD') ? 'Identity card services' :
-                                   fee.name.includes('Fine') ? 'Penalty charges' :
-                                   fee.name.includes('Bus') ? 'Transport services' :
-                                   fee.name.includes('Hostel') ? 'Accommodation charges' :
-                                   'Administrative services'}
-                                </p>
-                              </div>
-
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                                    ₹{fee.amount}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">One-time payment</p>
-                                </div>
+                            <div className="space-y-3">
+                              <div className="text-center p-3 bg-muted rounded-lg">
+                                <p className="text-2xl font-bold">₹{fee.amount}</p>
+                                <p className="text-xs text-muted-foreground">One-time payment</p>
                               </div>
 
                               <Button
                                 onClick={() => handlePayment(fee.amount)}
-                                className={`
-                                  w-full text-white font-medium py-3 rounded-lg transition-all duration-300 transform hover:scale-105
-                                  ${isHighAmount ? 'bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700' :
-                                    isMediumAmount ? 'bg-gradient-to-r from-orange-500 to-yellow-600 hover:from-orange-600 hover:to-yellow-700' :
-                                    'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700'}
-                                `}
-                                size="lg"
+                                className="w-full bg-primary hover:bg-primary/90"
                               >
                                 <CreditCard className="w-4 h-4 mr-2" />
                                 Pay Now
                               </Button>
                             </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
 
-                  {/* Quick Info */}
-                  <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-blue-200">
+                  {/* Payment Info */}
+                  <Card>
                     <CardContent className="p-6">
                       <div className="flex items-start space-x-4">
-                        <div className="p-2 bg-blue-500 rounded-lg">
-                          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                          <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                           </svg>
                         </div>
                         <div>
-                          <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Payment Information</h4>
-                          <ul className="text-sm text-blue-700 dark:text-blue-200 space-y-1">
+                          <h4 className="font-semibold mb-2">Payment Information</h4>
+                          <ul className="text-sm text-muted-foreground space-y-1">
                             <li>• All payments are processed securely through Razorpay</li>
                             <li>• Digital receipts will be sent to your registered email</li>
                             <li>• Optional fees are payable only when required</li>
