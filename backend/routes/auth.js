@@ -233,19 +233,8 @@ router.post("/setup-admin", async (req, res) => {
 });
 
 // Get user statistics (admin only)
-router.get("/stats", async (req, res) => {
+router.get("/stats", authenticateToken, adminOnly, async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) {
-      return res.status(401).json({ error: "No token provided" });
-    }
-
-    const decodedToken = await admin.auth().verifyIdToken(token);
-    const requestingUser = await User.findOne({ uid: decodedToken.uid });
-
-    if (!requestingUser || requestingUser.role !== "admin") {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
 
     // Get statistics
     const totalUsers = await User.countDocuments();
