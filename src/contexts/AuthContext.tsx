@@ -33,15 +33,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     if (isDevelopment) {
       // In development mode, check for stored user data
       const storedUser = localStorage.getItem("dev-user");
-      if (storedUser) {
+      if (storedUser && storedUser !== "undefined" && storedUser !== "null") {
         try {
           const parsedUser = JSON.parse(storedUser);
-          setUserData(parsedUser);
-          // Create a mock User object
-          setCurrentUser({
-            uid: parsedUser.uid,
-            email: parsedUser.email,
-          } as User);
+          if (parsedUser && parsedUser.uid && parsedUser.email) {
+            setUserData(parsedUser);
+            // Create a mock User object
+            setCurrentUser({
+              uid: parsedUser.uid,
+              email: parsedUser.email,
+            } as User);
+          } else {
+            localStorage.removeItem("dev-user");
+          }
         } catch (error) {
           console.error("Error parsing stored user data:", error);
           localStorage.removeItem("dev-user");
