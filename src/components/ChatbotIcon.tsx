@@ -12,8 +12,8 @@ export const ChatbotIcon: React.FC<ChatbotIconProps> = ({ onClick, isOpen }) => 
       <button
         onClick={onClick}
         className={`
-          group relative w-14 h-14 bg-gradient-to-r from-blue-500 to-purple-600 
-          rounded-full shadow-lg hover:shadow-xl transition-all duration-300 
+          group relative w-14 h-14 bg-primary border-2 border-background
+          rounded-full shadow-lg hover:shadow-xl transition-all duration-300
           transform hover:scale-110 active:scale-95
           ${isOpen ? 'scale-95' : 'animate-bounce'}
         `}
@@ -21,36 +21,34 @@ export const ChatbotIcon: React.FC<ChatbotIconProps> = ({ onClick, isOpen }) => 
           animation: isOpen ? 'none' : 'float 3s ease-in-out infinite'
         }}
       >
-        {/* Gradient overlay for extra shine */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
-        
+        {/* Overlay for extra shine */}
+        <div className="absolute inset-0 bg-accent rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+
         {/* Main icon */}
         <div className="relative flex items-center justify-center w-full h-full">
           {isOpen ? (
-            <div className="text-white transform rotate-45 transition-transform duration-200">
-              ✕
-            </div>
+            <X className="w-5 h-5 text-primary-foreground" />
           ) : (
-            <MessageCircle className="w-6 h-6 text-white" />
+            <MessageCircle className="w-6 h-6 text-primary-foreground" />
           )}
         </div>
-        
+
         {/* Sparkle effect */}
-        <Sparkles 
+        <Sparkles
           className={`
-            absolute -top-1 -right-1 w-4 h-4 text-yellow-300 
-            transition-all duration-300 
+            absolute -top-1 -right-1 w-4 h-4 text-yellow-400
+            transition-all duration-300
             ${isOpen ? 'opacity-0 scale-0' : 'opacity-100 scale-100'}
           `}
           style={{
             animation: isOpen ? 'none' : 'sparkle 2s ease-in-out infinite'
           }}
         />
-        
+
         {/* Notification pulse */}
-        <div 
+        <div
           className={`
-            absolute inset-0 rounded-full bg-blue-400 
+            absolute inset-0 rounded-full bg-primary/50
             transition-all duration-1000
             ${isOpen ? 'opacity-0 scale-100' : 'opacity-30 scale-150'}
           `}
@@ -59,11 +57,11 @@ export const ChatbotIcon: React.FC<ChatbotIconProps> = ({ onClick, isOpen }) => 
           }}
         />
       </button>
-      
+
       {/* Floating tooltip */}
-      <div 
+      <div
         className={`
-          absolute bottom-16 right-0 bg-gray-900 text-white text-sm px-3 py-2 
+          absolute bottom-16 right-0 bg-gray-900 text-white text-sm px-3 py-2
           rounded-lg whitespace-nowrap transition-all duration-300 transform
           ${isOpen ? 'opacity-0 translate-y-2 pointer-events-none' : 'opacity-0 group-hover:opacity-100 translate-y-0'}
         `}
@@ -71,18 +69,18 @@ export const ChatbotIcon: React.FC<ChatbotIconProps> = ({ onClick, isOpen }) => 
         Ask me anything!
         <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900" />
       </div>
-      
+
       <style jsx>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-5px); }
         }
-        
+
         @keyframes sparkle {
           0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
           50% { transform: scale(1.2) rotate(180deg); opacity: 0.8; }
         }
-        
+
         @keyframes pulse-ring {
           0% { transform: scale(1); opacity: 0.3; }
           100% { transform: scale(1.5); opacity: 0; }
