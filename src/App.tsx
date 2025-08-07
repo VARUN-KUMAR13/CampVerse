@@ -12,6 +12,10 @@ import { AIChatbot } from "./components/AIChatbot";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { LoadingPage } from "./components/LoadingSystem";
 import { useAuth } from "./contexts/AuthContext";
+import { setupGlobalErrorHandling } from "./utils/errorHandling";
+
+// Setup global error handling
+setupGlobalErrorHandling();
 
 // Public Pages
 import Features from "./pages/Features";
