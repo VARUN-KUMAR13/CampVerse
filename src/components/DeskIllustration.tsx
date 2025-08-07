@@ -22,6 +22,41 @@ const DeskIllustration = () => {
     script.type = "module";
     script.src =
       "https://unpkg.com/@splinetool/viewer@1.10.27/build/spline-viewer.js";
+
+    script.onload = () => {
+      // Additional setup after script loads
+      const style = document.createElement("style");
+      style.textContent = `
+        spline-viewer {
+          background: transparent !important;
+          --background: transparent !important;
+        }
+        spline-viewer canvas {
+          background: transparent !important;
+          mix-blend-mode: multiply !important;
+        }
+        /* Enhanced watermark removal */
+        spline-viewer .logo,
+        spline-viewer .brand,
+        spline-viewer .watermark,
+        spline-viewer [class*="logo"],
+        spline-viewer [class*="brand"],
+        spline-viewer [class*="watermark"],
+        spline-viewer [class*="spline"],
+        spline-viewer a[href*="spline.design"],
+        spline-viewer a[href*="spline.com"] {
+          display: none !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+          position: absolute !important;
+          left: -9999px !important;
+          top: -9999px !important;
+        }
+      `;
+      document.head.appendChild(style);
+    };
+
     document.head.appendChild(script);
 
     return () => {
