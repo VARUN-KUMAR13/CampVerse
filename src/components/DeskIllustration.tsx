@@ -20,74 +20,10 @@ const DeskIllustration = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Load Spline viewer script
+    // Load DotLottie web component script
     const script = document.createElement("script");
     script.type = "module";
-    script.src =
-      "https://unpkg.com/@splinetool/viewer@1.10.27/build/spline-viewer.js";
-
-    script.onload = () => {
-      // Additional setup after script loads
-      const style = document.createElement("style");
-      style.textContent = `
-        spline-viewer {
-          background: transparent !important;
-          --background: transparent !important;
-        }
-        spline-viewer canvas {
-          background: transparent !important;
-          mix-blend-mode: multiply !important;
-        }
-        /* Enhanced watermark removal */
-        spline-viewer .logo,
-        spline-viewer .brand,
-        spline-viewer .watermark,
-        spline-viewer [class*="logo"],
-        spline-viewer [class*="brand"],
-        spline-viewer [class*="watermark"],
-        spline-viewer [class*="spline"],
-        spline-viewer a[href*="spline.design"],
-        spline-viewer a[href*="spline.com"] {
-          display: none !important;
-          visibility: hidden !important;
-          opacity: 0 !important;
-          pointer-events: none !important;
-          position: absolute !important;
-          left: -9999px !important;
-          top: -9999px !important;
-        }
-      `;
-      document.head.appendChild(style);
-
-      // Set up mutation observer to remove watermarks
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          mutation.addedNodes.forEach((node) => {
-            if (node.nodeType === Node.ELEMENT_NODE) {
-              const element = node as Element;
-              // Remove any watermark elements
-              const watermarks = element.querySelectorAll(
-                'a[href*="spline.design"], a[href*="spline.com"], [class*="watermark"], [class*="logo"], [class*="brand"]'
-              );
-              watermarks.forEach((watermark) => {
-                watermark.remove();
-              });
-            }
-          });
-        });
-      });
-
-      // Start observing
-      if (containerRef.current) {
-        observer.observe(containerRef.current, {
-          childList: true,
-          subtree: true,
-        });
-      }
-
-      // Cleanup observer
-      return () => observer.disconnect();
-    };
+    script.src = "https://unpkg.com/@lottiefiles/dotlottie-wc@0.6.2/dist/dotlottie-wc.js";
 
     document.head.appendChild(script);
 
