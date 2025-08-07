@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageCircle, Sparkles } from 'lucide-react';
+import { MessageCircle, Sparkles, X } from 'lucide-react';
 
 interface ChatbotIconProps {
   onClick: () => void;
