@@ -49,16 +49,18 @@ import AdminPlacement from "./pages/admin/Placement";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <PlacementProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AIChatbot />
-            <Routes>
+// App content component
+const AppContent = () => {
+  const { loading } = useAuth();
+
+  if (loading) {
+    return <LoadingPage message="Initializing CampVerse..." />;
+  }
+
+  return (
+    <BrowserRouter>
+      <AIChatbot />
+      <Routes>
               {/* Dynamic Homepage - shows landing page or dashboard based on auth */}
               <Route path="/" element={<DynamicHomepage />} />
 
