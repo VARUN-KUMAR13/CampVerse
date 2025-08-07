@@ -74,6 +74,11 @@ const StudentSidebar = () => {
       label: "Assignments",
       path: "/student/assignments",
     },
+    {
+      icon: <CreditCard className="w-5 h-5" />,
+      label: "Fees",
+      path: "/student/fees",
+    },
   ];
 
   const handleLogout = async () => {
