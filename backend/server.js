@@ -41,10 +41,20 @@ if (!admin.apps.length) {
 // Import routes
 const userRoutes = require("./routes/users");
 const authRoutes = require("./routes/auth");
+const placementRoutes = require("./routes/placements");
+
+// Import middleware
+const { corsHandler, rateLimiter, validateApiVersion } = require("./middleware/auth");
+
+// Apply global middleware
+app.use(corsHandler());
+app.use(rateLimiter());
+app.use(validateApiVersion());
 
 // Routes
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/placements", placementRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {
