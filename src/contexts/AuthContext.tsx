@@ -82,12 +82,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     if (isDevelopment) {
       // Store user data in localStorage for development mode
-      localStorage.setItem("dev-user", JSON.stringify(userData));
-      setUserData(userData);
-      setCurrentUser({
-        uid: userData.uid,
-        email: userData.email,
-      } as User);
+      try {
+        localStorage.setItem("dev-user", JSON.stringify(userData));
+        setUserData(userData);
+        setCurrentUser({
+          uid: userData.uid,
+          email: userData.email,
+        } as User);
+      } catch (error) {
+        console.error("Error storing user data:", error);
+        setUserData(userData);
+        setCurrentUser({
+          uid: userData.uid,
+          email: userData.email,
+        } as User);
+      }
     }
 
     return userData;
