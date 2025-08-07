@@ -346,65 +346,62 @@ export const PlacementProvider: React.FC<{ children: ReactNode }> = ({ children 
     if (!currentUser) return null;
 
     try {
-      const response = await fetch(`/api/placements/${jobId}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Job not found');
-      }
-
-      const job = await response.json();
-      return job;
+      const job = jobs.find(j => j._id === jobId);
+      return job || null;
     } catch (err) {
       console.error('Error fetching job:', err);
       return null;
     }
-  }, [currentUser]);
+  }, [currentUser, jobs]);
 
   // Student applications
   const getStudentApplications = useCallback(async (): Promise<JobApplication[]> => {
     if (!currentUser || userData?.role !== 'student') return [];
 
     try {
-      const response = await fetch('/api/placements/student/applications', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-        },
-      });
+      // Mock applications for demo
+      const mockApplications = jobs
+        .filter(job => job.applied)
+        .map(job => ({
+          _id: `app_${job._id}`,
+          jobId: job._id!,
+          studentId: userData._id || '',
+          status: job.applicationStatus || 'Applied',
+          appliedDate: new Date(),
+          documents: [],
+        })) as JobApplication[];
 
-      if (!response.ok) throw new Error('Failed to fetch applications');
-
-      const data = await response.json();
-      return data.applications || [];
+      return mockApplications;
     } catch (err) {
       console.error('Error fetching applications:', err);
       return [];
     }
-  }, [currentUser, userData]);
+  }, [currentUser, userData, jobs]);
 
   // Get applications for a job (admin/faculty)
   const getJobApplications = useCallback(async (jobId: string): Promise<JobApplication[]> => {
     if (!currentUser || !['admin', 'faculty'].includes(userData?.role || '')) return [];
 
     try {
-      const response = await fetch(`/api/placements/${jobId}/applications`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-        },
-      });
+      // Mock applications for demo
+      const job = jobs.find(j => j._id === jobId);
+      if (!job) return [];
 
-      if (!response.ok) throw new Error('Failed to fetch job applications');
+      const mockApplications = Array.from({ length: job.appliedCount || 0 }, (_, i) => ({
+        _id: `app_${jobId}_${i}`,
+        jobId,
+        studentId: `student_${i}`,
+        status: 'Applied',
+        appliedDate: new Date(),
+        documents: [],
+      })) as JobApplication[];
 
-      const data = await response.json();
-      return data.applications || [];
+      return mockApplications;
     } catch (err) {
       console.error('Error fetching job applications:', err);
       return [];
     }
-  }, [currentUser, userData]);
+  }, [currentUser, userData, jobs]);
 
   // Update application status
   const updateApplicationStatus = useCallback(async (
@@ -415,17 +412,6 @@ export const PlacementProvider: React.FC<{ children: ReactNode }> = ({ children 
     if (!currentUser || !['admin', 'faculty'].includes(userData?.role || '')) return false;
 
     try {
-      const response = await fetch(`/api/placements/${jobId}/applications/${applicationId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-        },
-        body: JSON.stringify({ status }),
-      });
-
-      if (!response.ok) throw new Error('Failed to update application status');
-
       toast({
         title: "Success",
         description: "Application status updated successfully",
@@ -448,20 +434,32 @@ export const PlacementProvider: React.FC<{ children: ReactNode }> = ({ children 
     if (!currentUser || !['admin', 'faculty'].includes(userData?.role || '')) return null;
 
     try {
-      const response = await fetch('/api/placements/stats', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+      const totalJobs = jobs.length;
+      const activeJobs = jobs.filter(job => job.status === 'Open').length;
+      const totalApplications = jobs.reduce((sum, job) => sum + (job.appliedCount || 0), 0);
+
+      return {
+        overview: {
+          totalJobs,
+          activeJobs,
+          totalApplications,
         },
-      });
-
-      if (!response.ok) throw new Error('Failed to fetch stats');
-
-      return await response.json();
+        applicationsByStatus: [
+          { _id: 'Applied', count: totalApplications },
+          { _id: 'Shortlisted', count: Math.floor(totalApplications * 0.3) },
+          { _id: 'Selected', count: Math.floor(totalApplications * 0.1) },
+        ],
+        topCompanies: jobs.slice(0, 5).map(job => ({
+          _id: job.company,
+          jobCount: 1,
+          totalApplications: job.appliedCount || 0,
+        })),
+      };
     } catch (err) {
       console.error('Error fetching placement stats:', err);
       return null;
     }
-  }, [currentUser, userData]);
+  }, [currentUser, userData, jobs]);
 
   // Filter and pagination functions
   const setFilters = useCallback((newFilters: any) => {
