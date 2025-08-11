@@ -130,7 +130,7 @@ const Index = () => {
     {
       icon: <Phone className="w-5 h-5" />,
       label: "Phone",
-      value: "+91 7416130242",
+      value: "+91 6303409082",
       color: "text-blue-400",
     },
     {
