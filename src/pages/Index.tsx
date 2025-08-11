@@ -136,7 +136,7 @@ const Index = () => {
     {
       icon: <MapPin className="w-5 h-5" />,
       label: "Address",
-      value: "10-1-92/118/A,Kothapet,Hyderabad,Telangana,India",
+      value: "42-110/2/c,Madhapur,Hyderabad,Telangana,India",
       color: "text-blue-400",
     },
   ];
