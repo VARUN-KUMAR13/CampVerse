@@ -32,12 +32,12 @@ This guide provides comprehensive instructions for training and enhancing your C
 ```javascript
 // Update useAI.ts with your specific data
 const collegeInfo = {
-  name: "Your College Name",
-  location: "Your College Address",
-  established: "Year",
-  vision: "Your college vision statement",
-  departments: ["CSE", "ECE", "MECH", "CIVIL"],
-  facilities: ["Library", "Computer Labs", "Sports Complex"]
+  name: "CVR College of Engineering",
+  location: "Vastunagar, Mangalpalli (V), Ibrahimpatnam (M), Rangareddy (D), Telangana 501 510",
+  established: "2001",
+  vision: "To be a state-of-the-art institution of engineering in pursuit of excellence, in the service of society. ",
+  departments: ["CSE", "ECE", "MECH", "CIVIL", "AI&ML", "DS", "Cyber Security"],
+  facilities: ["Placements", "Library", "Computer Labs", "Sports Complex", "Techincal Departments", "NewGen for Next Generation"]
 };
 ```
 
@@ -127,7 +127,7 @@ const getAIResponse = async (message) => {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      'Authorization': `Bearer ${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}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -135,9 +135,9 @@ const getAIResponse = async (message) => {
       messages: [
         {
           role: "system",
-          content: `You are CampVerse AI assistant for ${COLLEGE_NAME}. 
+          content: `You are CampVerse AI assistant for ${CVR College of Engineering}. 
                    Help students with navigation, academics, and college information.
-                   College details: ${COLLEGE_INFO}`
+                   College details: ${Vastunagar, Mangalpalli (V), Ibrahimpatnam (M), Rangareddy (D), Telangana 501 510}`
         },
         {
           role: "user",
@@ -159,7 +159,7 @@ const getAIResponse = async (message) => {
 // Alternative with Google Gemini
 const GEMINI_API_KEY = 'your-gemini-api-key';
 const getGeminiResponse = async (message) => {
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${AIzaSyDARZ8O_UuHf_crfQOIaxhREVEAeuvvGQk}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -177,6 +177,27 @@ const getGeminiResponse = async (message) => {
   return data.candidates[0].content.parts[0].text;
 };
 ```
+### 🌐 Option C: Use College Website as Knowledge Source
+
+Instead of hardcoding college details, fetch the latest information directly from the official website:
+
+```javascript
+// Fetch CVR College info from the website
+const getCollegeInfo = async () => {
+  const response = await fetch("https://cvr.ac.in/home4/");
+  const html = await response.text();
+
+  // Clean HTML -> plain text
+  const text = html
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<\/?[^>]+(>|$)/g, "")
+    .replace(/\s+/g, " ")
+    .slice(0, 4000); // keep content within token limit
+
+  return text;
+};
+'''
 
 ### 2. **Context-Aware Responses**
 
