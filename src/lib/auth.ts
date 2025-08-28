@@ -336,7 +336,7 @@ export const resetPassword = async (collegeId: string) => {
 // Sign out user
 export const signOutUser = async () => {
   try {
-    if (isDevelopment) {
+    if (isDevelopment || !firebaseReady || !auth) {
       // In development mode, just clear any stored state
       console.log("Development mode: User signed out");
       return;
