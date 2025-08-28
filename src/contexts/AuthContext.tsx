@@ -105,7 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const logout = async (): Promise<void> => {
-    if (isDevelopment) {
+    if (isDevelopment || !firebaseReady) {
       // Clear stored user data in development mode
       localStorage.removeItem("dev-user");
       setUserData(null);
