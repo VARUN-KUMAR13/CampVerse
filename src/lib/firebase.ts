@@ -45,5 +45,5 @@ try {
 // Export environment flags
 export const isProduction = config.IS_PRODUCTION;
 
-export { auth, isDevelopment };
+export { auth, isDevelopment, firebaseReady };
 export default app;
