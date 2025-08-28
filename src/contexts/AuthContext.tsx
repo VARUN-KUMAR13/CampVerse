@@ -30,8 +30,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isDevelopment) {
-      // In development mode, check for stored user data
+    if (isDevelopment || !firebaseReady || !auth) {
+      // In development mode or Firebase not ready, check for stored user data
+      console.log("AuthContext: Using development mode");
       const storedUser = localStorage.getItem("dev-user");
       if (storedUser && storedUser !== "undefined" && storedUser !== "null") {
         try {
@@ -56,6 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     // Production mode with Firebase
+    console.log("AuthContext: Using Firebase authentication");
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
 
