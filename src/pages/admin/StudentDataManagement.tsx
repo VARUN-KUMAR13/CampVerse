@@ -186,6 +186,24 @@ const StudentDataManagement = () => {
           </TabsTrigger>
         </TabsList>
 
+        {/* Firebase Setup Tab */}
+        <TabsContent value="firebase" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="w-5 h-5" />
+                Firebase Authentication Setup
+              </CardTitle>
+              <CardDescription>
+                Configure Firebase Authentication and create initial users for your CampVerse system
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <FirebaseUserSetup />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Dataset Import Tab */}
         <TabsContent value="dataset" className="space-y-6">
           <DatasetImport onImportComplete={handleImportComplete} />
