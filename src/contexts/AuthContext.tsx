@@ -82,7 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const { signInUser } = await import("@/lib/auth");
     const userData = await signInUser(collegeId, password);
 
-    if (isDevelopment) {
+    if (isDevelopment || !firebaseReady) {
       // Store user data in localStorage for development mode
       try {
         localStorage.setItem("dev-user", JSON.stringify(userData));
