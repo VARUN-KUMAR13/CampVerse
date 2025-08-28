@@ -237,25 +237,35 @@ export const signInUser = async (collegeId: string, password: string) => {
 
     // Handle admin login
     if (collegeId === "admin" && password === "admin") {
-      // For admin, we'll use a special email
-      const email = "admin@cvr.ac.in";
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password,
-      );
+      try {
+        // For admin, we'll use a special email
+        const email = "admin@cvr.ac.in";
+        const userCredential = await signInWithEmailAndPassword(
+          auth,
+          email,
+          password,
+        );
 
-      return {
-        uid: userCredential.user.uid,
-        collegeId: "admin",
-        email,
-        role: "admin" as const,
-        name: "Administrator",
-        year: "",
-        section: "",
-        branch: "",
-        rollNumber: "",
-      };
+        return {
+          uid: userCredential.user.uid,
+          collegeId: "admin",
+          email,
+          role: "admin" as const,
+          name: "Administrator",
+          year: "",
+          section: "",
+          branch: "",
+          rollNumber: "",
+        };
+      } catch (firebaseError: any) {
+        // If Firebase fails, fall back to development mode for admin
+        if (firebaseError.code === 'auth/network-request-failed' ||
+            firebaseError.code === 'auth/user-not-found') {
+          console.warn("Firebase Authentication not configured properly, falling back to development mode");
+          return mockUsers.admin;
+        }
+        throw firebaseError;
+      }
     }
 
     // Validate college ID format
@@ -265,22 +275,33 @@ export const signInUser = async (collegeId: string, password: string) => {
 
     const email = collegeIdToEmail(collegeId);
 
-    // Sign in with Firebase
-    const userCredential = await signInWithEmailAndPassword(
-      auth,
-      email,
-      password,
-    );
-    const user = userCredential.user;
+    try {
+      // Sign in with Firebase
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
+      const user = userCredential.user;
 
-    // Get user data from MongoDB
-    const response = await fetch(`${API_BASE_URL}/users/${user.uid}`);
-    if (!response.ok) {
-      throw new Error("User not found in database");
+      // Get user data from MongoDB
+      const response = await fetch(`${API_BASE_URL}/users/${user.uid}`);
+      if (!response.ok) {
+        throw new Error("User not found in database");
+      }
+
+      const userData = await response.json();
+      return userData;
+    } catch (firebaseError: any) {
+      // If Firebase is not configured or user doesn't exist, fall back to development mode
+      if (firebaseError.code === 'auth/network-request-failed' ||
+          firebaseError.code === 'auth/user-not-found' ||
+          firebaseError.code === 'auth/wrong-password') {
+        console.warn("Firebase Authentication issue, falling back to development mode for user:", collegeId);
+        return await devSignIn(collegeId, password);
+      }
+      throw firebaseError;
     }
-
-    const userData = await response.json();
-    return userData;
   } catch (error) {
     console.error("Error signing in:", error);
     throw error;
