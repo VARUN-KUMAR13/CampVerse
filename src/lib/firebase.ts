@@ -16,18 +16,27 @@ if (config.IS_DEVELOPMENT) {
   logConfig();
 }
 
-// Check if we're in development mode without Firebase credentials
-const isDevelopment = config.IS_DEVELOPMENT && !import.meta.env.VITE_FIREBASE_API_KEY;
+// Force development mode until Firebase Authentication is properly configured
+// This prevents CONFIGURATION_NOT_FOUND errors
+const isDevelopment = config.IS_DEVELOPMENT || !config.IS_PRODUCTION;
 
 // Initialize Firebase
 let app: any;
 let auth: any;
+let firebaseReady = false;
 
 try {
-  app = initializeApp(config.FIREBASE_CONFIG);
-  auth = getAuth(app);
+  if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'demo-api-key') {
+    app = initializeApp(config.FIREBASE_CONFIG);
+    auth = getAuth(app);
+    firebaseReady = true;
+    console.log("Firebase initialized successfully");
+  } else {
+    console.log("Firebase credentials not configured, using development mode");
+  }
 } catch (error) {
-  console.warn("Firebase initialization failed, running in development mode");
+  console.warn("Firebase initialization failed, running in development mode:", error);
+  firebaseReady = false;
   if (config.IS_PRODUCTION) {
     throw error;
   }
