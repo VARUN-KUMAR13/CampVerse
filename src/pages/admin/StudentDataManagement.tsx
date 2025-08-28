@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import DatasetImport from '@/components/DatasetImport';
 import CustomStudentDashboard from '@/components/CustomStudentDashboard';
+import FirebaseUserSetup from '@/components/FirebaseUserSetup';
 import { useStudentsList } from '@/hooks/useFirestore';
 import { Input } from '@/components/ui/input';
 import { 
