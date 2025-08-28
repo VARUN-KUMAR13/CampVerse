@@ -312,8 +312,8 @@ export const signInUser = async (collegeId: string, password: string) => {
 // Send password reset email
 export const resetPassword = async (collegeId: string) => {
   try {
-    // Development mode
-    if (isDevelopment) {
+    // Development mode or Firebase not ready
+    if (isDevelopment || !firebaseReady || !auth) {
       return await devResetPassword(collegeId);
     }
 
