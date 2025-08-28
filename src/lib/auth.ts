@@ -5,7 +5,7 @@ import {
   signOut,
   User,
 } from "firebase/auth";
-import { auth, isDevelopment } from "./firebase";
+import { auth, isDevelopment, firebaseReady } from "./firebase";
 
 export interface CollegeUser {
   uid: string;
