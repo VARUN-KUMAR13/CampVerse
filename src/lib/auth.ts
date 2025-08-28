@@ -230,8 +230,9 @@ export const createUserAccount = async (collegeId: string, name: string) => {
 // Sign in user
 export const signInUser = async (collegeId: string, password: string) => {
   try {
-    // Development mode
-    if (isDevelopment) {
+    // Development mode or Firebase not ready
+    if (isDevelopment || !firebaseReady || !auth) {
+      console.log("Using development mode authentication");
       return await devSignIn(collegeId, password);
     }
 
