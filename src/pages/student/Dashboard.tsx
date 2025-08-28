@@ -47,26 +47,26 @@ const StudentDashboard = () => {
   const todaysSchedule = [
     {
       time: "9:00 AM - 12:10 PM",
-      subject: "CS & EDA LAB",
-      code: "CSEDA101",
+      subject: "Linux programming",
+      code: "22CS401",
       status: "Not Marked",
     },
     {
       time: "12:10 PM - 1:10 PM",
-      subject: "Python for EDA",
-      code: "EDA101",
+      subject: "Business Economics and Financial Analysis",
+      code: "22HS301",
       status: "Not Marked",
     },
     {
       time: "1:55 PM - 2:55 PM",
-      subject: "Software Engineering",
-      code: "PSE01",
+      subject: "Professional Elective-lll",
+      code: "22HS501",
       status: "Not Marked",
     },
     {
       time: "2:55 PM - 3:55 PM",
-      subject: "Mentoring",
-      code: "MEN01",
+      subject: "Professional Elective-lV",
+      code: "22HS601",
       status: "Not Marked",
     },
   ];
