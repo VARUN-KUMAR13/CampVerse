@@ -166,8 +166,12 @@ const StudentDataManagement = () => {
       </div>
 
       {/* Main Content Tabs */}
-      <Tabs defaultValue="dataset" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs defaultValue="firebase" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="firebase" className="flex items-center gap-2">
+            <Settings className="w-4 h-4" />
+            Firebase Setup
+          </TabsTrigger>
           <TabsTrigger value="dataset" className="flex items-center gap-2">
             <Upload className="w-4 h-4" />
             Dataset Import
