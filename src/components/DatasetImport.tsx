@@ -129,18 +129,18 @@ Mike Johnson,22B81B05C1,22B81B05C1@cvr.ac.in,22,B,05,C1,+91 9876543212,2003-03-1
         <CardContent className="space-y-4">
           {/* File Upload */}
           <div className="space-y-2">
-            <Label htmlFor="file-upload">Upload CSV File</Label>
+            <Label htmlFor="file-upload">Upload Excel or CSV File</Label>
             <div className="flex gap-2">
               <Input
                 id="file-upload"
                 type="file"
-                accept=".csv"
+                accept=".csv,.xlsx,.xls"
                 ref={fileInputRef}
                 onChange={handleFileUpload}
                 className="flex-1"
               />
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={downloadSampleCSV}
                 className="flex items-center gap-2"
               >
@@ -148,6 +148,9 @@ Mike Johnson,22B81B05C1,22B81B05C1@cvr.ac.in,22,B,05,C1,+91 9876543212,2003-03-1
                 Sample CSV
               </Button>
             </div>
+            <p className="text-sm text-muted-foreground">
+              Supported formats: Excel (.xlsx, .xls) and CSV (.csv)
+            </p>
           </div>
 
           {/* Manual CSV Input */}
