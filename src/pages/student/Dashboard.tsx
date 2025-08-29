@@ -73,14 +73,24 @@ const StudentDashboard = () => {
 
   const performanceMetrics = [
     {
-      label: "Overall Attendance",
-      value: 85,
+      label: "Linux Programming Attendence",
+      value: 78,
       color: "bg-blue-500",
     },
     {
-      label: "Average Grade",
-      value: 78,
-      color: "bg-green-500",
+      label: "Business Economics and Financial Analysis Attendence",
+      value: 75,
+      color: "bg-blue-500",
+    },
+    {
+      label: "Proffesional Elective - lll",
+      value: 80,
+      color: "bg-blue-500",
+    },
+    {
+      label: "Proffesional Elective - lV",
+      value: 70,
+      color: "bg-blue-500",
     },
   ];
 
