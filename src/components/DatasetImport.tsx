@@ -108,7 +108,7 @@ const DatasetImport: React.FC<DatasetImportProps> = ({ onImportComplete }) => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'sample_students.csv';
+    a.download = 'student_data_template.csv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -344,7 +344,7 @@ const DatasetImport: React.FC<DatasetImportProps> = ({ onImportComplete }) => {
                 <h4 className="font-semibold mb-2">📋 Required Fields:</h4>
                 <ul className="space-y-1 text-muted-foreground">
                   <li>• <code>Roll Number</code> or <code>collegeId</code> - Student ID</li>
-                  <li>• <code>Name</code> or <code>student_name</code> - Full name</li>
+                  <li>�� <code>Name</code> or <code>student_name</code> - Full name</li>
                 </ul>
               </div>
               <div>
