@@ -20,19 +20,19 @@ const StudentDashboard = () => {
   const stats = [
     {
       label: "Current Semester",
-      value: "VI",
+      value: "VII",
       icon: <BarChart3 className="w-4 h-4" />,
       color: "text-orange-500",
     },
     {
       label: "Subjects",
-      value: "9",
+      value: "5",
       icon: <Users className="w-4 h-4" />,
       color: "text-green-500",
     },
     {
       label: "Labs",
-      value: "4",
+      value: "3",
       icon: <CalendarIcon className="w-4 h-4" />,
       color: "text-blue-500",
     },
