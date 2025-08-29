@@ -134,9 +134,6 @@ const StudentDashboard = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Today's Schedule & Attendance</CardTitle>
-                <span className="text-sm text-muted-foreground">
-                  4:21:17 PM
-                </span>
               </div>
             </CardHeader>
             <CardContent>
