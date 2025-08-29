@@ -6,17 +6,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import { 
-  Upload, 
-  FileText, 
-  Users, 
-  CheckCircle, 
-  AlertCircle, 
+import {
+  Upload,
+  FileText,
+  Users,
+  CheckCircle,
+  AlertCircle,
   Download,
-  Eye
+  Eye,
+  FileSpreadsheet
 } from 'lucide-react';
 import { useDatasetImport, useStudentsList } from '@/hooks/useFirestore';
 import { StudentProfile } from '@/services/firestoreService';
+import * as XLSX from 'xlsx';
 
 interface DatasetImportProps {
   onImportComplete?: () => void;
