@@ -48,14 +48,33 @@ Mike Johnson,22B81B05C1,22B81B05C1@cvr.ac.in,22,B,05,C1,+91 9876543212,2003-03-1
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file && file.type === 'text/csv') {
-      const reader = new FileReader();
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+      // Handle CSV files
       reader.onload = (e) => {
         const content = e.target?.result as string;
         setCsvData(content);
         handleParseCSV(content);
       };
       reader.readAsText(file);
+    } else if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+               file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+      // Handle Excel files
+      reader.onload = (e) => {
+        const arrayBuffer = e.target?.result as ArrayBuffer;
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const csvContent = XLSX.utils.sheet_to_csv(worksheet);
+        setCsvData(csvContent);
+        handleParseCSV(csvContent);
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      alert('Please upload a CSV or Excel file (.csv, .xlsx, .xls)');
     }
   };
 
