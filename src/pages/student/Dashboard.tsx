@@ -92,28 +92,10 @@ const StudentDashboard = () => {
       color: "bg-green-500",
     },
     {
-      date: "16.06.2025 to 19.08.2025",
-      title: "1st Spell of Instruction/Classwork",
-      timeLeft: "9 Weeks",
-      color: "bg-emerald-500",
-    },
-    {
-      date: "20.08.2025 to 23.08.2025",
+      date: "07.09.2025 to 17.09.2025",
       title: "I Mid Examinations",
-      timeLeft: "4 Days",
+      timeLeft: "1 Week",
       color: "bg-blue-500",
-    },
-    {
-      date: "25.08.2025 to 21.10.2025",
-      title: "2nd Spell of Instruction/Classwork",
-      timeLeft: "8 Weeks",
-      color: "bg-emerald-500",
-    },
-    {
-      date: "03.10.2025 to 04.10.2025",
-      title: "Dussehra Holidays",
-      timeLeft: "2 Days",
-      color: "bg-yellow-500",
     },
     {
       date: "22.10.2025 to 25.10.2025",
@@ -129,15 +111,15 @@ const StudentDashboard = () => {
     },
     {
       date: "03.11.2025 to 17.11.2025",
+      title: "Dussehra Holidays",
+      timeLeft: "2 Weeks",
+      color: "bg-yellow-500",
+    },
+    {
+      date: "03.11.2025 to 17.11.2025",
       title: "Semester End Examinations (Main) & Supplementary",
       timeLeft: "2 Weeks",
       color: "bg-red-500",
-    },
-    {
-      date: "20.11.2025",
-      title: "Commencement of IV B.Tech. II Sem. AY 2025-26",
-      timeLeft: "Starts",
-      color: "bg-green-600",
     },
   ];
 
