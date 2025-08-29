@@ -26,7 +26,7 @@ let auth: any;
 let firebaseReady = false;
 
 try {
-  if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'demo-api-key') {
+  if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'AIzaSyBRY5horWW28vr3UhqVbG-uAVZahHTPVLU') {
     app = initializeApp(config.FIREBASE_CONFIG);
     auth = getAuth(app);
     firebaseReady = true;
