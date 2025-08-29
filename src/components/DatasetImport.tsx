@@ -40,11 +40,13 @@ const DatasetImport: React.FC<DatasetImportProps> = ({ onImportComplete }) => {
   
   const { students: existingStudents, reloadStudents } = useStudentsList();
 
-  // Sample CSV format
-  const sampleCSV = `name,collegeId,email,year,section,branch,rollNumber,phone,dateOfBirth,address,cgpa,semester
-John Doe,22B81A05C3,22B81A05C3@cvr.ac.in,22,A,05,C3,+91 9876543210,2003-01-15,Hyderabad,8.5,3
-Jane Smith,22B81A05C4,22B81A05C4@cvr.ac.in,22,A,05,C4,+91 9876543211,2003-02-20,Hyderabad,9.0,3
-Mike Johnson,22B81B05C1,22B81B05C1@cvr.ac.in,22,B,05,C1,+91 9876543212,2003-03-10,Hyderabad,7.8,3`;
+  // Sample CSV format - matches the user's Excel structure
+  const sampleCSV = `Roll Number,Name
+22B81A05C3,John Doe
+22B81A05C4,Jane Smith
+22B81B05C1,Mike Johnson
+22B81A05C5,Sarah Wilson
+22B81A05C6,David Brown`;
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
