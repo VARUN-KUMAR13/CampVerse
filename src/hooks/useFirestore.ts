@@ -333,32 +333,50 @@ export const useDatasetImport = () => {
 
   const parseCSVDataset = useCallback((csvData: string): StudentProfile[] => {
     const lines = csvData.trim().split('\n');
-    const headers = lines[0].split(',').map(h => h.trim());
-    
-    return lines.slice(1).map((line, index) => {
+    if (lines.length < 2) throw new Error('Dataset must have at least one data row');
+
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+
+    return lines.slice(1).filter(line => line.trim()).map((line, index) => {
       const values = line.split(',').map(v => v.trim());
       const row: any = {};
-      
+
       headers.forEach((header, i) => {
         row[header] = values[i] || '';
       });
 
+      // Handle different possible column names for roll number and name
+      const rollNumber = row['roll number'] || row['rollnumber'] || row['roll_number'] ||
+                        row['collegeid'] || row['college_id'] || row['id'] || row['student_id'];
+      const studentName = row['name'] || row['student_name'] || row['fullname'] || row['full_name'];
+
+      if (!rollNumber) {
+        throw new Error(`Row ${index + 2}: Roll number is required`);
+      }
+
+      if (!studentName) {
+        throw new Error(`Row ${index + 2}: Student name is required`);
+      }
+
+      // Use roll number as both collegeId and rollNumber for consistency
+      const collegeId = rollNumber;
+
       // Map CSV columns to StudentProfile structure
       return {
-        uid: row.collegeId || `student-${index}`,
-        name: row.name || `Student ${index}`,
-        collegeId: row.collegeId || '',
-        email: row.email || `${row.collegeId}@cvr.ac.in`,
+        uid: collegeId,
+        name: studentName,
+        collegeId: collegeId,
+        email: row.email || `${collegeId}@cvr.ac.in`,
         role: 'student' as const,
-        year: row.year || '',
-        section: row.section || '',
-        branch: row.branch || '',
-        rollNumber: row.rollNumber || '',
+        year: row.year || '22',
+        section: row.section || 'A',
+        branch: row.branch || '05',
+        rollNumber: rollNumber,
         profile: {
           phone: row.phone || '',
-          dateOfBirth: row.dateOfBirth || '',
+          dateOfBirth: row.dateOfBirth || row['date_of_birth'] || '',
           address: row.address || '',
-          bio: row.bio || '',
+          bio: row.bio || `Student ${studentName}`,
           academic: {
             cgpa: parseFloat(row.cgpa) || 0,
             semester: parseInt(row.semester) || 1
