@@ -50,6 +50,7 @@ import FacultySettings from "./pages/faculty/Settings";
 // Admin Dashboard Pages
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminPlacement from "./pages/admin/Placement";
+import StudentDataManagement from "./pages/admin/StudentDataManagement";
 
 const queryClient = new QueryClient();
 
@@ -259,6 +260,22 @@ const AppContent = () => {
 
               {/* Admin Dashboard Routes (protected, no navigation) */}
               <Route
+                path="/admin/dashboard"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/student-data-management"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <StudentDataManagement />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/admin/placement"
                 element={
                   <ProtectedRoute requiredRole="admin">
@@ -270,7 +287,6 @@ const AppContent = () => {
               {/* Legacy Dashboard Routes - Redirect to Homepage */}
               <Route path="/student/dashboard" element={<DynamicHomepage />} />
               <Route path="/faculty/dashboard" element={<DynamicHomepage />} />
-              <Route path="/admin/dashboard" element={<DynamicHomepage />} />
 
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
