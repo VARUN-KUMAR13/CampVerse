@@ -122,13 +122,8 @@ const StudentDashboard = () => {
           {/* Welcome Section */}
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              Hello {userData?.name || userData?.collegeId} <span className="text-2xl">👋</span>
+              Hello {userData?.collegeId} <span className="text-2xl">👋</span>
             </h1>
-            {userData?.name && (
-              <p className="text-sm text-muted-foreground mt-1">
-                ID: {userData.collegeId}
-              </p>
-            )}
             <p className="text-muted-foreground">
               Let's learn something new today!
             </p>
