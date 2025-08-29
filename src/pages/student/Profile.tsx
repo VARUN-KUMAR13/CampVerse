@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -36,24 +37,44 @@ const StudentProfile = () => {
   const { userData } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
-    firstName: "Katakam Varun",
-    lastName: "Kumar",
-    email: "varun.katakam@cvr.ac.in",
-    phone: "+91 9876543210",
-    address: "Hyderabad, Telangana",
-    dateOfBirth: "2003-01-15",
+    firstName: userData?.name?.split(' ').slice(0, -1).join(' ') || (userData?.name?.split(' ')[0] || 'Student'),
+    lastName: userData?.name?.split(' ').slice(-1)[0] || '',
+    email: userData?.email || (userData?.collegeId ? `${userData.collegeId}@cvr.ac.in` : ''),
+    phone: "",
+    address: "",
+    dateOfBirth: "",
     branch: "Computer Science & Business Systems",
     semester: "VI",
-    rollNumber: userData?.collegeId || "23BB1A3251",
-    cgpa: "8.95",
-    bio: "Passionate computer science student with interests in full-stack development and AI. Looking forward to contributing to innovative projects and building impactful solutions.",
-    skills: ["React", "TypeScript", "Python", "Java", "AWS", "Node.js"],
-    achievements: [
-      "Winner - National Level Hackathon 2024",
-      "Best Project Award - College Tech Fest",
-      "Internship at TCS - Summer 2024",
-    ],
+    rollNumber: userData?.collegeId || "",
+    cgpa: "",
+    bio: "",
+    skills: ["React", "TypeScript"],
+    achievements: [],
   });
+
+  useEffect(() => {
+    if (!userData?.collegeId) return;
+    // Sync core fields when auth changes
+    setProfileData(prev => ({
+      ...prev,
+      rollNumber: userData.collegeId,
+      email: userData.email || `${userData.collegeId}@cvr.ac.in`,
+    }));
+
+    // Try to hydrate name from Firebase Realtime Database if available
+    import('@/services/realtimeService').then(async ({ getStudentNameByRoll }) => {
+      const name = await getStudentNameByRoll(userData.collegeId);
+      const finalName = name || userData.name || '';
+      if (finalName) {
+        const parts = finalName.trim().split(' ');
+        setProfileData(prev => ({
+          ...prev,
+          firstName: parts.slice(0, -1).join(' ') || parts[0] || prev.firstName,
+          lastName: parts.slice(-1)[0] || '',
+        }));
+      }
+    });
+  }, [userData?.collegeId, userData?.name, userData?.email]);
 
   const handleSave = () => {
     // Here you would typically save to backend
