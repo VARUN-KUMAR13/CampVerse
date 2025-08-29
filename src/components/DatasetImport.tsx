@@ -313,37 +313,60 @@ const DatasetImport: React.FC<DatasetImportProps> = ({ onImportComplete }) => {
         </CardContent>
       </Card>
 
-      {/* CSV Format Guide */}
+      {/* CSV/Excel Format Guide */}
       <Card>
         <CardHeader>
-          <CardTitle>CSV Format Guide</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <FileSpreadsheet className="w-5 h-5" />
+            Excel/CSV Format Guide
+          </CardTitle>
           <CardDescription>
-            Required columns for student data import
+            Required and optional columns for student data import
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div>
-              <h4 className="font-semibold mb-2">Required Fields:</h4>
-              <ul className="space-y-1 text-muted-foreground">
-                <li>• <code>name</code> - Full name</li>
-                <li>• <code>collegeId</code> - College ID (e.g., 22B81A05C3)</li>
-                <li>• <code>email</code> - Email address</li>
-                <li>• <code>year</code> - Academic year</li>
-                <li>• <code>section</code> - Section (A, B, C, etc.)</li>
-                <li>• <code>branch</code> - Branch code</li>
-                <li>• <code>rollNumber</code> - Roll number</li>
-              </ul>
+          <div className="space-y-4">
+            <div className="bg-muted p-4 rounded-lg">
+              <h4 className="font-semibold mb-2 text-green-600">✅ Minimum Required Format:</h4>
+              <p className="text-sm text-muted-foreground mb-2">Your Excel/CSV file must have at least these columns:</p>
+              <div className="grid grid-cols-2 gap-4 text-sm font-mono bg-background p-3 rounded border">
+                <div><strong>Roll Number</strong></div>
+                <div><strong>Name</strong></div>
+                <div>22B81A05C3</div>
+                <div>John Doe</div>
+                <div>22B81A05C4</div>
+                <div>Jane Smith</div>
+              </div>
             </div>
-            <div>
-              <h4 className="font-semibold mb-2">Optional Fields:</h4>
-              <ul className="space-y-1 text-muted-foreground">
-                <li>• <code>phone</code> - Phone number</li>
-                <li>• <code>dateOfBirth</code> - Date of birth</li>
-                <li>• <code>address</code> - Address</li>
-                <li>• <code>cgpa</code> - Current CGPA</li>
-                <li>• <code>semester</code> - Current semester</li>
-                <li>• <code>bio</code> - Student bio</li>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <h4 className="font-semibold mb-2">📋 Required Fields:</h4>
+                <ul className="space-y-1 text-muted-foreground">
+                  <li>• <code>Roll Number</code> or <code>collegeId</code> - Student ID</li>
+                  <li>• <code>Name</code> or <code>student_name</code> - Full name</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-2">🔧 Optional Fields:</h4>
+                <ul className="space-y-1 text-muted-foreground">
+                  <li>• <code>email</code> - Email address</li>
+                  <li>• <code>year</code> - Academic year</li>
+                  <li>• <code>section</code> - Section (A, B, C, etc.)</li>
+                  <li>• <code>branch</code> - Branch code</li>
+                  <li>• <code>phone</code> - Phone number</li>
+                  <li>• <code>cgpa</code> - Current CGPA</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
+              <h4 className="font-semibold mb-2 text-blue-600">💡 Tips:</h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Column names are case-insensitive</li>
+                <li>• Alternative names work: "Roll Number", "rollnumber", "roll_number", "collegeId", "id"</li>
+                <li>• The system will auto-generate emails for missing email addresses</li>
+                <li>• After import, students can login using their Roll Number as both username and password</li>
               </ul>
             </div>
           </div>
