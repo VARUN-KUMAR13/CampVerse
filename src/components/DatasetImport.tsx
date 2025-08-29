@@ -123,7 +123,7 @@ Mike Johnson,22B81B05C1,22B81B05C1@cvr.ac.in,22,B,05,C1,+91 9876543212,2003-03-1
             Import Student Dataset
           </CardTitle>
           <CardDescription>
-            Upload a CSV file or paste CSV data to import student information into the system.
+            Upload an Excel file (.xlsx, .xls) or CSV file, or paste CSV data to import student information into the system.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
