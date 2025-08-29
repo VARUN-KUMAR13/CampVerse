@@ -207,6 +207,7 @@ const StudentDataManagement = () => {
 
         {/* Dataset Import Tab */}
         <TabsContent value="dataset" className="space-y-6">
+          <ExcelUploadGuide />
           <DatasetImport onImportComplete={handleImportComplete} />
         </TabsContent>
 
