@@ -97,14 +97,15 @@ const currentEnv: Environment = (getEnvVar('VITE_NODE_ENV', 'development') as En
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: getEnvVar('VITE_FIREBASE_API_KEY', 'demo-api-key'),
-  authDomain: getEnvVar('VITE_FIREBASE_AUTH_DOMAIN', 'campverse-demo.firebaseapp.com'),
-  projectId: getEnvVar('VITE_FIREBASE_PROJECT_ID', 'campverse-demo'),
-  storageBucket: getEnvVar('VITE_FIREBASE_STORAGE_BUCKET', 'campverse-demo.appspot.com'),
+  apiKey: getEnvVar('VITE_FIREBASE_API_KEY', 'AIzaSyBRY5horWW28vr3UhqVbG-uAVZahHTPVLU'),
+  authDomain: getEnvVar('VITE_FIREBASE_AUTH_DOMAIN', 'campverse-1374.firebaseapp.com'),
+  projectId: getEnvVar('VITE_FIREBASE_PROJECT_ID', 'campverse-1374'),
+  storageBucket: getEnvVar('VITE_FIREBASE_STORAGE_BUCKET', 'campverse-1374.firebasestorage.app'),
   messagingSenderId: getEnvVar('VITE_FIREBASE_MESSAGING_SENDER_ID', '123456789'),
-  appId: getEnvVar('VITE_FIREBASE_APP_ID', '1:123456789:web:abcdef'),
-  measurementId: getEnvVar('VITE_FIREBASE_MEASUREMENT_ID') || undefined,
+  appId: getEnvVar('VITE_FIREBASE_APP_ID', '1:730878450982:web:2a29ae46e611b1431235e7'),
+  measurementId: getEnvVar('VITE_FIREBASE_MEASUREMENT_ID') || G - J32WZ6RH8W,
 };
+
 
 // Main configuration object
 export const config: Config = {
