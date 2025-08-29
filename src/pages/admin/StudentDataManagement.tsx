@@ -16,6 +16,7 @@ import {
 import DatasetImport from '@/components/DatasetImport';
 import CustomStudentDashboard from '@/components/CustomStudentDashboard';
 import FirebaseUserSetup from '@/components/FirebaseUserSetup';
+import ExcelUploadGuide from '@/components/ExcelUploadGuide';
 import { useStudentsList } from '@/hooks/useFirestore';
 import { Input } from '@/components/ui/input';
 import { 
