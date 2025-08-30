@@ -32,6 +32,8 @@ import {
   Camera,
 } from "lucide-react";
 
+import { useEffect, useState, useRef } from "react";
+
 const StudentProfile = () => {
   const { userData } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
@@ -47,9 +49,12 @@ const StudentProfile = () => {
     rollNumber: userData?.collegeId || "",
     cgpa: "",
     bio: "",
+    avatar: "",
     skills: ["React", "TypeScript"],
     achievements: [],
   });
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!userData?.collegeId) return;
@@ -74,6 +79,37 @@ const StudentProfile = () => {
       }
     });
   }, [userData?.collegeId, userData?.name, userData?.email]);
+
+  const handleAvatarUpload = async (file: File) => {
+    try {
+      const localUrl = URL.createObjectURL(file);
+      setProfileData(prev => ({ ...prev, avatar: localUrl }));
+
+      const { default: app, isDevelopment, firebaseReady } = await import('@/lib/firebase');
+      let finalUrl = localUrl;
+      if (!isDevelopment && firebaseReady && app) {
+        const { getStorage, ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+        const storage = getStorage(app);
+        const path = `avatars/${userData?.uid || userData?.collegeId}.jpg`;
+        const storageRef = ref(storage, path);
+        await uploadBytes(storageRef, file);
+        finalUrl = await getDownloadURL(storageRef);
+        setProfileData(prev => ({ ...prev, avatar: finalUrl }));
+      }
+
+      const { StudentService } = await import('@/services/firestoreService');
+      if (userData?.uid) {
+        await StudentService.updateStudentProfile(userData.uid, { profile: { avatar: finalUrl } } as any);
+      }
+    } catch (e) {
+      console.error('Avatar upload failed:', e);
+    }
+  };
+
+  const onAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleAvatarUpload(file);
+  };
 
   const handleSave = () => {
     // Here you would typically save to backend
@@ -119,17 +155,31 @@ const StudentProfile = () => {
                 <div className="flex flex-col md:flex-row items-center gap-6">
                   <div className="relative">
                     <Avatar className="w-24 h-24">
+                      {profileData.avatar && (
+                        <AvatarImage src={profileData.avatar} alt="Profile Photo" />
+                      )}
                       <AvatarFallback className="bg-primary/10 text-foreground">
                         <User className="w-10 h-10" />
                       </AvatarFallback>
                     </Avatar>
                     {isEditing && (
-                      <Button
-                        size="sm"
-                        className="absolute bottom-0 right-0 rounded-full p-2 h-8 w-8"
-                      >
-                        <Camera className="w-4 h-4" />
-                      </Button>
+                      <>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          ref={fileInputRef}
+                          onChange={onAvatarFileChange}
+                          className="hidden"
+                        />
+                        <Button
+                          size="sm"
+                          className="absolute bottom-0 right-0 rounded-full p-2 h-8 w-8"
+                          onClick={() => fileInputRef.current?.click()}
+                          aria-label="Upload profile photo"
+                        >
+                          <Camera className="w-4 h-4" />
+                        </Button>
+                      </>
                     )}
                   </div>
                   <div className="text-center md:text-left flex-1">
