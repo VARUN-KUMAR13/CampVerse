@@ -33,6 +33,8 @@ import {
   Save,
   Edit,
   Camera,
+  Plus,
+  X,
 } from "lucide-react";
 
 
