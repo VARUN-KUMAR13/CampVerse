@@ -324,7 +324,7 @@ const StudentProfile = () => {
                       onValueChange={(value) =>
                         handleInputChange("branch", value)
                       }
-                      disabled
+                      disabled={!isEditing}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -352,7 +352,7 @@ const StudentProfile = () => {
                       onValueChange={(value) =>
                         handleInputChange("semester", value)
                       }
-                      disabled
+                      disabled={!isEditing}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -376,9 +376,7 @@ const StudentProfile = () => {
                     id="cgpa"
                     value={profileData.cgpa}
                     onChange={(e) => handleInputChange("cgpa", e.target.value)}
-                    disabled
-                    readOnly
-                    title="Locked by admin"
+                    disabled={!isEditing}
                     placeholder="Enter your CGPA"
                   />
                 </div>
