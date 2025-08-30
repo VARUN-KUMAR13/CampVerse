@@ -60,6 +60,7 @@ const StudentProfile = () => {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [newSkill, setNewSkill] = useState("");
+  const [newAchievement, setNewAchievement] = useState("");
 
   useEffect(() => {
     if (!userData?.collegeId) return;
@@ -120,8 +121,21 @@ const StudentProfile = () => {
     }));
   };
 
+  const addAchievement = () => {
+    const text = newAchievement.trim();
+    if (!text) return;
+    setProfileData(prev => ({ ...prev, achievements: [...prev.achievements, text] }));
+    setNewAchievement("");
+  };
+
+  const removeAchievement = (index: number) => {
+    setProfileData(prev => ({
+      ...prev,
+      achievements: prev.achievements.filter((_, i) => i !== index),
+    }));
+  };
+
   const handleSave = () => {
-    // Here you would typically save to backend
     console.log("Saving profile data:", profileData);
     setIsEditing(false);
   };
@@ -480,14 +494,39 @@ const StudentProfile = () => {
                       <div key={index} className="flex items-center gap-2">
                         <Award className="w-4 h-4 text-yellow-500" />
                         <span className="text-sm">{achievement}</span>
+                        {isEditing && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => removeAchievement(index)}
+                            aria-label={`Remove achievement ${index + 1}`}
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        )}
                       </div>
                     ))}
-                    {isEditing && (
-                      <Button variant="outline" size="sm">
-                        + Add Achievement
-                      </Button>
-                    )}
                   </div>
+                  {isEditing && (
+                    <div className="mt-3 flex items-center gap-2">
+                      <Input
+                        id="new-achievement"
+                        placeholder="Add an achievement"
+                        value={newAchievement}
+                        onChange={(e) => setNewAchievement(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            addAchievement();
+                          }
+                        }}
+                      />
+                      <Button type="button" onClick={addAchievement} className="flex items-center gap-1">
+                        <Plus className="w-4 h-4" /> Add
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
