@@ -6,6 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Select,
@@ -262,15 +265,32 @@ const StudentProfile = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                    <Input
-                      id="dateOfBirth"
-                      type="date"
-                      value={profileData.dateOfBirth}
-                      onChange={(e) =>
-                        handleInputChange("dateOfBirth", e.target.value)
-                      }
-                      disabled={!isEditing}
-                    />
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="dateOfBirth"
+                        type="date"
+                        value={profileData.dateOfBirth}
+                        onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
+                        disabled={!isEditing}
+                      />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button type="button" variant="outline" size="icon" disabled={!isEditing} aria-label="Set date">
+                            <Calendar className="w-4 h-4" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="p-0" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={profileData.dateOfBirth ? new Date(profileData.dateOfBirth) : undefined}
+                            onSelect={(date) => {
+                              if (date) handleInputChange("dateOfBirth", format(date, "yyyy-MM-dd"));
+                            }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="address">Address</Label>
