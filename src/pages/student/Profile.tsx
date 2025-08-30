@@ -230,7 +230,9 @@ const StudentProfile = () => {
                       onChange={(e) =>
                         handleInputChange("firstName", e.target.value)
                       }
-                      disabled={!isEditing}
+                      disabled
+                      readOnly
+                      title="Locked by admin"
                     />
                   </div>
                   <div className="space-y-2">
@@ -241,7 +243,9 @@ const StudentProfile = () => {
                       onChange={(e) =>
                         handleInputChange("lastName", e.target.value)
                       }
-                      disabled={!isEditing}
+                      disabled
+                      readOnly
+                      title="Locked by admin"
                     />
                   </div>
                 </div>
@@ -255,7 +259,9 @@ const StudentProfile = () => {
                       onChange={(e) =>
                         handleInputChange("email", e.target.value)
                       }
-                      disabled={!isEditing}
+                      disabled
+                      readOnly
+                      title="Locked by admin"
                     />
                   </div>
                   <div className="space-y-2">
@@ -333,7 +339,7 @@ const StudentProfile = () => {
                       onValueChange={(value) =>
                         handleInputChange("branch", value)
                       }
-                      disabled={!isEditing}
+                      disabled
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -361,7 +367,7 @@ const StudentProfile = () => {
                       onValueChange={(value) =>
                         handleInputChange("semester", value)
                       }
-                      disabled={!isEditing}
+                      disabled
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -385,7 +391,9 @@ const StudentProfile = () => {
                     id="cgpa"
                     value={profileData.cgpa}
                     onChange={(e) => handleInputChange("cgpa", e.target.value)}
-                    disabled={!isEditing}
+                    disabled
+                    readOnly
+                    title="Locked by admin"
                     placeholder="Enter your CGPA"
                   />
                 </div>
