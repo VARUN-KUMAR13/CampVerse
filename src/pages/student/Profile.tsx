@@ -330,6 +330,8 @@ const StudentProfile = () => {
                       id="rollNumber"
                       value={profileData.rollNumber}
                       disabled
+                      readOnly
+                      title="Locked by admin"
                     />
                   </div>
                   <div className="space-y-2">
