@@ -37,8 +37,8 @@ const StudentProfile = () => {
   const { userData } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
-    firstName: userData?.name?.split(' ').slice(0, -1).join(' ') || (userData?.name?.split(' ')[0] || 'Student'),
-    lastName: userData?.name?.split(' ').slice(-1)[0] || '',
+    firstName: '',
+    lastName: '',
     email: userData?.email || (userData?.collegeId ? `${userData.collegeId}@cvr.ac.in` : ''),
     phone: "",
     address: "",
@@ -64,19 +64,6 @@ const StudentProfile = () => {
       email: userData.email || `${userData.collegeId}@cvr.ac.in`,
     }));
 
-    // Try to hydrate name from Firebase Realtime Database if available
-    import('@/services/realtimeService').then(async ({ getStudentNameByRoll }) => {
-      const name = await getStudentNameByRoll(userData.collegeId);
-      const finalName = name || userData.name || '';
-      if (finalName) {
-        const parts = finalName.trim().split(' ');
-        setProfileData(prev => ({
-          ...prev,
-          firstName: parts.slice(0, -1).join(' ') || parts[0] || prev.firstName,
-          lastName: parts.slice(-1)[0] || '',
-        }));
-      }
-    });
   }, [userData?.collegeId, userData?.name, userData?.email]);
 
   const handleAvatarUpload = async (file: File) => {
@@ -230,9 +217,7 @@ const StudentProfile = () => {
                       onChange={(e) =>
                         handleInputChange("firstName", e.target.value)
                       }
-                      disabled
-                      readOnly
-                      title="Locked by admin"
+                      disabled={!isEditing}
                     />
                   </div>
                   <div className="space-y-2">
@@ -243,9 +228,7 @@ const StudentProfile = () => {
                       onChange={(e) =>
                         handleInputChange("lastName", e.target.value)
                       }
-                      disabled
-                      readOnly
-                      title="Locked by admin"
+                      disabled={!isEditing}
                     />
                   </div>
                 </div>
