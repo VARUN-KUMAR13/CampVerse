@@ -59,6 +59,7 @@ const StudentProfile = () => {
   });
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [newSkill, setNewSkill] = useState("");
 
   useEffect(() => {
     if (!userData?.collegeId) return;
