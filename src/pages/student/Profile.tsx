@@ -432,16 +432,41 @@ const StudentProfile = () => {
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
                     {profileData.skills.map((skill, index) => (
-                      <Badge key={index} variant="secondary">
-                        {skill}
-                      </Badge>
+                      <div key={index} className="flex items-center gap-1">
+                        <Badge variant="secondary">{skill}</Badge>
+                        {isEditing && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => removeSkill(index)}
+                            aria-label={`Remove ${skill}`}
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        )}
+                      </div>
                     ))}
-                    {isEditing && (
-                      <Button variant="outline" size="sm" className="h-6">
-                        + Add Skill
-                      </Button>
-                    )}
                   </div>
+                  {isEditing && (
+                    <div className="mt-3 flex items-center gap-2">
+                      <Input
+                        id="new-skill"
+                        placeholder="Add a skill"
+                        value={newSkill}
+                        onChange={(e) => setNewSkill(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            addSkill();
+                          }
+                        }}
+                      />
+                      <Button type="button" onClick={addSkill} className="flex items-center gap-1">
+                        <Plus className="w-4 h-4" /> Add
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
