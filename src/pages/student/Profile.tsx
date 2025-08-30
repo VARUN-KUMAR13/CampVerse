@@ -119,12 +119,8 @@ const StudentProfile = () => {
                 <div className="flex flex-col md:flex-row items-center gap-6">
                   <div className="relative">
                     <Avatar className="w-24 h-24">
-                      <AvatarImage
-                        src={`https://api.dicebear.com/7.x/initials/svg?seed=${profileData.firstName} ${profileData.lastName}`}
-                      />
-                      <AvatarFallback className="text-2xl">
-                        {profileData.firstName[0]}
-                        {profileData.lastName[0]}
+                      <AvatarFallback className="bg-primary/10 text-foreground">
+                        <User className="w-10 h-10" />
                       </AvatarFallback>
                     </Avatar>
                     {isEditing && (
