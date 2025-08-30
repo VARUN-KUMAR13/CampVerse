@@ -74,11 +74,8 @@ const StudentTopbar = ({ studentId }: StudentTopbarProps) => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage
-                    src={`https://api.dicebear.com/6.x/initials/svg?seed=${userData?.name || studentId}`}
-                  />
-                  <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                    {studentId.slice(-2)}
+                  <AvatarFallback className="bg-primary/10 text-foreground">
+                    <User className="w-4 h-4" />
                   </AvatarFallback>
                 </Avatar>
               </Button>
