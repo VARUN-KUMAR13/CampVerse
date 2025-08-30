@@ -103,6 +103,23 @@ const StudentProfile = () => {
     if (file) handleAvatarUpload(file);
   };
 
+  const addSkill = () => {
+    const skill = newSkill.trim();
+    if (!skill) return;
+    setProfileData(prev => {
+      if (prev.skills.includes(skill)) return prev;
+      return { ...prev, skills: [...prev.skills, skill] };
+    });
+    setNewSkill("");
+  };
+
+  const removeSkill = (index: number) => {
+    setProfileData(prev => ({
+      ...prev,
+      skills: prev.skills.filter((_, i) => i !== index),
+    }));
+  };
+
   const handleSave = () => {
     // Here you would typically save to backend
     console.log("Saving profile data:", profileData);
