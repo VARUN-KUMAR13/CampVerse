@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,6 @@ import {
   Camera,
 } from "lucide-react";
 
-import { useEffect, useState, useRef } from "react";
 
 const StudentProfile = () => {
   const { userData } = useAuth();
