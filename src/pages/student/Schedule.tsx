@@ -1,6 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import StudentSidebar from "@/components/StudentSidebar";
 import StudentTopbar from "@/components/StudentTopbar";
@@ -56,7 +55,7 @@ const StudentSchedule = () => {
       "IOE - 303 CB | DWDM - 304 CB",
       "LP",
       "BCT - 303 CB | CS - 305 CB | NoSQL - 306 CB",
-      "Minor/LP(T)",
+      "LUNCH",
       "",
       "",
     ],
@@ -65,7 +64,7 @@ const StudentSchedule = () => {
       "LP",
       "",
       "Project Work (303 CB) (Ms.K Sravani)",
-      "Project Work (303 CB) (Ms.K Sravani)",
+      "LUNCH",
       "",
       "",
     ],
@@ -74,7 +73,7 @@ const StudentSchedule = () => {
       "BEFA",
       "",
       "Minor/Library",
-      "",
+      "LUNCH",
       "CRT/PE-IV(T) IOE - 303 CB DWDM - 304 CB",
       "CRT/Mentoring (303CB)",
     ],
@@ -83,7 +82,7 @@ const StudentSchedule = () => {
       "BCT - 303 CB | CS - 305 CB | NoSQL - 112 CB",
       "PE-IV",
       "IOE - 303 CB | DWDM - 304 CB",
-      "OE/LP(T)",
+      "LUNCH",
       "Minor Lab/Projects (303 CB) (Ms.G.Malleswari)",
       "Minor Lab/Sports",
     ],
@@ -93,17 +92,8 @@ const StudentSchedule = () => {
     { name: "Linux Programming", instructor: "Dr. K. Karthik" },
     { name: "Business Economics & Financial Analysis", instructor: "Ms. P. Asifa Tazeen" },
     { name: "Cloud Security - Professional Elective: III", instructor: "Ms. Sharmila Bandlamudi" },
-    { name: "Blockchain Technologies - Professional Elective: III", instructor: "Dr. Baddepaka Prasad" },
-    { name: "NoSQL Databases - Professional Elective: III", instructor: "Mr. B. Ashwin Kumar" },
-    { name: "Data Warehousing and Data Mining - Professional Elective: IV", instructor: "Dr. P. Madhavi" },
     { name: "Internet of Everything - Professional Elective: IV", instructor: "Dr. P. Kiran Kumar" },
-    { name: "Disaster Preparedness, Planning and Management - Open Elective: I", instructor: "Mr. K. Mahesh" },
-    { name: "Environmental Impact Assessment - Open Elective: I", instructor: "Dr. R. Karthik" },
-    { name: "Professional Skills for Engineers - Open Elective: I", instructor: "Dr. T. Hymavathi" },
-    { name: "Essentials of Anatomy and Physiology - Open Elective: I", instructor: "Dr. K. T. Padma Priya" },
     { name: "Entrepreneurship - Open Elective: I", instructor: "Mr. P. V. S. H. Sastry" },
-    { name: "Big Data Analytics and Platforms Lab", instructor: "Ms. Sheshrieka, Ms. S. Bhavani, Mr. R. Sathya Prakash" },
-    { name: "Visual Programming Lab", instructor: "Dr. Baddepaka Prasad, Mr. T. Rama Rao, Ms. T. Jyothi" },
     { name: "Project Work Stage-I", instructor: "Ms. K. Sravani (Coordinator)" },
   ];
 
@@ -246,16 +236,6 @@ const StudentSchedule = () => {
             </CardHeader>
           </Card>
 
-          {/* Legend */}
-          <div className="mb-4 flex flex-wrap gap-2">
-            <Badge className="bg-green-500/20 text-green-700 border border-green-200" variant="outline">Lab</Badge>
-            <Badge className="bg-cyan-500/20 text-cyan-700 border border-cyan-200" variant="outline">VP</Badge>
-            <Badge className="bg-indigo-500/20 text-indigo-700 border border-indigo-200" variant="outline">CRT</Badge>
-            <Badge className="bg-yellow-500/20 text-yellow-700 border border-yellow-200" variant="outline">Minor</Badge>
-            <Badge className="bg-teal-500/20 text-teal-700 border border-teal-200" variant="outline">Project</Badge>
-            <Badge className="bg-orange-500/20 text-orange-700 border border-orange-200" variant="outline">Lunch</Badge>
-            <Badge className="bg-blue-500/20 text-blue-700 border border-blue-200" variant="outline">Library</Badge>
-          </div>
 
           {/* Timetable */}
           <Card id="timetable">
