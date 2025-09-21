@@ -61,6 +61,8 @@ const StudentProfile = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [newSkill, setNewSkill] = useState("");
   const [newAchievement, setNewAchievement] = useState("");
+  const printRef = useRef<HTMLDivElement | null>(null);
+  const [printMode, setPrintMode] = useState(false);
 
   useEffect(() => {
     if (!userData?.collegeId) return;
@@ -144,6 +146,50 @@ const StudentProfile = () => {
     setProfileData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handlePrint = async () => {
+    if (!printRef.current) return;
+    try {
+      setPrintMode(true);
+      await new Promise((r) => setTimeout(r, 50));
+      const [{ default: html2canvas }, jsPDFModule] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ]);
+      const jsPDFCtor: any = (jsPDFModule as any).jsPDF || (jsPDFModule as any).default;
+      const element = printRef.current as HTMLDivElement;
+      const canvas = await html2canvas(element, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDFCtor('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      const imgWidth = pageWidth - margin * 2;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = margin;
+
+      pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight - margin * 2;
+
+      while (heightLeft > 0) {
+        pdf.addPage();
+        position = margin - (imgHeight - heightLeft);
+        pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight - margin * 2;
+      }
+
+      pdf.save('profile.pdf');
+    } catch (e) {
+      console.error('Print failed', e);
+    } finally {
+      setPrintMode(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-background">
       <StudentSidebar />
@@ -151,7 +197,7 @@ const StudentProfile = () => {
         <StudentTopbar studentId={userData?.collegeId || ""} />
 
         <main className="flex-1 p-6">
-          <div className="max-w-4xl mx-auto space-y-6">
+          <div ref={printRef} className="max-w-4xl mx-auto space-y-6" style={printMode ? { backgroundColor: '#ffffff', color: '#000000' } : undefined}>
             {/* Header */}
             <div className="flex items-center justify-between">
               <div>
@@ -529,6 +575,11 @@ const StudentProfile = () => {
                   )}
                 </CardContent>
               </Card>
+            </div>
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={handlePrint}>
+                Print
+              </Button>
             </div>
 
             {/* Save Button */}
