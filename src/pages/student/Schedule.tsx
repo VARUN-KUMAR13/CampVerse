@@ -25,7 +25,7 @@ const StudentSchedule = () => {
   ];
 
   const schedule = {
-    MONDAY: ["CS", "DAA", "OS", "EDA", "", "RFP LAB (308 CM)", ""],
+    MONDAY: ["PE-lll", "DAA", "OS", "EDA", "", "RFP LAB (308 CM)", ""],
     TUESDAY: ["PSE", "SE LAB (305 CB)", "", "CS", "", "DAA", ""],
     WEDNESDAY: [
       "",
@@ -87,10 +87,10 @@ const StudentSchedule = () => {
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="text-lg">
-                SEC - CSE- CSBS (Class Room - 110 CM)
+                SEC - CSE- B (Class Room - 303CB)
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Class In-Charge: Mr. D. Sujan Kumar | W.E.F: 14.02.2025
+                Class In-Charge: Dr. Baddepaka Prasad | W.E.F: 08/09/2025
               </p>
             </CardHeader>
           </Card>
