@@ -25,43 +25,92 @@ const StudentSchedule = () => {
   ];
 
   const schedule = {
-    MONDAY: ["PE-lll", "DAA", "OS", "EDA", "", "RFP LAB (308 CM)", ""],
-    TUESDAY: ["PSE", "SE LAB (305 CB)", "", "CS", "", "DAA", ""],
-    WEDNESDAY: [
-      "",
-      "E-BOX LAB (203 MB) - Mr.B.Divya",
-      "",
-      "OS",
+    MONDAY: [
+      "PE-III",
+      "BCT - 303 CB | CS - 305 CB | NoSQL - 306 CB",
+      "VP Class",
+      "PE-III(T) | BCT - 303 CB | CS - 305 CB | NoSQL - 306 CB",
       "LUNCH",
-      "LIB",
+      "VP Lab (Old Cellar)",
       "",
     ],
-    THURSDAY: ["", "CS & EDA LAB (308 CM)", "", "PSE", "", "MENTORING", ""],
-    FRIDAY: ["", "ALG & OS LAB (304CM)", "", "", "", "RFP LAB (308 CM)", ""],
-    SATURDAY: ["CRT (110 CM)", "", "CS", "OS", "", "EDA", "SPORTS"],
+    TUESDAY: [
+      "BDAP Lab (112 CB)",
+      "",
+      "BDAP Lab (112 CB)",
+      "OE/ Mentoring (206 CM)",
+      "LUNCH",
+      "CRT/BEFA(T)",
+      "CRT/Lib",
+    ],
+    WEDNESDAY: [
+      "PE-IV",
+      "IOE - 303 CB | DWDM - 304 CB",
+      "LP",
+      "BCT - 303 CB | CS - 305 CB | NoSQL - 306 CB",
+      "Minor/LP(T)",
+      "",
+      "",
+    ],
+    THURSDAY: [
+      "BEFA",
+      "LP",
+      "",
+      "Project Work (303 CB) (Ms.K Sravani)",
+      "Project Work (303 CB) (Ms.K Sravani)",
+      "",
+      "",
+    ],
+    FRIDAY: [
+      "LP",
+      "BEFA",
+      "",
+      "Minor/Library",
+      "",
+      "CRT/PE-IV(T) IOE - 303 CB DWDM - 304 CB",
+      "CRT/Mentoring (303CB)",
+    ],
+    SATURDAY: [
+      "PE-III",
+      "BCT - 303 CB | CS - 305 CB | NoSQL - 112 CB",
+      "PE-IV",
+      "IOE - 303 CB | DWDM - 304 CB",
+      "OE/LP(T)",
+      "Minor Lab/Projects (303 CB) (Ms.G.Malleswari)",
+      "Minor Lab/Sports",
+    ],
   };
 
   const subjects = [
-    {
-      name: "Python for Exploratory Data Analysis",
-      instructor: "Mr. D. Sujan Kumar (9849142916)",
-    },
+    { name: "Linux Programming", instructor: "Dr. K. Karthik" },
+    { name: "Business Economics & Financial Analysis", instructor: "Ms. P. Asifa Tazeen" },
+    { name: "Cloud Security - Professional Elective: III", instructor: "Ms. Sharmila Bandlamudi" },
+    { name: "Blockchain Technologies - Professional Elective: III", instructor: "Dr. Baddepaka Prasad" },
+    { name: "NoSQL Databases - Professional Elective: III", instructor: "Mr. B. Ashwin Kumar" },
+    { name: "Data Warehousing and Data Mining - Professional Elective: IV", instructor: "Dr. P. Madhavi" },
+    { name: "Internet of Everything - Professional Elective: IV", instructor: "Dr. P. Kiran Kumar" },
+    { name: "Disaster Preparedness, Planning and Management - Open Elective: I", instructor: "Mr. K. Mahesh" },
+    { name: "Environmental Impact Assessment - Open Elective: I", instructor: "Dr. R. Karthik" },
+    { name: "Professional Skills for Engineers - Open Elective: I", instructor: "Dr. T. Hymavathi" },
+    { name: "Essentials of Anatomy and Physiology - Open Elective: I", instructor: "Dr. K. T. Padma Priya" },
+    { name: "Entrepreneurship - Open Elective: I", instructor: "Mr. P. V. S. H. Sastry" },
+    { name: "Big Data Analytics and Platforms Lab", instructor: "Ms. Sheshrieka, Ms. S. Bhavani, Mr. R. Sathya Prakash" },
+    { name: "Visual Programming Lab", instructor: "Dr. Baddepaka Prasad, Mr. T. Rama Rao, Ms. T. Jyothi" },
+    { name: "Project Work Stage-I", instructor: "Ms. K. Sravani (Coordinator)" },
   ];
 
   const getClassColor = (subject: string) => {
-    if (subject.includes("LAB"))
-      return "bg-green-500/20 text-green-700 border-green-200";
-    if (subject === "LUNCH")
-      return "bg-orange-500/20 text-orange-700 border-orange-200";
-    if (subject === "MENTORING")
-      return "bg-purple-500/20 text-purple-700 border-purple-200";
-    if (subject === "LIB")
-      return "bg-blue-500/20 text-blue-700 border-blue-200";
-    if (subject === "SPORTS")
-      return "bg-red-500/20 text-red-700 border-red-200";
-    if (subject === "CRT")
-      return "bg-indigo-500/20 text-indigo-700 border-indigo-200";
-    if (subject === "") return "bg-gray-100/20";
+    const s = subject.toUpperCase();
+    if (s.includes("LAB")) return "bg-green-500/20 text-green-700 border-green-200";
+    if (s.includes("LUNCH")) return "bg-orange-500/20 text-orange-700 border-orange-200";
+    if (s.includes("MENTOR")) return "bg-purple-500/20 text-purple-700 border-purple-200";
+    if (s.includes("LIB")) return "bg-blue-500/20 text-blue-700 border-blue-200";
+    if (s.includes("SPORT")) return "bg-red-500/20 text-red-700 border-red-200";
+    if (s.includes("CRT")) return "bg-indigo-500/20 text-indigo-700 border-indigo-200";
+    if (s.includes("PROJECT")) return "bg-teal-500/20 text-teal-700 border-teal-200";
+    if (s.includes("VP")) return "bg-cyan-500/20 text-cyan-700 border-cyan-200";
+    if (s.includes("MINOR")) return "bg-yellow-500/20 text-yellow-700 border-yellow-200";
+    if (subject.trim() === "") return "bg-gray-100/20";
     return "bg-blue-500/20 text-blue-700 border-blue-200";
   };
 
