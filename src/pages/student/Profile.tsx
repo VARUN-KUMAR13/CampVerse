@@ -586,7 +586,7 @@ const StudentProfile = () => {
             )}
           </div>
           <div className="mt-4 flex justify-end">
-            <Button variant="outline" onClick={handlePrint} className="print-hidden">
+            <Button onClick={handlePrint} className="print-hidden mr-auto bg-[#4A90E2] text-white hover:bg-[#4A90E2]/90 border border-[#1D2839] rounded-[10px]">
               Print
             </Button>
           </div>
