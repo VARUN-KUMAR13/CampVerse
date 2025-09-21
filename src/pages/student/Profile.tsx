@@ -62,7 +62,6 @@ const StudentProfile = () => {
   const [newSkill, setNewSkill] = useState("");
   const [newAchievement, setNewAchievement] = useState("");
   const printRef = useRef<HTMLDivElement | null>(null);
-  const [printMode, setPrintMode] = useState(false);
 
   useEffect(() => {
     if (!userData?.collegeId) return;
@@ -149,8 +148,6 @@ const StudentProfile = () => {
   const handlePrint = async () => {
     if (!printRef.current) return;
     try {
-      setPrintMode(true);
-      await new Promise((r) => setTimeout(r, 50));
       const [{ default: html2canvas }, jsPDFModule] = await Promise.all([
         import('html2canvas'),
         import('jspdf'),
@@ -158,9 +155,9 @@ const StudentProfile = () => {
       const jsPDFCtor: any = (jsPDFModule as any).jsPDF || (jsPDFModule as any).default;
       const element = printRef.current as HTMLDivElement;
       const canvas = await html2canvas(element, {
-        backgroundColor: '#ffffff',
         scale: 2,
         useCORS: true,
+        ignoreElements: (el) => (el as HTMLElement).classList?.contains('print-hidden'),
       });
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDFCtor('p', 'mm', 'a4');
@@ -185,8 +182,6 @@ const StudentProfile = () => {
       pdf.save('profile.pdf');
     } catch (e) {
       console.error('Print failed', e);
-    } finally {
-      setPrintMode(false);
     }
   };
 
@@ -197,7 +192,7 @@ const StudentProfile = () => {
         <StudentTopbar studentId={userData?.collegeId || ""} />
 
         <main className="flex-1 p-6">
-          <div ref={printRef} className="max-w-4xl mx-auto space-y-6" style={printMode ? { backgroundColor: '#ffffff', color: '#000000' } : undefined}>
+          <div ref={printRef} className="max-w-4xl mx-auto space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
               <div>
@@ -212,6 +207,7 @@ const StudentProfile = () => {
               <Button
                 onClick={() => setIsEditing(!isEditing)}
                 variant={isEditing ? "outline" : "default"}
+                className="print-hidden"
               >
                 <Edit className="w-4 h-4 mr-2" />
                 {isEditing ? "Cancel" : "Edit Profile"}
@@ -242,7 +238,7 @@ const StudentProfile = () => {
                         />
                         <Button
                           size="sm"
-                          className="absolute bottom-0 right-0 rounded-full p-2 h-8 w-8"
+                          className="absolute bottom-0 right-0 rounded-full p-2 h-8 w-8 print-hidden"
                           onClick={() => fileInputRef.current?.click()}
                           aria-label="Upload profile photo"
                         >
@@ -498,7 +494,7 @@ const StudentProfile = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6"
+                            className="h-6 w-6 print-hidden"
                             onClick={() => removeSkill(index)}
                             aria-label={`Remove ${skill}`}
                           >
@@ -522,7 +518,7 @@ const StudentProfile = () => {
                           }
                         }}
                       />
-                      <Button type="button" onClick={addSkill} className="flex items-center gap-1">
+                      <Button type="button" onClick={addSkill} className="flex items-center gap-1 print-hidden">
                         <Plus className="w-4 h-4" /> Add
                       </Button>
                     </div>
@@ -544,7 +540,7 @@ const StudentProfile = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6"
+                            className="h-6 w-6 print-hidden"
                             onClick={() => removeAchievement(index)}
                             aria-label={`Remove achievement ${index + 1}`}
                           >
@@ -568,7 +564,7 @@ const StudentProfile = () => {
                           }
                         }}
                       />
-                      <Button type="button" onClick={addAchievement} className="flex items-center gap-1">
+                      <Button type="button" onClick={addAchievement} className="flex items-center gap-1 print-hidden">
                         <Plus className="w-4 h-4" /> Add
                       </Button>
                     </div>
@@ -576,24 +572,23 @@ const StudentProfile = () => {
                 </CardContent>
               </Card>
             </div>
-            <div className="flex justify-end">
-              <Button variant="outline" onClick={handlePrint}>
-                Print
-              </Button>
-            </div>
-
             {/* Save Button */}
             {isEditing && (
               <div className="flex justify-end">
                 <Button
                   onClick={handleSave}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 print-hidden"
                 >
                   <Save className="w-4 h-4" />
                   Save Changes
                 </Button>
               </div>
             )}
+          </div>
+          <div className="mt-4 flex justify-end">
+            <Button variant="outline" onClick={handlePrint} className="print-hidden">
+              Print
+            </Button>
           </div>
         </main>
       </div>
