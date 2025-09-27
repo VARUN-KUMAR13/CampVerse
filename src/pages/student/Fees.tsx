@@ -303,8 +303,13 @@ const StudentFees = () => {
                               <p className="text-sm text-muted-foreground">Pending Fees</p>
                               <p className="text-2xl font-bold text-destructive">₹{feeData.pendingFees}/-</p>
                             </div>
-                            <div className="flex justify-end">
-                              <Button size="sm" onClick={() => openRazorpay(feeData.pendingFees)} disabled={feeData.pendingFees <= 0} className="bg-emerald-600 hover:bg-emerald-600/90">
+                            <div className="flex justify-center items-center mt-2">
+                              <Button
+                                size="sm"
+                                onClick={() => openRazorpay(feeData.pendingFees)}
+                                disabled={feeData.pendingFees <= 0}
+                                className="bg-emerald-600 hover:bg-emerald-600/90 disabled:opacity-50 disabled:pointer-events-none rounded-[10px] h-9"
+                              >
                                 Pay Now
                               </Button>
                             </div>
