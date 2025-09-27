@@ -20,6 +20,8 @@ import {
 import StudentSidebar from "@/components/StudentSidebar";
 import StudentTopbar from "@/components/StudentTopbar";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
+import { useState } from "react";
 import {
   CreditCard,
   Download,
@@ -34,11 +36,66 @@ import {
   GraduationCap,
 } from "lucide-react";
 
+declare global { interface Window { Razorpay: any } }
+
 const StudentFees = () => {
   const { userData } = useAuth();
   const [selectedTab, setSelectedTab] = useState("dashboard");
   const [selectedYear, setSelectedYear] = useState("2025-26");
   const [paymentAmount, setPaymentAmount] = useState("");
+
+  const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID as string | undefined;
+
+  const loadRazorpay = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (window.Razorpay) return resolve(true);
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const openRazorpay = async (amountInRupees: number) => {
+    if (!amountInRupees || amountInRupees <= 0) {
+      toast({ title: 'No pending amount', description: 'You have no dues to pay.' });
+      return;
+    }
+    if (!RAZORPAY_KEY_ID) {
+      toast({ title: 'Missing Razorpay Key', description: 'Set VITE_RAZORPAY_KEY_ID in your environment to enable payments.' });
+      return;
+    }
+    const loaded = await loadRazorpay();
+    if (!loaded) {
+      toast({ title: 'Payment unavailable', description: 'Could not load Razorpay. Check your network and try again.' });
+      return;
+    }
+
+    const options: any = {
+      key: RAZORPAY_KEY_ID,
+      amount: Math.round(amountInRupees * 100),
+      currency: 'INR',
+      name: 'CampVerse Fees',
+      description: 'Fee Payment',
+      prefill: {
+        name: userData?.name || userData?.collegeId || 'Student',
+        email: userData?.email || 'student@example.com',
+      },
+      notes: {
+        studentId: userData?.collegeId || '',
+        year: selectedYear,
+      },
+      theme: { color: '#4F46E5' },
+      handler: function (response: any) {
+        toast({ title: 'Payment initiated', description: `Razorpay ref: ${response.razorpay_payment_id || ''}` });
+      },
+      modal: { ondismiss: () => {} },
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+  };
 
   // Mock fee data - replace with real data
   const feeData = {
@@ -149,10 +206,7 @@ const StudentFees = () => {
   ];
 
   const handlePayment = (amount: number) => {
-    // Redirect to Razorpay - you'll provide the payment link later
-    console.log(`Initiating payment for ₹${amount}`);
-    // window.open('YOUR_RAZORPAY_PAYMENT_LINK', '_blank');
-    alert(`Payment of ₹${amount} will be processed via Razorpay`);
+    openRazorpay(amount);
   };
 
   const FeeProgressCircle = ({ percentage }: { percentage: number }) => {
@@ -245,9 +299,16 @@ const StudentFees = () => {
                             <p className="text-sm text-muted-foreground">Total Fees</p>
                             <p className="text-2xl font-bold">₹{feeData.totalFees.toLocaleString()}/-</p>
                           </div>
-                          <div className="text-right">
-                            <p className="text-sm text-muted-foreground">Pending Fees</p>
-                            <p className="text-2xl font-bold text-destructive">₹{feeData.pendingFees}/-</p>
+                          <div className="text-right space-y-2">
+                            <div>
+                              <p className="text-sm text-muted-foreground">Pending Fees</p>
+                              <p className="text-2xl font-bold text-destructive">₹{feeData.pendingFees}/-</p>
+                            </div>
+                            <div className="flex justify-end">
+                              <Button size="sm" onClick={() => openRazorpay(feeData.pendingFees)} disabled={feeData.pendingFees <= 0} className="bg-emerald-600 hover:bg-emerald-600/90">
+                                Pay Now
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </div>
