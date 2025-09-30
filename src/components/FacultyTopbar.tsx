@@ -70,9 +70,7 @@ const FacultyTopbar = () => {
             <div className="text-sm font-medium text-foreground">
               User ID : {facultyId}
             </div>
-            <div className="text-xs text-muted-foreground">
-              {facultyName}
-            </div>
+            <div className="text-xs text-muted-foreground">{facultyName}</div>
           </div>
 
           <DropdownMenu>

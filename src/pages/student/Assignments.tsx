@@ -8,7 +8,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar, Eye, Upload, AlertCircle } from "lucide-react";
 
-type AssignmentStatusVariant = "default" | "secondary" | "destructive" | "outline";
+type AssignmentStatusVariant =
+  | "default"
+  | "secondary"
+  | "destructive"
+  | "outline";
 
 type Assignment = {
   title: string;
@@ -66,10 +70,16 @@ const formatFileSize = (size: number) => {
   return `${value.toFixed(2)} ${units[exponent]}`;
 };
 
-const buildFileKey = (file: File) => `${file.name}-${file.size}-${file.lastModified}`;
+const buildFileKey = (file: File) =>
+  `${file.name}-${file.size}-${file.lastModified}`;
 
 const escapeHtml = (value: string) =>
-  value.replaceAll(/&/g, "&amp;").replaceAll(/</g, "&lt;").replaceAll(/>/g, "&gt;").replaceAll(/"/g, "&quot;").replaceAll(/'/g, "&#039;");
+  value
+    .replaceAll(/&/g, "&amp;")
+    .replaceAll(/</g, "&lt;")
+    .replaceAll(/>/g, "&gt;")
+    .replaceAll(/"/g, "&quot;")
+    .replaceAll(/'/g, "&#039;");
 
 const buildDetailsWindowContent = (
   assignmentTitle: string,
@@ -140,7 +150,8 @@ const buildDetailsWindowContent = (
 
 const StudentAssignments = () => {
   const { userData } = useAuth();
-  const [assignments, setAssignments] = useState<Assignment[]>(initialAssignments);
+  const [assignments, setAssignments] =
+    useState<Assignment[]>(initialAssignments);
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const { toast } = useToast();
 
@@ -152,7 +163,9 @@ const StudentAssignments = () => {
     assignmentIndex: number,
     event: ChangeEvent<HTMLInputElement>,
   ) => {
-    const selectedFiles = event.target.files ? Array.from(event.target.files) : [];
+    const selectedFiles = event.target.files
+      ? Array.from(event.target.files)
+      : [];
 
     if (!selectedFiles.length) {
       event.target.value = "";
@@ -214,7 +227,10 @@ const StudentAssignments = () => {
       url: URL.createObjectURL(file),
     }));
 
-    const htmlContent = buildDetailsWindowContent(assignment.title, fileEntries);
+    const htmlContent = buildDetailsWindowContent(
+      assignment.title,
+      fileEntries,
+    );
 
     detailsWindow.document.open();
     detailsWindow.document.write(htmlContent);
@@ -230,7 +246,9 @@ const StudentAssignments = () => {
 
         <main className="flex-1 p-6 space-y-6">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-foreground">My Assignments</h1>
+            <h1 className="text-2xl font-bold text-foreground">
+              My Assignments
+            </h1>
           </div>
 
           <div className="space-y-4">
@@ -267,7 +285,10 @@ const StudentAssignments = () => {
                         </div>
                         <div className="flex items-center space-x-1">
                           <AlertCircle className="w-4 h-4" />
-                          <Badge variant={assignment.statusColor} className="text-xs">
+                          <Badge
+                            variant={assignment.statusColor}
+                            className="text-xs"
+                          >
                             {assignment.status}
                           </Badge>
                         </div>
@@ -284,7 +305,9 @@ const StudentAssignments = () => {
                                 key={buildFileKey(file)}
                                 className="flex items-center justify-between rounded-md border border-border bg-muted/60 px-3 py-2 text-sm"
                               >
-                                <span className="truncate pr-4">{file.name}</span>
+                                <span className="truncate pr-4">
+                                  {file.name}
+                                </span>
                                 <span className="text-muted-foreground">
                                   {formatFileSize(file.size)}
                                 </span>
