@@ -202,7 +202,7 @@ const FacultySettings = () => {
 
             {/* Save Button */}
             <div className="flex justify-end">
-              <Button className="flex items-center space-x-2">
+              <Button className="flex items-center space-x-2 bg-red-600 text-white hover:bg-red-700">
                 <Save className="w-4 h-4" />
                 <span>Save Changes</span>
               </Button>
