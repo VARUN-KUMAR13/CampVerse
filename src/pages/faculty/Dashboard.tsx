@@ -1,13 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import FacultySidebar from "@/components/FacultySidebar";
+import FacultyTopbar from "@/components/FacultyTopbar";
 import {
   BookOpen,
   Users,
   FileText,
   Calendar,
-  Search,
   Clock,
   AlertTriangle,
 } from "lucide-react";
@@ -91,29 +90,7 @@ const FacultyDashboard = () => {
       <FacultySidebar />
 
       <div className="flex-1 flex flex-col">
-        {/* Top Bar */}
-        <header className="bg-background border-b border-border px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input placeholder="Search..." className="pl-10 w-64" />
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <div className="font-medium text-foreground">DSK001</div>
-                <div className="text-sm text-muted-foreground">
-                  Faculty ID: DSK001
-                </div>
-              </div>
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-medium">
-                DS
-              </div>
-            </div>
-          </div>
-        </header>
+        <FacultyTopbar />
 
         <main className="flex-1 p-6 space-y-6">
           {/* Welcome Section */}
