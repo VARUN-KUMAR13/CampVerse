@@ -68,6 +68,76 @@ const formatFileSize = (size: number) => {
 
 const buildFileKey = (file: File) => `${file.name}-${file.size}-${file.lastModified}`;
 
+const escapeHtml = (value: string) =>
+  value.replaceAll(/&/g, "&amp;").replaceAll(/</g, "&lt;").replaceAll(/>/g, "&gt;").replaceAll(/"/g, "&quot;").replaceAll(/'/g, "&#039;");
+
+const buildDetailsWindowContent = (
+  assignmentTitle: string,
+  files: { name: string; size: string; type: string; url: string }[],
+) => {
+  const listItems = files
+    .map(
+      (file, index) => `
+        <li class="file-item">
+          <div class="file-meta">
+            <span class="file-index">${index + 1}.</span>
+            <div class="file-info">
+              <span class="file-name">${escapeHtml(file.name)}</span>
+              <span class="file-type">${escapeHtml(file.type)}</span>
+            </div>
+          </div>
+          <div class="file-actions">
+            <span class="file-size">${escapeHtml(file.size)}</span>
+            <a class="file-link" href="${file.url}" target="_blank" rel="noopener noreferrer">Open</a>
+            <a class="file-link" href="${file.url}" download>Download</a>
+          </div>
+        </li>
+      `,
+    )
+    .join("");
+
+  const revokeScript = `const blobUrls = ${JSON.stringify(
+    files.map((file) => file.url),
+  )}; window.addEventListener('unload', () => { blobUrls.forEach((url) => URL.revokeObjectURL(url)); });`;
+
+  return `<!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>${escapeHtml(assignmentTitle)} – Uploaded Files</title>
+      <style>
+        :root { color-scheme: light dark; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        body { margin: 0; padding: 32px; background: #0f172a; color: #e2e8f0; }
+        main { max-width: 960px; margin: 0 auto; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(16px); border-radius: 16px; padding: 32px; box-shadow: 0 20px 60px rgba(15, 23, 42, 0.35); }
+        h1 { font-size: 28px; margin-bottom: 24px; }
+        p { margin-bottom: 16px; color: #94a3b8; }
+        ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 16px; }
+        .file-item { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; padding: 16px; border-radius: 12px; border: 1px solid rgba(148, 163, 184, 0.3); background: rgba(30, 41, 59, 0.7); }
+        .file-meta { display: flex; align-items: center; gap: 12px; min-width: 220px; }
+        .file-index { font-weight: 600; color: #38bdf8; }
+        .file-info { display: flex; flex-direction: column; gap: 4px; }
+        .file-name { font-weight: 600; word-break: break-word; }
+        .file-type { font-size: 14px; color: #94a3b8; }
+        .file-actions { display: flex; align-items: center; gap: 16px; }
+        .file-size { font-size: 14px; color: #94a3b8; }
+        .file-link { font-size: 14px; font-weight: 600; color: #38bdf8; text-decoration: none; padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.4); transition: background 0.2s, color 0.2s; }
+        .file-link:hover { background: rgba(56, 189, 248, 0.1); color: #38bdf8; }
+        @media (max-width: 600px) { .file-actions { flex-direction: column; align-items: flex-start; } }
+      </style>
+    </head>
+    <body>
+      <main>
+        <h1>Uploaded files for ${escapeHtml(assignmentTitle)}</h1>
+        <p>Click the links below to open or download each file in a separate tab.</p>
+        <ul>${listItems}</ul>
+      </main>
+      <script>${revokeScript}</script>
+    </body>
+  </html>`;
+};
+
 const StudentAssignments = () => {
   const { userData } = useAuth();
   const [assignments, setAssignments] = useState<Assignment[]>(initialAssignments);
@@ -112,6 +182,43 @@ const StudentAssignments = () => {
     });
 
     event.target.value = "";
+  };
+
+  const handleViewDetails = (assignmentIndex: number) => {
+    const assignment = assignments[assignmentIndex];
+
+    if (!assignment.uploadedFiles.length) {
+      toast({
+        title: "No files uploaded",
+        description: "Upload files before viewing details.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const detailsWindow = window.open("", "_blank", "noopener,noreferrer");
+
+    if (!detailsWindow) {
+      toast({
+        title: "Popup blocked",
+        description: "Allow popups to view uploaded files.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const fileEntries = assignment.uploadedFiles.map((file) => ({
+      name: file.name,
+      type: file.type || "Unknown type",
+      size: formatFileSize(file.size),
+      url: URL.createObjectURL(file),
+    }));
+
+    const htmlContent = buildDetailsWindowContent(assignment.title, fileEntries);
+
+    detailsWindow.document.open();
+    detailsWindow.document.write(htmlContent);
+    detailsWindow.document.close();
   };
 
   return (
@@ -207,7 +314,12 @@ const StudentAssignments = () => {
                         <Upload className="w-4 h-4 mr-2" />
                         Submit
                       </Button>
-                      <Button variant="outline" size="sm" className="justify-center">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="justify-center"
+                        onClick={() => handleViewDetails(index)}
+                      >
                         <Eye className="w-4 h-4 mr-2" />
                         View Details
                       </Button>
