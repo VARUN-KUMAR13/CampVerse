@@ -306,10 +306,9 @@ const StudentAssignments = () => {
                         onChange={(event) => handleFileSelection(index, event)}
                       />
                       <Button
-                        variant="outline"
                         size="sm"
                         onClick={() => handleSubmitClick(index)}
-                        className="justify-center"
+                        className="justify-center bg-red-600 text-white hover:bg-red-700"
                       >
                         <Upload className="w-4 h-4 mr-2" />
                         Submit
