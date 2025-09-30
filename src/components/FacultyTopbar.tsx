@@ -95,8 +95,7 @@ const FacultyTopbar = () => {
                 </div>
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate("/faculty/profile")}
-              >
+              <DropdownMenuItem onClick={() => navigate("/faculty/profile")}>
                 <User className="mr-2 h-4 w-4" />
                 <span>My Profile</span>
               </DropdownMenuItem>
