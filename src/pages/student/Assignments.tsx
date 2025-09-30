@@ -58,7 +58,10 @@ const formatFileSize = (size: number) => {
     return "0 B";
   }
   const units = ["B", "KB", "MB", "GB", "TB"];
-  const exponent = Math.floor(Math.log(size) / Math.log(1024));
+  const exponent = Math.min(
+    units.length - 1,
+    Math.floor(Math.log(size) / Math.log(1024)),
+  );
   const value = size / Math.pow(1024, exponent);
   return `${value.toFixed(2)} ${units[exponent]}`;
 };
