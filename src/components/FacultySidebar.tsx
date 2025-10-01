@@ -6,7 +6,6 @@ import {
   FileText,
   Star,
   Clock,
-  Settings,
   LogOut,
   GraduationCap,
 } from "lucide-react";
@@ -23,7 +22,7 @@ const FacultySidebar = () => {
     {
       icon: <LayoutDashboard className="w-5 h-5" />,
       label: "Dashboard",
-      path: "/",
+      path: "/faculty/dashboard",
     },
     {
       icon: <BookOpen className="w-5 h-5" />,
@@ -50,11 +49,6 @@ const FacultySidebar = () => {
       label: "Schedule",
       path: "/faculty/schedule",
     },
-    {
-      icon: <Settings className="w-5 h-5" />,
-      label: "Settings",
-      path: "/faculty/settings",
-    },
   ];
 
   const handleLogout = async () => {
@@ -67,9 +61,9 @@ const FacultySidebar = () => {
   };
 
   const isActiveRoute = (path: string) => {
-    if (path === "/") {
+    if (path === "/faculty/dashboard") {
       return (
-        location.pathname === "/" || location.pathname === "/faculty/dashboard"
+        location.pathname === "/faculty/dashboard" || location.pathname === "/"
       );
     }
     return location.pathname === path;
