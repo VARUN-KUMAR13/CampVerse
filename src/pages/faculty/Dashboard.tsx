@@ -2,13 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import FacultySidebar from "@/components/FacultySidebar";
 import FacultyTopbar from "@/components/FacultyTopbar";
-import {
-  BookOpen,
-  Users,
-  FileText,
-  Calendar,
-  Clock,
-} from "lucide-react";
+import { BookOpen, Users, FileText, Calendar, Clock } from "lucide-react";
 
 const FacultyDashboard = () => {
   const stats = [
