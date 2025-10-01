@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,6 @@ const FacultyTopbar = () => {
 
   const facultyId = userData?.collegeId || "FACULTY";
   const facultyEmail = userData?.email || `${facultyId}@cvr.ac.in`;
-  const facultyName = userData?.name || facultyId;
 
   const handleLogout = async () => {
     try {
@@ -70,7 +70,6 @@ const FacultyTopbar = () => {
             <div className="text-sm font-medium text-foreground">
               User ID : {facultyId}
             </div>
-            <div className="text-xs text-muted-foreground">{facultyName}</div>
           </div>
 
           <DropdownMenu>
