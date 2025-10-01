@@ -8,7 +8,6 @@ import {
   FileText,
   Calendar,
   Clock,
-  AlertTriangle,
 } from "lucide-react";
 
 const FacultyDashboard = () => {
