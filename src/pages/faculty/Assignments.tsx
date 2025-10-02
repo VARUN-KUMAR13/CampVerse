@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import FacultySidebar from "@/components/FacultySidebar";
+import FacultyTopbar from "@/components/FacultyTopbar";
 import { Search, Plus, Eye, Edit, Trash2 } from "lucide-react";
 
 const FacultyAssignments = () => {
