@@ -94,46 +94,31 @@ const FacultyGrades = () => {
       <FacultySidebar />
 
       <div className="flex-1 flex flex-col">
-        {/* Top Bar */}
-        <header className="bg-background border-b border-border px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  placeholder="Search students..."
-                  className="pl-10 w-64"
-                />
+        <FacultyTopbar />
+
+        <main className="flex-1 p-6 space-y-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-3 w-full lg:flex-row lg:items-center">
+              <div className="relative w-full lg:w-72">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input placeholder="Search students..." className="pl-10" />
               </div>
-              <Select>
-                <SelectTrigger className="w-48">
+              <Select defaultValue="cs101">
+                <SelectTrigger className="w-full lg:w-64">
                   <SelectValue placeholder="Select Course" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="cs101">CS101 - Intro to CS</SelectItem>
                   <SelectItem value="cs201">CS201 - Data Structures</SelectItem>
-                  <SelectItem value="cs301">
-                    CS301 - Database Systems
-                  </SelectItem>
+                  <SelectItem value="cs301">CS301 - Database Systems</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <div className="font-medium text-foreground">DSK001</div>
-                <div className="text-sm text-muted-foreground">
-                  Faculty ID: DSK001
-                </div>
-              </div>
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-medium">
-                DS
-              </div>
-            </div>
+            <Button variant="outline" className="w-full lg:w-auto">
+              Export Report
+            </Button>
           </div>
-        </header>
 
-        <main className="flex-1 p-6">
           <div className="space-y-6">
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
