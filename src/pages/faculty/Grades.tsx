@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import FacultySidebar from "@/components/FacultySidebar";
+import FacultyTopbar from "@/components/FacultyTopbar";
 import { Search, Eye, TrendingUp, Users, BookOpen, Star } from "lucide-react";
 
 const FacultyGrades = () => {
