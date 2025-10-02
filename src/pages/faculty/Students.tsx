@@ -3,7 +3,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import FacultySidebar from "@/components/FacultySidebar";
-import { Search, Eye } from "lucide-react";
+import FacultyTopbar from "@/components/FacultyTopbar";
+import { Search, Eye, Download } from "lucide-react";
 
 const FacultyStudents = () => {
   const students = [
