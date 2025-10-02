@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import FacultySidebar from "@/components/FacultySidebar";
+import FacultyTopbar from "@/components/FacultyTopbar";
 import { Clock, MapPin, Users, Calendar } from "lucide-react";
 
 const FacultySchedule = () => {
