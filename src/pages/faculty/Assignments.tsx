@@ -39,44 +39,23 @@ const FacultyAssignments = () => {
       <FacultySidebar />
 
       <div className="flex-1 flex flex-col">
-        {/* Top Bar */}
-        <header className="bg-background border-b border-border px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  placeholder="Search assignments..."
-                  className="pl-10 w-64"
-                />
-              </div>
-            </div>
+        <FacultyTopbar />
 
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <div className="font-medium text-foreground">
-                  D. Sujan Kumar
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Faculty ID: DSK001
-                </div>
-              </div>
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-medium">
-                DS
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <main className="flex-1 p-6">
-          <div className="flex items-center justify-between mb-6">
+        <main className="flex-1 p-6 space-y-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <h1 className="text-2xl font-bold text-foreground">
               Assignment Management
             </h1>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Create Assignment
-            </Button>
+            <div className="flex flex-col gap-3 w-full md:w-auto md:flex-row md:items-center">
+              <div className="relative w-full md:w-72">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input placeholder="Search assignments..." className="pl-10" />
+              </div>
+              <Button className="w-full md:w-auto">
+                <Plus className="w-4 h-4 mr-2" />
+                Create Assignment
+              </Button>
+            </div>
           </div>
 
           <Card>
