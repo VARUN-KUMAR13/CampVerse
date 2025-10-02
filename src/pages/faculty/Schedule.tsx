@@ -112,30 +112,21 @@ const FacultySchedule = () => {
       <FacultySidebar />
 
       <div className="flex-1 flex flex-col">
-        {/* Top Bar */}
-        <header className="bg-background border-b border-border px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-foreground">
-                My Schedule
-              </h1>
-            </div>
+        <FacultyTopbar />
 
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <div className="font-medium text-foreground">DSK001</div>
-                <div className="text-sm text-muted-foreground">
-                  Faculty ID: DSK001
-                </div>
-              </div>
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-medium">
-                DS
-              </div>
+        <main className="flex-1 p-6 space-y-6">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">My Schedule</h1>
+              <p className="text-sm text-muted-foreground">
+                Track daily sessions and weekly plan at a glance.
+              </p>
             </div>
+            <Button variant="outline" className="w-full md:w-auto">
+              Download Schedule
+            </Button>
           </div>
-        </header>
 
-        <main className="flex-1 p-6">
           <div className="space-y-6">
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
