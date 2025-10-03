@@ -281,6 +281,38 @@ const AdminDashboard = () => {
     setIsClubModalOpen(false);
   };
 
+  const handleExamSubmit = () => {
+    const scopes = [
+      "classes",
+      "groups",
+      "events",
+      "branches",
+      "individuals",
+    ] as const;
+
+    const targetedAudiences = scopes
+      .filter((scope) => examForm[`${scope}Enabled` as const])
+      .map((scope) => ({
+        scope,
+        values: examForm[scope] || "",
+      }))
+      .filter((entry) => entry.values.trim().length > 0);
+
+    console.log("Exam scheduled:", {
+      title: examForm.title,
+      course: examForm.course,
+      examType: examForm.examType,
+      date: examForm.date,
+      startTime: examForm.startTime,
+      endTime: examForm.endTime,
+      description: examForm.description,
+      audiences: targetedAudiences,
+    });
+
+    setExamForm(createEmptyExamForm());
+    setIsExamModalOpen(false);
+  };
+
   const handleNotificationSubmit = () => {
     console.log("Notification sent:", notificationForm);
     // API call to send notification
