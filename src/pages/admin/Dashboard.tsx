@@ -739,6 +739,100 @@ const AdminDashboard = () => {
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Event Name</label>
+                  <Input
+                    value={eventForm.name}
+                    onChange={(e) =>
+                      setEventForm((prev) => ({ ...prev, name: e.target.value }))
+                    }
+                    placeholder="e.g., Alumni Meetup"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Venue</label>
+                  <Input
+                    value={eventForm.venue}
+                    onChange={(e) =>
+                      setEventForm((prev) => ({ ...prev, venue: e.target.value }))
+                    }
+                    placeholder="e.g., Seminar Hall - 2"
+                  />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Date</label>
+                  <Input
+                    type="date"
+                    value={eventForm.date}
+                    onChange={(e) =>
+                      setEventForm((prev) => ({ ...prev, date: e.target.value }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Time</label>
+                  <Input
+                    type="time"
+                    value={eventForm.time}
+                    onChange={(e) =>
+                      setEventForm((prev) => ({ ...prev, time: e.target.value }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Entry Fee</label>
+                  <Input
+                    value={eventForm.entryFee}
+                    onChange={(e) =>
+                      setEventForm((prev) => ({ ...prev, entryFee: e.target.value }))
+                    }
+                    placeholder="Optional"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Event Description</label>
+                <Textarea
+                  value={eventForm.description}
+                  onChange={(e) =>
+                    setEventForm((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  placeholder="Share agenda, key speakers, and participation instructions."
+                  rows={4}
+                />
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg border border-border bg-muted/20 p-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    Notify all users
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Toggle off to limit visibility to specific groups later.
+                  </p>
+                </div>
+                <Switch
+                  checked={eventForm.notifyAll}
+                  onCheckedChange={(checked) =>
+                    setEventForm((prev) => ({ ...prev, notifyAll: checked }))
+                  }
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsEventModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleEventSubmit}>Create Event</Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
