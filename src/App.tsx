@@ -251,6 +251,14 @@ const AppContent = () => {
                 }
               />
               <Route
+                path="/faculty/profile"
+                element={
+                  <ProtectedRoute requiredRole="faculty">
+                    <FacultyProfile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/faculty/settings"
                 element={
                   <ProtectedRoute requiredRole="faculty">
