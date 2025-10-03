@@ -739,6 +739,216 @@ const AdminDashboard = () => {
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Exam Scheduling Modal */}
+        <Dialog open={isExamModalOpen} onOpenChange={setIsExamModalOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Schedule Upcoming Exam
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Exam Title</label>
+                  <Input
+                    value={examForm.title}
+                    onChange={(e) =>
+                      setExamForm((prev) => ({ ...prev, title: e.target.value }))
+                    }
+                    placeholder="e.g., Midterm Examination"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Course / Subject</label>
+                  <Input
+                    value={examForm.course}
+                    onChange={(e) =>
+                      setExamForm((prev) => ({ ...prev, course: e.target.value }))
+                    }
+                    placeholder="e.g., Data Structures (CS301)"
+                  />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Exam Type</label>
+                  <Select
+                    value={examForm.examType}
+                    onValueChange={(value) =>
+                      setExamForm((prev) => ({ ...prev, examType: value }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="midterm">Midterm</SelectItem>
+                      <SelectItem value="final">Final</SelectItem>
+                      <SelectItem value="quiz">Quiz</SelectItem>
+                      <SelectItem value="lab">Lab Evaluation</SelectItem>
+                      <SelectItem value="viva">Viva / Oral</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Exam Date</label>
+                  <Input
+                    type="date"
+                    value={examForm.date}
+                    onChange={(e) =>
+                      setExamForm((prev) => ({ ...prev, date: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-sm font-medium">Start</label>
+                    <Input
+                      type="time"
+                      value={examForm.startTime}
+                      onChange={(e) =>
+                        setExamForm((prev) => ({
+                          ...prev,
+                          startTime: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">End</label>
+                    <Input
+                      type="time"
+                      value={examForm.endTime}
+                      onChange={(e) =>
+                        setExamForm((prev) => ({
+                          ...prev,
+                          endTime: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Important Details</label>
+                <Textarea
+                  value={examForm.description}
+                  onChange={(e) =>
+                    setExamForm((prev) => ({ ...prev, description: e.target.value }))
+                  }
+                  placeholder="Outline syllabus coverage, exam rules, and permitted materials."
+                  rows={4}
+                />
+              </div>
+
+              <div className="space-y-4 rounded-lg border border-border bg-muted/20 p-4">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    Target dashboards
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Enable the audiences that should see this update on their dashboards, then
+                    list the specific classes, groups, events, branches, or individuals.
+                  </p>
+                </div>
+
+                {(
+                  [
+                    {
+                      key: "classes" as const,
+                      label: "Classes",
+                      placeholder: "e.g., CSE VII-A, IT VI-B",
+                    },
+                    {
+                      key: "groups" as const,
+                      label: "Groups",
+                      placeholder: "e.g., Robotics Club, GDSC Core",
+                    },
+                    {
+                      key: "events" as const,
+                      label: "Events",
+                      placeholder: "e.g., Hackathon Prep, NSS",
+                    },
+                    {
+                      key: "branches" as const,
+                      label: "Branches",
+                      placeholder: "e.g., CSE, ECE, ME",
+                    },
+                    {
+                      key: "individuals" as const,
+                      label: "Individuals",
+                      placeholder: "e.g., 22B81A0501, 22B81Z05F1",
+                    },
+                  ]
+                ).map(({ key, label, placeholder }) => (
+                  <div
+                    key={key}
+                    className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{label}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Separate multiple entries with commas.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3 md:w-1/2">
+                      <Switch
+                        checked={examForm[`${key}Enabled`]}
+                        onCheckedChange={(checked) =>
+                          setExamForm((prev) => ({
+                            ...prev,
+                            [`${key}Enabled`]: checked,
+                            [key]: checked ? prev[key] : "",
+                          }))
+                        }
+                      />
+                      <Input
+                        value={examForm[key]}
+                        onChange={(e) =>
+                          setExamForm((prev) => ({ ...prev, [key]: e.target.value }))
+                        }
+                        placeholder={placeholder}
+                        disabled={!examForm[`${key}Enabled`]}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setExamForm(createEmptyExamForm());
+                    setIsExamModalOpen(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleExamSubmit}>Publish Exam Update</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Event Creation Modal */}
+        <Dialog open={isEventModalOpen} onOpenChange={setIsEventModalOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CalendarDays className="w-5 h-5" />
+                Create Campus Event
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium">Event Name</label>
                 <Input
