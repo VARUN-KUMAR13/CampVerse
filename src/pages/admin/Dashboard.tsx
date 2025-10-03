@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -44,9 +45,30 @@ import {
 const AdminDashboard = () => {
   const { userData, logout } = useAuth();
 
+  const createEmptyExamForm = () => ({
+    title: "",
+    course: "",
+    examType: "",
+    date: "",
+    startTime: "",
+    endTime: "",
+    description: "",
+    classesEnabled: false,
+    classes: "",
+    groupsEnabled: false,
+    groups: "",
+    eventsEnabled: false,
+    events: "",
+    branchesEnabled: false,
+    branches: "",
+    individualsEnabled: false,
+    individuals: "",
+  });
+
   // Modal states
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [isExamModalOpen, setIsExamModalOpen] = useState(false);
   const [isClubModalOpen, setIsClubModalOpen] = useState(false);
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
 
@@ -79,6 +101,8 @@ const AdminDashboard = () => {
     members: "",
     followers: "",
   });
+
+  const [examForm, setExamForm] = useState(createEmptyExamForm);
 
   const [notificationForm, setNotificationForm] = useState({
     message: "",
