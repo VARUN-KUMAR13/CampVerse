@@ -54,7 +54,7 @@ const FacultyProfile = () => {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <CardTitle className="text-2xl">{facultyName}</CardTitle>
+                    <CardTitle className="text-2xl">{facultyId}</CardTitle>
                     <CardDescription className="text-base text-muted-foreground">
                       {department}
                     </CardDescription>
@@ -64,7 +64,6 @@ const FacultyProfile = () => {
                   <Badge variant="secondary" className="text-sm">
                     Faculty ID: {facultyId}
                   </Badge>
-                  <Badge className="text-sm">{section}</Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
