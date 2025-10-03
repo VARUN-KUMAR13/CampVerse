@@ -45,6 +45,7 @@ import FacultyStudents from "./pages/faculty/Students";
 import FacultyAssignments from "./pages/faculty/Assignments";
 import FacultyGrades from "./pages/faculty/Grades";
 import FacultySchedule from "./pages/faculty/Schedule";
+import FacultyProfile from "./pages/faculty/Profile";
 import FacultySettings from "./pages/faculty/Settings";
 
 // Admin Dashboard Pages
