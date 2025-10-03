@@ -221,6 +221,13 @@ const AdminDashboard = () => {
       action: () => setIsEventModalOpen(true),
     },
     {
+      title: "Post Upcoming Exam",
+      description: "Update dashboards for targeted cohorts",
+      icon: <Calendar className="w-5 h-5" />,
+      color: "bg-amber-600",
+      action: () => setIsExamModalOpen(true),
+    },
+    {
       title: "Add Club",
       description: "Register new club",
       icon: <UsersRound className="w-5 h-5" />,
@@ -475,7 +482,7 @@ const AdminDashboard = () => {
                 Content Hub
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Manage placements, events, clubs, and notifications
+                Manage placements, exams, events, clubs, and notifications
               </p>
             </CardHeader>
             <CardContent>
