@@ -102,7 +102,7 @@ const FacultyStudents = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Student Management</CardTitle>
+              <CardTitle>Student Attendence</CardTitle>
             </CardHeader>
             <CardContent>
               {/* Students Table */}
