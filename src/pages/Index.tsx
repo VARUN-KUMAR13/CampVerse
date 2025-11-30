@@ -274,37 +274,12 @@ const Index = () => {
             </div>
             <div className="relative">
               <div className="relative h-[500px] flex items-center justify-center">
-                <div className="relative">
-                  <div className="w-48 h-64 bg-gradient-to-b from-yellow-400 to-yellow-500 rounded-t-full relative">
-                    <div className="w-32 h-32 bg-gradient-to-b from-yellow-300 to-yellow-400 rounded-full mx-auto"></div>
-                    <div className="w-40 h-40 bg-gradient-to-b from-yellow-400 to-yellow-500 rounded-lg mx-auto -mt-8"></div>
-                    <div className="absolute top-16 -left-6 w-8 h-20 bg-yellow-400 rounded-full transform -rotate-12"></div>
-                    <div className="absolute top-16 -right-6 w-8 h-20 bg-yellow-400 rounded-full transform rotate-12"></div>
-                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 flex space-x-4">
-                      <div className="w-6 h-16 bg-yellow-500 rounded-full"></div>
-                      <div className="w-6 h-16 bg-yellow-500 rounded-full"></div>
-                    </div>
-                  </div>
-                  {/* Floating icons around character */}
-                  <div className="absolute top-8 right-8 w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                    <div className="w-6 h-6 bg-white rounded"></div>
-                  </div>
-                  <div className="absolute top-20 left-8 w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center">
-                    <div className="w-4 h-4 bg-white rounded-full"></div>
-                  </div>
-                  <div className="absolute bottom-20 right-12 w-8 h-8 bg-green-500 rounded-full"></div>
-                  <div className="absolute bottom-32 left-12 w-10 h-10 bg-pink-500 rounded-full flex items-center justify-center">
-                    <div className="w-4 h-4 bg-white rounded"></div>
-                  </div>
-                  <div className="absolute top-1/2 right-2 w-6 h-6 bg-orange-500 rounded-full"></div>
-                  <div className="absolute bottom-8 right-8 w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center">
-                    <div className="w-6 h-6 bg-white rounded"></div>
-                  </div>
-                  <div className="absolute top-1/3 left-4 w-8 h-8 bg-teal-500 rounded-full"></div>
-                  <div className="absolute bottom-1/3 left-0 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
-                    <div className="w-4 h-4 bg-white rounded"></div>
-                  </div>
-                </div>
+                <dotlottie-wc
+                  src="https://lottie.host/5ffa9688-0352-4259-adee-c7cac3ab3ed0/6DRH1BuIPM.lottie"
+                  style={{ width: "300px", height: "300px" }}
+                  autoplay
+                  loop
+                ></dotlottie-wc>
               </div>
             </div>
           </div>
