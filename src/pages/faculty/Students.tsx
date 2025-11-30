@@ -2,11 +2,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import FacultySidebar from "@/components/FacultySidebar";
 import FacultyTopbar from "@/components/FacultyTopbar";
 import { Search, Eye, Download } from "lucide-react";
+import { useState } from "react";
 
 const FacultyStudents = () => {
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   const students = [
     {
       id: "23BB1A3201",
@@ -58,6 +68,18 @@ const FacultyStudents = () => {
       avatar: "MR",
     },
   ];
+
+  const handleViewDetails = (student) => {
+    setSelectedStudent(student);
+    setIsDialogOpen(true);
+  };
+
+  const handleAttendanceStatus = (status) => {
+    if (selectedStudent) {
+      console.log(`Attendance for ${selectedStudent.name}: ${status}`);
+    }
+    setIsDialogOpen(false);
+  };
 
   return (
     <div className="flex min-h-screen bg-background">
