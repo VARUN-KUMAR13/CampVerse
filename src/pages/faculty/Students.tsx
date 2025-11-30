@@ -149,6 +149,47 @@ const FacultyStudents = () => {
           </Card>
         </main>
       </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Mark Attendance</DialogTitle>
+          </DialogHeader>
+          {selectedStudent && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Student: <span className="font-medium">{selectedStudent.name}</span>
+              </p>
+              <p className="text-sm text-muted-foreground">
+                ID: <span className="font-medium">{selectedStudent.id}</span>
+              </p>
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Select attendance status:</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <Button
+                    onClick={() => handleAttendanceStatus("Attended")}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    Attended
+                  </Button>
+                  <Button
+                    onClick={() => handleAttendanceStatus("Not Attended")}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    Not Attended
+                  </Button>
+                  <Button
+                    onClick={() => handleAttendanceStatus("Other")}
+                    className="bg-gray-600 hover:bg-gray-700 text-white"
+                  >
+                    Other
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
