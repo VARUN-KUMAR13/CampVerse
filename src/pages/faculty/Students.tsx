@@ -133,7 +133,11 @@ const FacultyStudents = () => {
                     </div>
                     <div className="flex items-center justify-between">
                       <Badge variant="outline">{student.section}</Badge>
-                      <Button variant="ghost" size="sm">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleViewDetails(student)}
+                      >
                         <Eye className="w-4 h-4 mr-2" />
                         View Details
                       </Button>
