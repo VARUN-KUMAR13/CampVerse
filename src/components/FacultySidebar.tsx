@@ -31,7 +31,7 @@ const FacultySidebar = () => {
     },
     {
       icon: <Users className="w-5 h-5" />,
-      label: "Students",
+      label: "Attendence",
       path: "/faculty/students",
     },
     {
