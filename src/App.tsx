@@ -87,239 +87,239 @@ const AppContent = () => {
     <BrowserRouter>
       <AIChatbot />
       <Routes>
-              {/* Dynamic Homepage - shows landing page or dashboard based on auth */}
-              <Route path="/" element={<DynamicHomepage />} />
+        {/* Dynamic Homepage - shows landing page or dashboard based on auth */}
+        <Route path="/" element={<DynamicHomepage />} />
 
-              {/* Public Routes with Navigation */}
-              <Route
-                path="/features"
-                element={
-                  <>
-                    <Navigation />
-                    <Features />
-                  </>
-                }
-              />
-              <Route
-                path="/about"
-                element={
-                  <>
-                    <Navigation />
-                    <About />
-                  </>
-                }
-              />
-              <Route
-                path="/faq"
-                element={
-                  <>
-                    <Navigation />
-                    <FAQ />
-                  </>
-                }
-              />
-              <Route
-                path="/contact"
-                element={
-                  <>
-                    <Navigation />
-                    <Contact />
-                  </>
-                }
-              />
+        {/* Public Routes with Navigation */}
+        <Route
+          path="/features"
+          element={
+            <>
+              <Navigation />
+              <Features />
+            </>
+          }
+        />
+        <Route
+          path="/about"
+          element={
+            <>
+              <Navigation />
+              <About />
+            </>
+          }
+        />
+        <Route
+          path="/faq"
+          element={
+            <>
+              <Navigation />
+              <FAQ />
+            </>
+          }
+        />
+        <Route
+          path="/contact"
+          element={
+            <>
+              <Navigation />
+              <Contact />
+            </>
+          }
+        />
 
-              {/* Login Route (no navigation) */}
-              <Route path="/login" element={<Login />} />
+        {/* Login Route (no navigation) */}
+        <Route path="/login" element={<Login />} />
 
-              {/* Student Dashboard Routes (protected, no navigation) */}
-              <Route
-                path="/student/courses"
-                element={
-                  <ProtectedRoute requiredRole="student">
-                    <StudentCourses />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/student/schedule"
-                element={
-                  <ProtectedRoute requiredRole="student">
-                    <StudentSchedule />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/student/results"
-                element={
-                  <ProtectedRoute requiredRole="student">
-                    <StudentResults />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/student/attendance"
-                element={
-                  <ProtectedRoute requiredRole="student">
-                    <StudentAttendance />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/student/assignments"
-                element={
-                  <ProtectedRoute requiredRole="student">
-                    <StudentAssignments />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/student/exams"
-                element={
-                  <ProtectedRoute requiredRole="student">
-                    <StudentExams />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/student/placement"
-                element={
-                  <ProtectedRoute requiredRole="student">
-                    <StudentPlacement />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/student/events"
-                element={
-                  <ProtectedRoute requiredRole="student">
-                    <StudentEvents />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/student/clubs"
-                element={
-                  <ProtectedRoute requiredRole="student">
-                    <StudentClubs />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/student/profile"
-                element={
-                  <ProtectedRoute requiredRole="student">
-                    <StudentProfile />
-                  </ProtectedRoute>
-                }
-              />
-            <Route
-              path="/student/settings"
-              element={
-                <ProtectedRoute requiredRole="student">
-                  <StudentSettings />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/student/fees"
-              element={
-                <ProtectedRoute requiredRole="student">
-                  <StudentFees />
-                </ProtectedRoute>
-              }
-            />
+        {/* Student Dashboard Routes (protected, no navigation) */}
+        <Route
+          path="/student/courses"
+          element={
+            <ProtectedRoute requiredRole="student">
+              <StudentCourses />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/schedule"
+          element={
+            <ProtectedRoute requiredRole="student">
+              <StudentSchedule />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/results"
+          element={
+            <ProtectedRoute requiredRole="student">
+              <StudentResults />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/attendance"
+          element={
+            <ProtectedRoute requiredRole="student">
+              <StudentAttendance />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/assignments"
+          element={
+            <ProtectedRoute requiredRole="student">
+              <StudentAssignments />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/exams"
+          element={
+            <ProtectedRoute requiredRole="student">
+              <StudentExams />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/placement"
+          element={
+            <ProtectedRoute requiredRole="student">
+              <StudentPlacement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/events"
+          element={
+            <ProtectedRoute requiredRole="student">
+              <StudentEvents />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/clubs"
+          element={
+            <ProtectedRoute requiredRole="student">
+              <StudentClubs />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/profile"
+          element={
+            <ProtectedRoute requiredRole="student">
+              <StudentProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/settings"
+          element={
+            <ProtectedRoute requiredRole="student">
+              <StudentSettings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/fees"
+          element={
+            <ProtectedRoute requiredRole="student">
+              <StudentFees />
+            </ProtectedRoute>
+          }
+        />
 
-              {/* Faculty Dashboard Routes (protected, no navigation) */}
-              <Route
-                path="/faculty/courses"
-                element={
-                  <ProtectedRoute requiredRole="faculty">
-                    <FacultyCourses />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/faculty/students"
-                element={
-                  <ProtectedRoute requiredRole="faculty">
-                    <FacultyStudents />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/faculty/assignments"
-                element={
-                  <ProtectedRoute requiredRole="faculty">
-                    <FacultyAssignments />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/faculty/grades"
-                element={
-                  <ProtectedRoute requiredRole="faculty">
-                    <FacultyGrades />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/faculty/schedule"
-                element={
-                  <ProtectedRoute requiredRole="faculty">
-                    <FacultySchedule />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/faculty/profile"
-                element={
-                  <ProtectedRoute requiredRole="faculty">
-                    <FacultyProfile />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/faculty/settings"
-                element={
-                  <ProtectedRoute requiredRole="faculty">
-                    <FacultySettings />
-                  </ProtectedRoute>
-                }
-              />
+        {/* Faculty Dashboard Routes (protected, no navigation) */}
+        <Route
+          path="/faculty/courses"
+          element={
+            <ProtectedRoute requiredRole="faculty">
+              <FacultyCourses />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/faculty/students"
+          element={
+            <ProtectedRoute requiredRole="faculty">
+              <FacultyStudents />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/faculty/assignments"
+          element={
+            <ProtectedRoute requiredRole="faculty">
+              <FacultyAssignments />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/faculty/grades"
+          element={
+            <ProtectedRoute requiredRole="faculty">
+              <FacultyGrades />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/faculty/schedule"
+          element={
+            <ProtectedRoute requiredRole="faculty">
+              <FacultySchedule />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/faculty/profile"
+          element={
+            <ProtectedRoute requiredRole="faculty">
+              <FacultyProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/faculty/settings"
+          element={
+            <ProtectedRoute requiredRole="faculty">
+              <FacultySettings />
+            </ProtectedRoute>
+          }
+        />
 
-              {/* Admin Dashboard Routes (protected, no navigation) */}
-              <Route
-                path="/admin/dashboard"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/student-data-management"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <StudentDataManagement />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/placement"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminPlacement />
-                  </ProtectedRoute>
-                }
-              />
+        {/* Admin Dashboard Routes (protected, no navigation) */}
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/student-data-management"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <StudentDataManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/placement"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminPlacement />
+            </ProtectedRoute>
+          }
+        />
 
-              {/* Legacy Dashboard Routes - Redirect to Homepage */}
-              <Route path="/student/dashboard" element={<DynamicHomepage />} />
-              <Route path="/faculty/dashboard" element={<DynamicHomepage />} />
+        {/* Legacy Dashboard Routes - Redirect to Homepage */}
+        <Route path="/student/dashboard" element={<DynamicHomepage />} />
+        <Route path="/faculty/dashboard" element={<DynamicHomepage />} />
 
-              {/* Catch-all route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+        {/* Catch-all route */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
     </BrowserRouter>
   );
 };
