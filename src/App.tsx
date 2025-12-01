@@ -60,6 +60,19 @@ const queryClient = new QueryClient();
 const AppContent = () => {
   const { loading } = useAuth();
 
+  useEffect(() => {
+    // Load DotLottie web component script globally (only once)
+    if (!window.__dotlottieLoaded) {
+      const script = document.createElement("script");
+      script.src =
+        "https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.5/dist/dotlottie-wc.js";
+      script.type = "module";
+      script.async = true;
+      document.head.appendChild(script);
+      window.__dotlottieLoaded = true;
+    }
+  }, []);
+
   if (loading) {
     return <LoadingPage message="Initializing CampVerse..." />;
   }
