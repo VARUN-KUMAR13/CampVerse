@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 
 declare global {
   namespace JSX {
@@ -18,22 +18,6 @@ declare global {
 
 const DeskIllustration = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    // Load DotLottie web component script
-    const script = document.createElement("script");
-    script.type = "module";
-    script.src = "https://unpkg.com/@lottiefiles/dotlottie-wc@0.6.2/dist/dotlottie-wc.js";
-
-    document.head.appendChild(script);
-
-    return () => {
-      // Cleanup script when component unmounts
-      if (document.head.contains(script)) {
-        document.head.removeChild(script);
-      }
-    };
-  }, []);
 
   return (
     <div
