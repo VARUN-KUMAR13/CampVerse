@@ -267,7 +267,7 @@ const Index = () => {
               <div className="relative h-[500px] flex items-center justify-center w-full">
                 <dotlottie-wc
                   src="https://lottie.host/5ffa9688-0352-4259-adee-c7cac3ab3ed0/6DRH1BuIPM.lottie"
-                  style={{ width: "100%", height: "100%", maxWidth: "600px", maxHeight: "500px" }}
+                  style={{ width: "100%", height: "100%", maxWidth: "700px", maxHeight: "600px" }}
                   autoplay
                   loop
                 ></dotlottie-wc>
