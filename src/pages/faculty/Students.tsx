@@ -1,84 +1,94 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import FacultySidebar from "@/components/FacultySidebar";
 import FacultyTopbar from "@/components/FacultyTopbar";
-import { Search, Eye, Download } from "lucide-react";
+import { CheckCircle2, XCircle, Clock } from "lucide-react";
 import { useState } from "react";
 
 const FacultyStudents = () => {
-  const [selectedStudent, setSelectedStudent] = useState(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState("Algorithms");
+  const [selectedSection, setSelectedSection] = useState("A");
+  const [isAttendanceMode, setIsAttendanceMode] = useState(false);
+
+  const [studentAttendance, setStudentAttendance] = useState({
+    "23BB1A3201": { status: "attended", lastUpdated: "4:51:55 PM" },
+    "23BB1A3202": { status: "attended", lastUpdated: "4:51:56 PM" },
+    "23BB1A3203": { status: null, lastUpdated: "Not marked" },
+    "23BB1A3204": { status: null, lastUpdated: "Not marked" },
+    "23BB1A3205": { status: null, lastUpdated: "Not marked" },
+    "23BB1A3206": { status: null, lastUpdated: "Not marked" },
+    "23BB1A3207": { status: null, lastUpdated: "Not marked" },
+  });
 
   const students = [
-    {
-      id: "23BB1A3201",
-      name: "INAPANURI ABHIJITH",
-      course: "CSBS",
-      section: "A",
-      avatar: "IA",
-    },
-    {
-      id: "23BB1A3202",
-      name: "SANDRI AKSHAINI",
-      course: "CSBS",
-      section: "A",
-      avatar: "SA",
-    },
-    {
-      id: "23BB1A3203",
-      name: "MUSKU AKSHAY",
-      course: "CSBS",
-      section: "A",
-      avatar: "MA",
-    },
-    {
-      id: "23BB1A3204",
-      name: "REVARTHI ANAND",
-      course: "CSBS",
-      section: "A",
-      avatar: "RA",
-    },
-    {
-      id: "23BB1A3205",
-      name: "ARJUN",
-      course: "CSBS",
-      section: "A",
-      avatar: "AR",
-    },
-    {
-      id: "23BB1A3206",
-      name: "KOMMU ASHWINI",
-      course: "CSBS",
-      section: "A",
-      avatar: "KA",
-    },
-    {
-      id: "23BB1A3207",
-      name: "MALE BALA KRISHNA REDDY",
-      course: "CSBS",
-      section: "A",
-      avatar: "MR",
-    },
+    { id: "23BB1A3201", name: "INAPANURI ABHIJITH" },
+    { id: "23BB1A3202", name: "SANDRI AKSHAINI" },
+    { id: "23BB1A3203", name: "MUSKU AKSHAY" },
+    { id: "23BB1A3204", name: "REVARTHI ANAND" },
+    { id: "23BB1A3205", name: "ARJUN" },
+    { id: "23BB1A3206", name: "KOMMU ASHWINI" },
+    { id: "23BB1A3207", name: "MALE BALA KRISHNA REDDY" },
   ];
 
-  const handleViewDetails = (student) => {
-    setSelectedStudent(student);
-    setIsDialogOpen(true);
+  const handleAttendanceStatus = (studentId, status) => {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    });
+
+    setStudentAttendance((prev) => ({
+      ...prev,
+      [studentId]: {
+        status: status === studentAttendance[studentId]?.status ? null : status,
+        lastUpdated:
+          status === studentAttendance[studentId]?.status ? "Not marked" : timeString,
+      },
+    }));
   };
 
-  const handleAttendanceStatus = (status) => {
-    if (selectedStudent) {
-      console.log(`Attendance for ${selectedStudent.name}: ${status}`);
+  const getStatusIcon = (studentId) => {
+    const attendance = studentAttendance[studentId];
+    if (!attendance || !attendance.status) {
+      return (
+        <button
+          onClick={() => handleAttendanceStatus(studentId, "not-attended")}
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <Clock className="w-5 h-5 text-gray-400" />
+        </button>
+      );
     }
-    setIsDialogOpen(false);
+
+    if (attendance.status === "attended") {
+      return (
+        <button
+          onClick={() => handleAttendanceStatus(studentId, "attended")}
+          className="p-2 hover:bg-green-50 rounded-lg transition-colors"
+        >
+          <CheckCircle2 className="w-5 h-5 text-green-500" />
+        </button>
+      );
+    }
+
+    return (
+      <button
+        onClick={() => handleAttendanceStatus(studentId, "not-attended")}
+        className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+      >
+        <XCircle className="w-5 h-5 text-red-500" />
+      </button>
+    );
   };
 
   return (
