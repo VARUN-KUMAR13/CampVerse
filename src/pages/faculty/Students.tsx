@@ -99,58 +99,99 @@ const FacultyStudents = () => {
         <FacultyTopbar />
 
         <main className="flex-1 p-6 space-y-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="relative w-full md:w-80">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input placeholder="Search students..." className="pl-10" />
-            </div>
-            <Button variant="outline" className="w-full md:w-auto">
-              <Download className="w-4 h-4 mr-2" />
-              Export List
-            </Button>
-          </div>
-
           <Card>
             <CardHeader>
               <CardTitle>Student Attendence</CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Students Table */}
-              <div className="space-y-4">
-                <div className="grid grid-cols-4 gap-4 py-2 border-b text-sm font-medium text-muted-foreground">
-                  <div>Student</div>
-                  <div>ID</div>
-                  <div>Course</div>
-                  <div>Section</div>
+              {/* Filters and Attendance Button */}
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+                <div className="flex gap-4 flex-1">
+                  <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+                    <SelectTrigger className="w-full md:w-64">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Algorithms">Algorithms</SelectItem>
+                      <SelectItem value="CSBS">CSBS</SelectItem>
+                      <SelectItem value="DSA">Data Structures</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={selectedSection} onValueChange={setSelectedSection}>
+                    <SelectTrigger className="w-full md:w-48">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="A">Section A</SelectItem>
+                      <SelectItem value="B">Section B</SelectItem>
+                      <SelectItem value="C">Section C</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                {students.map((student, index) => (
+                <Button
+                  onClick={() => setIsAttendanceMode(!isAttendanceMode)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white md:w-auto"
+                >
+                  Take Attendance
+                </Button>
+              </div>
+
+              {/* Attendance Table */}
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-8 py-3 border-b text-sm font-medium text-muted-foreground">
+                  <div>Roll Number</div>
+                  <div>Status</div>
+                  <div>Last Updated</div>
+                </div>
+
+                {students.map((student) => (
                   <div
-                    key={index}
-                    className="grid grid-cols-4 gap-4 py-3 items-center hover:bg-muted/30 rounded-lg transition-colors"
+                    key={student.id}
+                    className="grid grid-cols-3 gap-8 py-3 items-center hover:bg-muted/30 rounded-lg transition-colors"
                   >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-medium">
-                        {student.avatar}
-                      </div>
-                      <span className="font-medium text-foreground">
-                        {student.name}
-                      </span>
-                    </div>
-                    <div className="text-muted-foreground">{student.id}</div>
-                    <div className="text-muted-foreground">
-                      {student.course}
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Badge variant="outline">{student.section}</Badge>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleViewDetails(student)}
+                    <div className="text-foreground font-medium">{student.id}</div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleAttendanceStatus(student.id, "attended")}
+                        className="p-2 hover:bg-green-50 rounded-lg transition-colors"
                       >
-                        <Eye className="w-4 h-4 mr-2" />
-                        View Details
-                      </Button>
+                        <CheckCircle2
+                          className={`w-5 h-5 ${
+                            studentAttendance[student.id]?.status === "attended"
+                              ? "text-green-500"
+                              : "text-gray-300"
+                          }`}
+                        />
+                      </button>
+                      <button
+                        onClick={() => handleAttendanceStatus(student.id, "not-attended")}
+                        className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <XCircle
+                          className={`w-5 h-5 ${
+                            studentAttendance[student.id]?.status === "not-attended"
+                              ? "text-red-500"
+                              : "text-gray-300"
+                          }`}
+                        />
+                      </button>
+                      <button
+                        onClick={() => handleAttendanceStatus(student.id, null)}
+                        className="p-2 hover:bg-gray-50 rounded-lg transition-colors"
+                      >
+                        <Clock
+                          className={`w-5 h-5 ${
+                            studentAttendance[student.id]?.status === null
+                              ? "text-gray-400"
+                              : "text-gray-300"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                    <div className="text-muted-foreground text-sm">
+                      {studentAttendance[student.id]?.lastUpdated || "Not marked"}
                     </div>
                   </div>
                 ))}
@@ -159,47 +200,6 @@ const FacultyStudents = () => {
           </Card>
         </main>
       </div>
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Mark Attendance</DialogTitle>
-          </DialogHeader>
-          {selectedStudent && (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Student: <span className="font-medium">{selectedStudent.name}</span>
-              </p>
-              <p className="text-sm text-muted-foreground">
-                ID: <span className="font-medium">{selectedStudent.id}</span>
-              </p>
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Select attendance status:</p>
-                <div className="grid grid-cols-3 gap-2">
-                  <Button
-                    onClick={() => handleAttendanceStatus("Attended")}
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    Attended
-                  </Button>
-                  <Button
-                    onClick={() => handleAttendanceStatus("Not Attended")}
-                    className="bg-red-600 hover:bg-red-700 text-white"
-                  >
-                    Not Attended
-                  </Button>
-                  <Button
-                    onClick={() => handleAttendanceStatus("Other")}
-                    className="bg-gray-600 hover:bg-gray-700 text-white"
-                  >
-                    Other
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
