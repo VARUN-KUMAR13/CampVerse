@@ -13,18 +13,18 @@
   email: String,
   phone: String,
   role: Enum('student', 'faculty', 'admin'),
-  
+
   // Student-specific fields
   year: Number,                   // 1, 2, 3, 4
   section: String,                // A, B, C
   branch: String,                 // CSE, ECE, Mechanical, etc.
   rollNumber: String,
-  
+
   // Faculty-specific fields
   department: String,
   designation: String,            // Professor, Assistant Professor, etc.
   courses: [ObjectId],            // References to courses taught
-  
+
   // Common fields
   avatar: String,                 // Profile picture URL
   isActive: Boolean,
@@ -44,24 +44,24 @@
   description: String,
   credits: Number,
   department: String,
-  
+
   faculty: {
     _id: ObjectId,                // Faculty ID
     name: String,
   },
-  
+
   schedule: [{
     day: Enum('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'),
     startTime: String,            // HH:MM format
     endTime: String,
     room: String,
   }],
-  
+
   enrolledStudents: [ObjectId],   // Student IDs
   sections: [String],             // A, B, C sections this course has
   semester: Number,               // 1-8
   academicYear: String,           // 2024-2025
-  
+
   createdAt: Date,
   updatedAt: Date,
 }
@@ -75,7 +75,7 @@
   courseId: ObjectId,             // Reference to course
   sectionId: String,              // Section A, B, C
   date: Date,                     // Attendance date
-  
+
   attendanceRecords: [{
     studentId: ObjectId,
     rollNumber: String,           // Denormalized for quick access
@@ -86,7 +86,7 @@
     lastModified: Date,           // For audit trail
     modifiedBy: [ObjectId],       // List of who modified it
   }],
-  
+
   markedBy: ObjectId,             // Faculty who marked attendance
   createdAt: Date,
   updatedAt: Date,
@@ -94,6 +94,7 @@
 ```
 
 **Indexes for Performance**:
+
 ```javascript
 db.attendance.createIndex({ courseId: 1, date: 1 });
 db.attendance.createIndex({ "attendanceRecords.studentId": 1, date: 1 });
@@ -108,7 +109,7 @@ db.attendance.createIndex({ markedBy: 1, createdAt: -1 });
   title: String,
   subject: String,
   courseId: ObjectId,
-  
+
   schedule: {
     date: Date,
     startTime: String,            // HH:MM
@@ -116,21 +117,21 @@ db.attendance.createIndex({ markedBy: 1, createdAt: -1 });
     duration: Number,             // In minutes
     room: String,
   },
-  
+
   // Granular targeting
   targetGroups: [{
     type: Enum('class', 'section', 'branch', 'year', 'individual'),
     value: String,                // e.g., "CSE", "Section A", "23BB1A3201"
   }],
-  
+
   eligibleStudents: [ObjectId],   // Pre-calculated for quick access
   maxMarks: Number,
   description: String,
   instructions: String,
-  
+
   createdBy: ObjectId,            // Admin/Faculty who created
   status: Enum('draft', 'published', 'completed', 'cancelled'),
-  
+
   createdAt: Date,
   updatedAt: Date,
 }
@@ -144,29 +145,29 @@ db.attendance.createIndex({ markedBy: 1, createdAt: -1 });
   title: String,
   description: String,
   courseId: ObjectId,
-  
+
   deadline: Date,
   totalMarks: Number,
   attachments: [String],          // URLs to files
-  
+
   targetGroups: [{
     type: Enum('section', 'year', 'branch', 'individual'),
     value: String,
   }],
-  
+
   submissions: [{
     studentId: ObjectId,
     submittedAt: Date,
     files: [String],              // Submission file URLs
     text: String,                 // Optional text submission
     status: Enum('submitted', 'late', 'missing', 'graded'),
-    
+
     grade: Number,
     feedback: String,
     gradedAt: Date,
     gradedBy: ObjectId,           // Faculty ID
   }],
-  
+
   createdBy: ObjectId,            // Faculty ID
   createdAt: Date,
   updatedAt: Date,
@@ -187,16 +188,16 @@ db.attendance.createIndex({ markedBy: 1, createdAt: -1 });
     examId: ObjectId,
     // ... context-specific data
   },
-  
+
   isRead: Boolean,
   readAt: Date,
-  
+
   channels: {
     inApp: Boolean,
     email: Boolean,
     sms: Boolean,
   },
-  
+
   createdAt: Date,
   expiresAt: Date,                // Auto-delete old notifications
 }
@@ -445,21 +446,21 @@ Response:
 ```javascript
 const permissions = {
   student: {
-    'attendance:read': true,      // Can view own attendance
-    'course:read': true,          // Can view enrolled courses
-    'assignment:submit': true,
-    'exam:read': true,
+    "attendance:read": true, // Can view own attendance
+    "course:read": true, // Can view enrolled courses
+    "assignment:submit": true,
+    "exam:read": true,
   },
   faculty: {
-    'attendance:write': true,     // Can mark attendance
-    'grade:write': true,
-    'assignment:create': true,
-    'course:manage': true,
-    'assignment:grade': true,
+    "attendance:write": true, // Can mark attendance
+    "grade:write": true,
+    "assignment:create": true,
+    "course:manage": true,
+    "assignment:grade": true,
   },
   admin: {
-    '*': true,                    // Full access
-  }
+    "*": true, // Full access
+  },
 };
 ```
 
@@ -468,27 +469,27 @@ const permissions = {
 ```javascript
 // Auth middleware
 app.use((req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'No token' });
-  
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "No token" });
+
   try {
     req.user = jwt.verify(token, process.env.JWT_SECRET);
     next();
   } catch (error) {
-    return res.status(403).json({ error: 'Invalid token' });
+    return res.status(403).json({ error: "Invalid token" });
   }
 });
 
 // Role check middleware
 const requireRole = (roles) => (req, res, next) => {
   if (!roles.includes(req.user.role)) {
-    return res.status(403).json({ error: 'Insufficient permissions' });
+    return res.status(403).json({ error: "Insufficient permissions" });
   }
   next();
 };
 
 // Usage
-app.post('/api/attendance/mark', requireRole(['faculty']), markAttendance);
+app.post("/api/attendance/mark", requireRole(["faculty"]), markAttendance);
 ```
 
 ---
@@ -499,10 +500,10 @@ app.post('/api/attendance/mark', requireRole(['faculty']), markAttendance);
 
 ```javascript
 // Client side
-const socket = io('https://api.campverse.com', {
+const socket = io("https://api.campverse.com", {
   auth: {
-    token: localStorage.getItem('auth_token')
-  }
+    token: localStorage.getItem("auth_token"),
+  },
 });
 
 // Server side
@@ -513,10 +514,10 @@ io.use((socket, next) => {
 });
 
 // Join rooms by role/course
-socket.on('connect', () => {
+socket.on("connect", () => {
   socket.join(`user:${socket.user.userId}`);
   socket.join(`role:${socket.user.role}`);
-  if (socket.user.role === 'student') {
+  if (socket.user.role === "student") {
     socket.join(`student:${socket.user.studentId}`);
   }
 });
@@ -526,34 +527,34 @@ socket.on('connect', () => {
 
 ```javascript
 // When faculty marks attendance
-socket.emit('attendance:marked', {
-  courseId: '507f1f77bcf86cd799439011',
-  studentId: '507f1f77bcf86cd799439012',
-  status: 'attended',
-  markedAt: '2024-01-15T10:30:45Z'
+socket.emit("attendance:marked", {
+  courseId: "507f1f77bcf86cd799439011",
+  studentId: "507f1f77bcf86cd799439012",
+  status: "attended",
+  markedAt: "2024-01-15T10:30:45Z",
 });
 
 // Broadcast to all connected users of that course
-io.to(`course:${courseId}`).emit('attendance:updated', {
-  studentId: '507f1f77bcf86cd799439012',
-  status: 'attended'
+io.to(`course:${courseId}`).emit("attendance:updated", {
+  studentId: "507f1f77bcf86cd799439012",
+  status: "attended",
 });
 
 // Notify specific student
-io.to(`student:${studentId}`).emit('you_marked_present', {
-  course: 'Algorithms',
-  time: '10:30 AM'
+io.to(`student:${studentId}`).emit("you_marked_present", {
+  course: "Algorithms",
+  time: "10:30 AM",
 });
 
 // Admin announcement
-socket.emit('announcement:broadcast', {
-  targetRole: 'student',
-  message: 'Exams scheduled for Feb 15',
-  priority: 'high'
+socket.emit("announcement:broadcast", {
+  targetRole: "student",
+  message: "Exams scheduled for Feb 15",
+  priority: "high",
 });
 
-io.to(`role:student`).emit('announcement:received', {
-  message: 'Exams scheduled for Feb 15'
+io.to(`role:student`).emit("announcement:received", {
+  message: "Exams scheduled for Feb 15",
 });
 ```
 
@@ -616,22 +617,26 @@ db.exams.createIndex({ date: 1, status: 1 });
 const cache = redis.createClient();
 
 // Cache user profiles (5 minute TTL)
-app.get('/api/users/:userId', async (req, res) => {
+app.get("/api/users/:userId", async (req, res) => {
   const cached = await cache.get(`user:${req.params.userId}`);
   if (cached) return res.json(JSON.parse(cached));
-  
+
   const user = await User.findById(req.params.userId);
   await cache.setex(`user:${req.params.userId}`, 300, JSON.stringify(user));
   res.json(user);
 });
 
 // Cache attendance percentage (1 hour TTL)
-app.get('/api/attendance/student/:studentId/percentage', async (req, res) => {
+app.get("/api/attendance/student/:studentId/percentage", async (req, res) => {
   const cached = await cache.get(`attendance:${req.params.studentId}`);
   if (cached) return res.json(JSON.parse(cached));
-  
+
   const percentage = calculatePercentage(req.params.studentId);
-  await cache.setex(`attendance:${req.params.studentId}`, 3600, JSON.stringify(percentage));
+  await cache.setex(
+    `attendance:${req.params.studentId}`,
+    3600,
+    JSON.stringify(percentage),
+  );
   res.json(percentage);
 });
 ```
@@ -640,30 +645,28 @@ app.get('/api/attendance/student/:studentId/percentage', async (req, res) => {
 
 ```javascript
 // Backend
-app.get('/api/attendance/:courseId/records', (req, res) => {
+app.get("/api/attendance/:courseId/records", (req, res) => {
   const page = req.query.page || 1;
   const limit = req.query.limit || 50;
   const skip = (page - 1) * limit;
-  
-  const records = Attendance.findOne({ courseId })
-    .then(doc => ({
-      records: doc.attendanceRecords.slice(skip, skip + limit),
-      pagination: {
-        total: doc.attendanceRecords.length,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        pages: Math.ceil(doc.attendanceRecords.length / limit)
-      }
-    }));
-  
+
+  const records = Attendance.findOne({ courseId }).then((doc) => ({
+    records: doc.attendanceRecords.slice(skip, skip + limit),
+    pagination: {
+      total: doc.attendanceRecords.length,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      pages: Math.ceil(doc.attendanceRecords.length / limit),
+    },
+  }));
+
   res.json(records);
 });
 
 // Frontend
 const [page, setPage] = useState(1);
-const { data } = useQuery(
-  ['attendance', courseId, page],
-  () => api.get(`/attendance/${courseId}/records?page=${page}`)
+const { data } = useQuery(["attendance", courseId, page], () =>
+  api.get(`/attendance/${courseId}/records?page=${page}`),
 );
 ```
 
@@ -675,16 +678,16 @@ const { data } = useQuery(
 
 ```typescript
 // Test attendance calculation
-import { describe, it, expect } from 'vitest';
-import { calculateAttendancePercentage } from '@/lib/attendance';
+import { describe, it, expect } from "vitest";
+import { calculateAttendancePercentage } from "@/lib/attendance";
 
-describe('calculateAttendancePercentage', () => {
-  it('should calculate percentage correctly', () => {
+describe("calculateAttendancePercentage", () => {
+  it("should calculate percentage correctly", () => {
     const records = [
-      { status: 'attended' },
-      { status: 'attended' },
-      { status: 'not-attended' },
-      { status: 'attended' },
+      { status: "attended" },
+      { status: "attended" },
+      { status: "not-attended" },
+      { status: "attended" },
     ];
     expect(calculateAttendancePercentage(records)).toBe(75);
   });
@@ -695,18 +698,16 @@ describe('calculateAttendancePercentage', () => {
 
 ```javascript
 // Test attendance marking endpoint
-describe('POST /api/attendance/mark', () => {
-  it('should mark attendance successfully', async () => {
+describe("POST /api/attendance/mark", () => {
+  it("should mark attendance successfully", async () => {
     const response = await request(app)
-      .post('/api/attendance/mark')
-      .set('Authorization', `Bearer ${token}`)
+      .post("/api/attendance/mark")
+      .set("Authorization", `Bearer ${token}`)
       .send({
-        courseId: 'course123',
-        attendanceRecords: [
-          { studentId: 'student123', status: 'attended' }
-        ]
+        courseId: "course123",
+        attendanceRecords: [{ studentId: "student123", status: "attended" }],
       });
-    
+
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
   });
@@ -720,45 +721,53 @@ describe('POST /api/attendance/mark', () => {
 ### 8.1 Input Validation
 
 ```javascript
-const { body, validationResult } = require('express-validator');
+const { body, validationResult } = require("express-validator");
 
-app.post('/api/attendance/mark',
-  body('courseId').isMongoId().notEmpty(),
-  body('attendanceRecords').isArray().notEmpty(),
-  body('attendanceRecords.*.studentId').isMongoId(),
-  body('attendanceRecords.*.status').isIn(['attended', 'not-attended', 'pending']),
+app.post(
+  "/api/attendance/mark",
+  body("courseId").isMongoId().notEmpty(),
+  body("attendanceRecords").isArray().notEmpty(),
+  body("attendanceRecords.*.studentId").isMongoId(),
+  body("attendanceRecords.*.status").isIn([
+    "attended",
+    "not-attended",
+    "pending",
+  ]),
   (req, res) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(422).json({ errors: errors.array() });
+    if (!errors.isEmpty())
+      return res.status(422).json({ errors: errors.array() });
     // Process request
-  }
+  },
 );
 ```
 
 ### 8.2 Rate Limiting
 
 ```javascript
-const rateLimit = require('express-rate-limit');
+const rateLimit = require("express-rate-limit");
 
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,  // 15 minutes
-  max: 100,                   // Limit each IP to 100 requests per window
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per window
 });
 
-app.use('/api/', limiter);
+app.use("/api/", limiter);
 ```
 
 ### 8.3 CORS Configuration
 
 ```javascript
-const cors = require('cors');
+const cors = require("cors");
 
-app.use(cors({
-  origin: process.env.FRONTEND_URL,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
 ```
 
 ---
@@ -817,18 +826,18 @@ app.use(Sentry.Handlers.errorHandler());
 ### 10.2 Structured Logging
 
 ```javascript
-const logger = require('winston');
+const logger = require("winston");
 
-logger.info('Attendance marked', {
+logger.info("Attendance marked", {
   courseId: courseId,
   markedBy: userId,
   studentCount: records.length,
-  timestamp: new Date()
+  timestamp: new Date(),
 });
 
-logger.error('Database connection failed', {
+logger.error("Database connection failed", {
   error: error.message,
-  stack: error.stack
+  stack: error.stack,
 });
 ```
 
