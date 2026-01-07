@@ -69,23 +69,6 @@ export const ChatbotIcon: React.FC<ChatbotIconProps> = ({ onClick, isOpen }) => 
         Ask me anything!
         <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-popover" />
       </div>
-
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-5px); }
-        }
-
-        @keyframes sparkle {
-          0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
-          50% { transform: scale(1.2) rotate(180deg); opacity: 0.8; }
-        }
-
-        @keyframes pulse-ring {
-          0% { transform: scale(1); opacity: 0.3; }
-          100% { transform: scale(1.5); opacity: 0; }
-        }
-      `}</style>
     </div>
   );
 };
