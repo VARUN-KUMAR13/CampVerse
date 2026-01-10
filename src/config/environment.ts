@@ -103,7 +103,7 @@ const firebaseConfig = {
   storageBucket: getEnvVar('VITE_FIREBASE_STORAGE_BUCKET', 'campverse-1374.firebasestorage.app'),
   messagingSenderId: getEnvVar('VITE_FIREBASE_MESSAGING_SENDER_ID', '123456789'),
   appId: getEnvVar('VITE_FIREBASE_APP_ID', '1:730878450982:web:2a29ae46e611b1431235e7'),
-  measurementId: getEnvVar('VITE_FIREBASE_MEASUREMENT_ID') || G - J32WZ6RH8W,
+  measurementId: getEnvVar('VITE_FIREBASE_MEASUREMENT_ID') || 'G-J32WZ6RH8W',
 };
 
 
