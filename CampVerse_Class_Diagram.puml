@@ -1,0 +1,713 @@
+@startuml CampVerse Class Diagram
+
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FFFFFF
+skinparam class {
+    BackgroundColor #F8F9FA
+    BorderColor #343A40
+    ArrowColor #007BFF
+}
+
+title CampVerse - Class Diagram
+
+' ===== CORE APPLICATION =====
+package "Core Application" {
+    class App {
+        +queryClient: QueryClient
+        +AppContent(): JSX.Element
+    }
+    
+    class AppContent {
+        +useAuth(): AuthContextType
+        +loading: boolean
+        +render(): JSX.Element
+    }
+}
+
+' ===== AUTHENTICATION SYSTEM =====
+package "Authentication" {
+    class AuthContext {
+        +currentUser: User | null
+        +userData: CollegeUser | null
+        +loading: boolean
+        +login(collegeId: string, password: string): Promise<CollegeUser>
+        +logout(): Promise<void>
+        +resetPassword(collegeId: string): Promise<void>
+    }
+    
+    class AuthProvider {
+        +children: React.ReactNode
+        +useEffect(): void
+        +login(): Promise<CollegeUser>
+        +logout(): Promise<void>
+        +resetPassword(): Promise<void>
+    }
+    
+    class CollegeUser {
+        +uid: string
+        +name: string
+        +collegeId: string
+        +email: string
+        +role: "student" | "faculty" | "admin"
+        +year: string
+        +section: string
+        +branch: string
+        +rollNumber: string
+    }
+    
+    class ProtectedRoute {
+        +children: React.ReactNode
+        +requiredRole?: "student" | "faculty" | "admin"
+        +render(): JSX.Element
+    }
+}
+
+' ===== ROUTING SYSTEM =====
+package "Routing" {
+    class DynamicHomepage {
+        +currentUser: User | null
+        +userData: CollegeUser | null
+        +loading: boolean
+        +render(): JSX.Element
+    }
+    
+    class Navigation {
+        +location: Location
+        +activeSection: string
+        +navItems: NavItem[]
+        +scrollToSection(sectionId: string): void
+        +isActiveSection(sectionId: string): boolean
+    }
+}
+
+' ===== DASHBOARD COMPONENTS =====
+package "Dashboard Components" {
+    class StudentDashboard {
+        +render(): JSX.Element
+    }
+    
+    class FacultyDashboard {
+        +render(): JSX.Element
+    }
+    
+    class AdminDashboard {
+        +render(): JSX.Element
+    }
+    
+    class CustomStudentDashboard {
+        +studentId?: string
+        +useStudentDashboard(): DashboardData
+        +useStudentProfile(): ProfileData
+        +render(): JSX.Element
+    }
+}
+
+' ===== SIDEBAR COMPONENTS =====
+package "Sidebar Components" {
+    class StudentSidebar {
+        +location: Location
+        +navigate: NavigateFunction
+        +logout: Function
+        +menuItems: MenuItem[]
+        +handleLogout(): void
+        +isActiveRoute(path: string): boolean
+    }
+    
+    class FacultySidebar {
+        +location: Location
+        +navigate: NavigateFunction
+        +logout: Function
+        +menuItems: MenuItem[]
+        +handleLogout(): void
+        +isActiveRoute(path: string): boolean
+    }
+    
+    class AdminSidebar {
+        +location: Location
+        +navigate: NavigateFunction
+        +logout: Function
+        +menuItems: MenuItem[]
+        +handleLogout(): void
+        +isActiveRoute(path: string): boolean
+    }
+}
+
+' ===== PAGE COMPONENTS =====
+package "Page Components" {
+    package "Public Pages" {
+        class Index {
+            +render(): JSX.Element
+        }
+        
+        class Features {
+            +render(): JSX.Element
+        }
+        
+        class About {
+            +render(): JSX.Element
+        }
+        
+        class FAQ {
+            +render(): JSX.Element
+        }
+        
+        class Contact {
+            +render(): JSX.Element
+        }
+        
+        class Login {
+            +render(): JSX.Element
+        }
+        
+        class NotFound {
+            +render(): JSX.Element
+        }
+    }
+    
+    package "Student Pages" {
+        class StudentCourses {
+            +render(): JSX.Element
+        }
+        
+        class StudentSchedule {
+            +render(): JSX.Element
+        }
+        
+        class StudentResults {
+            +render(): JSX.Element
+        }
+        
+        class StudentAttendance {
+            +render(): JSX.Element
+        }
+        
+        class StudentAssignments {
+            +render(): JSX.Element
+        }
+        
+        class StudentExams {
+            +render(): JSX.Element
+        }
+        
+        class StudentPlacement {
+            +render(): JSX.Element
+        }
+        
+        class StudentEvents {
+            +render(): JSX.Element
+        }
+        
+        class StudentClubs {
+            +render(): JSX.Element
+        }
+        
+        class StudentProfile {
+            +render(): JSX.Element
+        }
+        
+        class StudentSettings {
+            +render(): JSX.Element
+        }
+        
+        class StudentFees {
+            +render(): JSX.Element
+        }
+    }
+    
+    package "Faculty Pages" {
+        class FacultyCourses {
+            +render(): JSX.Element
+        }
+        
+        class FacultyStudents {
+            +render(): JSX.Element
+        }
+        
+        class FacultyAssignments {
+            +render(): JSX.Element
+        }
+        
+        class FacultyGrades {
+            +render(): JSX.Element
+        }
+        
+        class FacultySchedule {
+            +render(): JSX.Element
+        }
+        
+        class FacultyProfile {
+            +render(): JSX.Element
+        }
+        
+        class FacultySettings {
+            +render(): JSX.Element
+        }
+    }
+    
+    package "Admin Pages" {
+        class AdminDashboard {
+            +render(): JSX.Element
+        }
+        
+        class AdminPlacement {
+            +render(): JSX.Element
+        }
+        
+        class StudentDataManagement {
+            +render(): JSX.Element
+        }
+    }
+}
+
+' ===== CONTEXT PROVIDERS =====
+package "Context Providers" {
+    class PlacementContext {
+        +jobs: PlacementJob[]
+        +addJob(job: PlacementJob): void
+        +updateJob(id: string, updates: Partial<PlacementJob>): void
+        +deleteJob(id: string): void
+        +applyToJob(jobId: string): void
+        +getPlacementStats(): Promise<any>
+    }
+    
+    class PlacementProvider {
+        +children: ReactNode
+        +useState<PlacementJob[]>()
+        +useEffect(): void
+        +addJob(): void
+        +updateJob(): void
+        +deleteJob(): void
+        +applyToJob(): void
+    }
+    
+    class PlacementJob {
+        +id: string
+        +title: string
+        +company: string
+        +description: string
+        +requirements: string[]
+        +location: string
+        +salary: string
+        +deadline: Date
+        +applied: boolean
+        +eligible: boolean
+    }
+}
+
+' ===== AI CHATBOT =====
+package "AI Chatbot" {
+    class AIChatbot {
+        +isOpen: boolean
+        +messages: ChatMessage[]
+        +isTyping: boolean
+        +sendMessage(message: string): void
+        +toggleChat(): void
+        +render(): JSX.Element
+    }
+    
+    class ChatMessage {
+        +id: string
+        +content: string
+        +isBot: boolean
+        +timestamp: Date
+    }
+    
+    class ChatSuggestion {
+        +id: string
+        +text: string
+    }
+    
+    class ChatState {
+        +messages: ChatMessage[]
+        +isTyping: boolean
+    }
+    
+    class AIResponse {
+        +content: string
+        +suggestions?: ChatSuggestion[]
+    }
+}
+
+' ===== HOOKS =====
+package "Custom Hooks" {
+    class useFirestoreDocument {
+        +collection: string
+        +docId: string | null
+        +data: T | null
+        +loading: boolean
+        +error: string | null
+    }
+    
+    class useStudentProfile {
+        +studentId?: string
+        +profile: StudentProfile | null
+        +loading: boolean
+        +error: string | null
+        +updateProfile(updates: Partial<StudentProfile>): Promise<boolean>
+        +saveProfile(profileData: StudentProfile): Promise<boolean>
+        +reloadProfile(): void
+    }
+    
+    class useStudentsList {
+        +students: StudentProfile[]
+        +loading: boolean
+        +error: string | null
+        +reloadStudents(): void
+    }
+    
+    class useCourses {
+        +branch?: string
+        +semester?: string
+        +courses: Course[]
+        +loading: boolean
+        +error: string | null
+        +createCourse(courseData: Course): Promise<string | null>
+        +enrollStudent(courseId: string, studentId: string): Promise<boolean>
+        +reloadCourses(): void
+    }
+    
+    class useAssignments {
+        +courseId?: string
+        +assignments: Assignment[]
+        +loading: boolean
+        +error: string | null
+        +createAssignment(assignmentData: Assignment): Promise<string | null>
+        +submitAssignment(assignmentId: string, submission: any): Promise<boolean>
+        +reloadAssignments(): void
+    }
+    
+    class useStudentDashboard {
+        +profile: StudentProfile | null
+        +courses: Course[]
+        +assignments: Assignment[]
+        +loading: boolean
+        +error: string | null
+    }
+    
+    class useToast {
+        +toast(props: Toast): ToastReturn
+        +dismiss(toastId?: string): void
+    }
+    
+    class useIsMobile {
+        +isMobile: boolean
+    }
+}
+
+' ===== SERVICES =====
+package "Services" {
+    class API {
+        +API_BASE_URL: string
+        +apiRequest<T>(endpoint: string, options: RequestInit): Promise<T>
+    }
+    
+    class userAPI {
+        +getAll(): Promise<User[]>
+        +getById(id: string): Promise<User>
+        +create(data: Partial<User>): Promise<User>
+        +update(id: string, updates: Partial<User>): Promise<User>
+        +delete(id: string): Promise<{ message: string }>
+    }
+    
+    class placementAPI {
+        +getAll(): Promise<PlacementJob[]>
+        +getById(id: string): Promise<PlacementJob>
+        +create(data: Partial<PlacementJob>): Promise<PlacementJob>
+        +update(id: string, updates: Partial<PlacementJob>): Promise<PlacementJob>
+        +delete(id: string): Promise<{ message: string }>
+        +apply(jobId: string): Promise<{ message: string }>
+    }
+    
+    class announcementAPI {
+        +getAll(): Promise<Announcement[]>
+        +getById(id: string): Promise<Announcement>
+        +create(data: Partial<Announcement>): Promise<Announcement>
+        +update(id: string, updates: Partial<Announcement>): Promise<Announcement>
+        +delete(id: string): Promise<{ message: string }>
+        +getByAudience(audience: string): Promise<Announcement[]>
+    }
+    
+    class eventAPI {
+        +getAll(): Promise<Event[]>
+        +getById(id: string): Promise<Event>
+        +create(data: Partial<Event>): Promise<Event>
+        +update(id: string, updates: Partial<Event>): Promise<Event>
+        +delete(id: string): Promise<{ message: string }>
+        +register(eventId: string): Promise<{ message: string }>
+        +getRegistered(): Promise<Event[]>
+    }
+    
+    class assignmentAPI {
+        +getAll(): Promise<Assignment[]>
+        +getById(id: string): Promise<Assignment>
+        +create(data: Partial<Assignment>): Promise<Assignment>
+        +update(id: string, updates: Partial<Assignment>): Promise<Assignment>
+        +delete(id: string): Promise<{ message: string }>
+        +submit(assignmentId: string, submissionData: Partial<AssignmentSubmission>): Promise<AssignmentSubmission>
+        +getSubmissions(assignmentId: string): Promise<AssignmentSubmission[]>
+        +gradeSubmission(assignmentId: string, submissionId: string, grade: number, feedback?: string): Promise<AssignmentSubmission>
+    }
+    
+    class authAPI {
+        +login(credentials: LoginCredentials): Promise<AuthResponse>
+        +logout(): Promise<{ message: string }>
+        +refreshToken(): Promise<AuthResponse>
+        +resetPassword(email: string): Promise<{ message: string }>
+    }
+    
+    class RealTimeConnection {
+        -ws: WebSocket | null
+        -listeners: Map<string, Function[]>
+        +connect(): void
+        +disconnect(): void
+        +send(type: string, payload: any): void
+        +on(event: string, callback: Function): void
+        +off(event: string, callback: Function): void
+        -emit(event: string, data: any): void
+    }
+}
+
+' ===== FIRESTORE SERVICES =====
+package "Firestore Services" {
+    class FirestoreService {
+        +getDocument(collectionName: string, docId: string): Promise<any>
+        +getCollection(collectionName: string): Promise<any[]>
+        +createDocument(collectionName: string, data: any): Promise<string>
+        +updateDocument(collectionName: string, docId: string, data: any): Promise<void>
+        +deleteDocument(collectionName: string, docId: string): Promise<void>
+        +subscribeToDocument(collectionName: string, docId: string, callback: Function): Function
+    }
+    
+    class StudentService {
+        +getStudentProfile(studentId: string): Promise<StudentProfile>
+        +updateStudentProfile(studentId: string, updates: Partial<StudentProfile>): Promise<void>
+        +saveStudentProfile(profile: StudentProfile): Promise<void>
+        +getAllStudents(): Promise<StudentProfile[]>
+    }
+    
+    class CourseService {
+        +getCoursesByBranch(branch: string, semester: string): Promise<Course[]>
+        +createCourse(course: Course): Promise<string>
+        +enrollStudent(courseId: string, studentId: string): Promise<void>
+        +getAllCourses(): Promise<Course[]>
+    }
+    
+    class AssignmentService {
+        +getAssignmentsByCourse(courseId: string): Promise<Assignment[]>
+        +createAssignment(assignment: Assignment): Promise<string>
+        +submitAssignment(assignmentId: string, submission: any): Promise<void>
+        +getAllAssignments(): Promise<Assignment[]>
+    }
+}
+
+' ===== DATA MODELS =====
+package "Data Models" {
+    class User {
+        +_id: string
+        +uid: string
+        +name: string
+        +collegeId: string
+        +email: string
+        +role: "student" | "faculty" | "admin"
+        +year: string
+        +section: string
+        +branch: string
+        +rollNumber: string
+        +createdAt: Date
+        +updatedAt: Date
+    }
+    
+    class StudentProfile {
+        +uid: string
+        +name: string
+        +collegeId: string
+        +email: string
+        +role: "student"
+        +year: string
+        +section: string
+        +branch: string
+        +rollNumber: string
+        +personalInfo: PersonalInfo
+        +academicInfo: AcademicInfo
+        +contactInfo: ContactInfo
+        +createdAt: Date
+        +updatedAt: Date
+    }
+    
+    class Course {
+        +id: string
+        +name: string
+        +code: string
+        +description: string
+        +credits: number
+        +branch: string
+        +semester: string
+        +instructor: string
+        +schedule: Schedule
+    }
+    
+    class Assignment {
+        +id: string
+        +title: string
+        +description: string
+        +courseId: string
+        +dueDate: Date
+        +maxMarks: number
+        +instructions: string
+        +attachments: string[]
+        +createdAt: Date
+        +updatedAt: Date
+    }
+    
+    class AssignmentSubmission {
+        +id: string
+        +assignmentId: string
+        +studentId: string
+        +content: string
+        +attachments: string[]
+        +submittedAt: Date
+        +grade?: number
+        +feedback?: string
+        +gradedAt?: Date
+    }
+    
+    class Event {
+        +id: string
+        +title: string
+        +description: string
+        +date: Date
+        +location: string
+        +organizer: string
+        +maxParticipants: number
+        +registeredUsers: string[]
+        +createdAt: Date
+        +updatedAt: Date
+    }
+    
+    class Announcement {
+        +id: string
+        +title: string
+        +content: string
+        +audience: string
+        +priority: "low" | "medium" | "high"
+        +createdBy: string
+        +createdAt: Date
+        +updatedAt: Date
+    }
+}
+
+' ===== UTILITY COMPONENTS =====
+package "Utility Components" {
+    class ErrorBoundary {
+        +children: React.ReactNode
+        +componentDidCatch(error: Error, errorInfo: ErrorInfo): void
+        +render(): JSX.Element
+    }
+    
+    class LoadingPage {
+        +message: string
+        +render(): JSX.Element
+    }
+    
+    class LoadingSystem {
+        +render(): JSX.Element
+    }
+}
+
+' ===== RELATIONSHIPS =====
+
+' Core Application Relationships
+App --> AppContent
+AppContent --> AuthContext
+AppContent --> DynamicHomepage
+AppContent --> Navigation
+
+' Authentication Relationships
+AuthContext --> AuthProvider
+AuthProvider --> CollegeUser
+ProtectedRoute --> AuthContext
+
+' Dashboard Relationships
+DynamicHomepage --> StudentDashboard
+DynamicHomepage --> FacultyDashboard
+DynamicHomepage --> AdminDashboard
+StudentDashboard --> CustomStudentDashboard
+
+' Sidebar Relationships
+StudentDashboard --> StudentSidebar
+FacultyDashboard --> FacultySidebar
+AdminDashboard --> AdminSidebar
+
+' Page Relationships
+DynamicHomepage --> Index
+Navigation --> Features
+Navigation --> About
+Navigation --> FAQ
+Navigation --> Contact
+
+' Context Relationships
+PlacementContext --> PlacementProvider
+PlacementProvider --> PlacementJob
+
+' AI Chatbot Relationships
+AIChatbot --> ChatMessage
+AIChatbot --> ChatSuggestion
+AIChatbot --> ChatState
+AIChatbot --> AIResponse
+
+' Hook Relationships
+useStudentProfile --> StudentService
+useStudentsList --> StudentService
+useCourses --> CourseService
+useAssignments --> AssignmentService
+useStudentDashboard --> StudentService
+useStudentDashboard --> CourseService
+useStudentDashboard --> AssignmentService
+
+' Service Relationships
+API --> userAPI
+API --> placementAPI
+API --> announcementAPI
+API --> eventAPI
+API --> assignmentAPI
+API --> authAPI
+API --> RealTimeConnection
+
+' Firestore Service Relationships
+StudentService --> FirestoreService
+CourseService --> FirestoreService
+AssignmentService --> FirestoreService
+
+' Data Model Relationships
+StudentProfile --> User
+AssignmentSubmission --> Assignment
+Assignment --> Course
+Event --> User
+Announcement --> User
+
+' Hook to Data Model Relationships
+useStudentProfile --> StudentProfile
+useStudentsList --> StudentProfile
+useCourses --> Course
+useAssignments --> Assignment
+useStudentDashboard --> StudentProfile
+useStudentDashboard --> Course
+useStudentDashboard --> Assignment
+
+' Service to Data Model Relationships
+userAPI --> User
+placementAPI --> PlacementJob
+announcementAPI --> Announcement
+eventAPI --> Event
+assignmentAPI --> Assignment
+assignmentAPI --> AssignmentSubmission
+authAPI --> User
+
+' Firestore Service to Data Model Relationships
+StudentService --> StudentProfile
+CourseService --> Course
+AssignmentService --> Assignment
+
+@enduml
+

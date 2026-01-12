@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ import {
 import StudentSidebar from "@/components/StudentSidebar";
 import StudentTopbar from "@/components/StudentTopbar";
 import { useAuth } from "@/contexts/AuthContext";
+import { useClubs } from "@/contexts/ClubContext";
 import {
   Search,
   Users,
@@ -21,281 +22,40 @@ import {
   Trophy,
   Code,
   Palette,
-  Gamepad2,
-  Music,
   Camera,
   ExternalLink,
   UserPlus,
+  RefreshCw,
+  Loader2,
+  MapPin,
+  Star,
+  UsersRound,
 } from "lucide-react";
 
 const StudentClubs = () => {
   const { userData } = useAuth();
+  const { clubs, loading, error, fetchClubs, joinClub } = useClubs();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [followedFilter, setFollowedFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
 
-  const clubsData = [
-    {
-      id: "ENIGMA",
-      name: "ENIGMA",
-      fullName: "Engineering Initiative for Gaming and Multimedia Applications",
-      description:
-        "A technical club focused on game development, multimedia applications, and innovative engineering solutions. We organize workshops, hackathons, and gaming tournaments.",
-      category: "Technical",
-      members: 120,
-      followers: 340,
-      events: 15,
-      achievementsCount: 8,
-      isFollowing: true,
-      established: "2018",
-      president: "Arjun Sharma",
-      activities: [
-        "Game Development Workshops",
-        "Multimedia Projects",
-        "Gaming Tournaments",
-        "Tech Talks",
-      ],
-      upcomingEvents: [
-        {
-          title: "Unity Workshop",
-          date: "2025-02-15",
-          type: "Workshop",
-        },
-        {
-          title: "Gaming Tournament",
-          date: "2025-02-20",
-          type: "Competition",
-        },
-      ],
-      achievements: [
-        "Best Technical Club 2024",
-        "Most Innovative Project Award",
-        "Excellence in Game Development",
-      ],
-      icon: <Gamepad2 className="w-6 h-6" />,
-      color: "bg-purple-500",
-    },
-    {
-      id: "IEEE_CS",
-      name: "IEEE Computer Society",
-      fullName: "IEEE Computational Intelligence Society",
-      description:
-        "Professional society dedicated to advancing computational intelligence and computer science. We bridge the gap between academia and industry.",
-      category: "Technical",
-      members: 85,
-      followers: 245,
-      events: 12,
-      achievementsCount: 6,
-      isFollowing: false,
-      established: "2015",
-      president: "Priya Patel",
-      activities: [
-        "Research Paper Presentations",
-        "Industry Expert Sessions",
-        "AI/ML Workshops",
-        "Coding Competitions",
-      ],
-      upcomingEvents: [
-        {
-          title: "AI Research Symposium",
-          date: "2025-02-25",
-          type: "Symposium",
-        },
-        {
-          title: "Coding Bootcamp",
-          date: "2025-03-01",
-          type: "Workshop",
-        },
-      ],
-      achievements: [
-        "IEEE Student Branch Excellence Award",
-        "Best Research Paper 2024",
-        "Outstanding Student Chapter",
-      ],
-      icon: <Code className="w-6 h-6" />,
-      color: "bg-blue-500",
-    },
-    {
-      id: "CULTURAL_CLUB",
-      name: "Cultural Club",
-      fullName: "Cultural Activities and Arts Society",
-      description:
-        "Promoting arts, culture, and creativity on campus. We organize cultural events, art exhibitions, and performance showcases.",
-      category: "Cultural",
-      members: 200,
-      followers: 520,
-      events: 25,
-      achievementsCount: 12,
-      isFollowing: true,
-      established: "2010",
-      president: "Kavya Reddy",
-      activities: [
-        "Dance Competitions",
-        "Music Concerts",
-        "Art Exhibitions",
-        "Drama Performances",
-      ],
-      upcomingEvents: [
-        {
-          title: "Spring Cultural Fest",
-          date: "2025-03-15",
-          type: "Festival",
-        },
-        {
-          title: "Art Workshop",
-          date: "2025-02-18",
-          type: "Workshop",
-        },
-      ],
-      achievements: [
-        "Best Cultural Event 2024",
-        "Excellence in Arts Promotion",
-        "Most Participated Club",
-      ],
-      icon: <Palette className="w-6 h-6" />,
-      color: "bg-pink-500",
-    },
-    {
-      id: "PHOTOGRAPHY",
-      name: "Photography Club",
-      fullName: "Campus Photography and Visual Arts Club",
-      description:
-        "Capturing moments and creating visual stories. We conduct photography workshops, photo walks, and organize exhibitions.",
-      category: "Arts",
-      members: 65,
-      followers: 180,
-      events: 8,
-      achievementsCount: 4,
-      isFollowing: false,
-      established: "2019",
-      president: "Rohit Gupta",
-      activities: [
-        "Photo Walks",
-        "Photography Workshops",
-        "Photo Exhibitions",
-        "Camera Technique Sessions",
-      ],
-      upcomingEvents: [
-        {
-          title: "Nature Photography Walk",
-          date: "2025-02-22",
-          type: "Activity",
-        },
-        {
-          title: "Portrait Workshop",
-          date: "2025-03-05",
-          type: "Workshop",
-        },
-      ],
-      achievements: [
-        "Best Photo Exhibition 2024",
-        "Excellence in Visual Arts",
-        "Outstanding Creative Club",
-      ],
-      icon: <Camera className="w-6 h-6" />,
-      color: "bg-green-500",
-    },
-    {
-      id: "MUSIC_CLUB",
-      name: "Music Club",
-      fullName: "Harmony - Music and Sound Society",
-      description:
-        "Creating melodies and fostering musical talent. We organize concerts, music workshops, and provide a platform for aspiring musicians.",
-      category: "Arts",
-      members: 90,
-      followers: 280,
-      events: 18,
-      achievementsCount: 7,
-      isFollowing: true,
-      established: "2016",
-      president: "Ananya Singh",
-      activities: [
-        "Live Concerts",
-        "Music Production Workshops",
-        "Band Formations",
-        "Instrument Training",
-      ],
-      upcomingEvents: [
-        {
-          title: "Acoustic Night",
-          date: "2025-02-28",
-          type: "Concert",
-        },
-        {
-          title: "Music Production Workshop",
-          date: "2025-03-10",
-          type: "Workshop",
-        },
-      ],
-      achievements: [
-        "Best Musical Performance 2024",
-        "Outstanding Music Club",
-        "Excellence in Sound Production",
-      ],
-      icon: <Music className="w-6 h-6" />,
-      color: "bg-indigo-500",
-    },
-    {
-      id: "SPORTS_CLUB",
-      name: "Sports Club",
-      fullName: "Athletic Excellence and Sports Society",
-      description:
-        "Promoting physical fitness and sportsmanship. We organize tournaments, training sessions, and represent the college in inter-collegiate competitions.",
-      category: "Sports",
-      members: 150,
-      followers: 380,
-      events: 20,
-      achievementsCount: 15,
-      isFollowing: false,
-      established: "2012",
-      president: "Vikram Kumar",
-      activities: [
-        "Inter-College Tournaments",
-        "Daily Training Sessions",
-        "Fitness Workshops",
-        "Sports Equipment Management",
-      ],
-      upcomingEvents: [
-        {
-          title: "Basketball Tournament",
-          date: "2025-03-08",
-          type: "Tournament",
-        },
-        {
-          title: "Fitness Workshop",
-          date: "2025-02-25",
-          type: "Workshop",
-        },
-      ],
-      achievements: [
-        "Inter-College Champions 2024",
-        "Best Sports Club Award",
-        "Excellence in Athletic Training",
-      ],
-      icon: <Trophy className="w-6 h-6" />,
-      color: "bg-orange-500",
-    },
-  ];
+  useEffect(() => {
+    fetchClubs();
+  }, []);
 
-  const filteredClubs = clubsData.filter((club) => {
+  const filteredClubs = clubs.filter((club) => {
     const matchesSearch =
       club.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      club.description.toLowerCase().includes(searchTerm.toLowerCase());
+      club.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      club.club_id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory =
       categoryFilter === "all" ||
       club.category.toLowerCase() === categoryFilter.toLowerCase();
-    const matchesFollowed =
-      followedFilter === "all" ||
-      (followedFilter === "following" && club.isFollowing) ||
-      (followedFilter === "not_following" && !club.isFollowing);
+    const matchesStatus =
+      statusFilter === "all" || club.recruitmentStatus === statusFilter;
 
-    return matchesSearch && matchesCategory && matchesFollowed;
+    return matchesSearch && matchesCategory && matchesStatus;
   });
-
-  const toggleFollow = (clubId: string) => {
-    // This would typically make an API call to follow/unfollow
-    console.log(`Toggle follow for club: ${clubId}`);
-  };
 
   const getCategoryIcon = (category: string) => {
     switch (category.toLowerCase()) {
@@ -303,20 +63,48 @@ const StudentClubs = () => {
         return <Code className="w-4 h-4" />;
       case "cultural":
         return <Palette className="w-4 h-4" />;
-      case "arts":
-        return <Camera className="w-4 h-4" />;
       case "sports":
         return <Trophy className="w-4 h-4" />;
+      case "literary":
+        return <Camera className="w-4 h-4" />;
       default:
         return <Users className="w-4 h-4" />;
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-    });
+  const getCategoryBadge = (category: string) => {
+    const colors: { [key: string]: string } = {
+      Technical: "bg-blue-500",
+      Cultural: "bg-purple-500",
+      Sports: "bg-green-500",
+      Literary: "bg-amber-500",
+      Social: "bg-pink-500",
+      Professional: "bg-cyan-500",
+      Hobby: "bg-orange-500",
+      Other: "bg-gray-500",
+    };
+    return <Badge className={colors[category] || "bg-gray-500"}>{category}</Badge>;
+  };
+
+  const getRecruitmentBadge = (status: string) => {
+    switch (status) {
+      case "Open":
+        return <Badge className="bg-green-500">Recruiting</Badge>;
+      case "Closed":
+        return <Badge variant="secondary">Closed</Badge>;
+      case "Coming Soon":
+        return <Badge variant="outline">Coming Soon</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
+  const handleJoinClub = async (clubId: string) => {
+    try {
+      await joinClub(clubId);
+    } catch (err) {
+      console.error("Error joining club:", err);
+    }
   };
 
   return (
@@ -331,13 +119,26 @@ const StudentClubs = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-                  <Users className="w-8 h-8 text-primary" />
+                  <UsersRound className="w-8 h-8 text-primary" />
                   Student Clubs
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                  Discover and join clubs that match your interests and passions
+                  Discover and join clubs that match your interests
                 </p>
               </div>
+              <Button
+                variant="outline"
+                onClick={fetchClubs}
+                disabled={loading}
+                className="flex items-center gap-2"
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                Refresh
+              </Button>
             </div>
 
             {/* Filters */}
@@ -369,41 +170,63 @@ const StudentClubs = () => {
                       <SelectItem value="all">All Categories</SelectItem>
                       <SelectItem value="technical">Technical</SelectItem>
                       <SelectItem value="cultural">Cultural</SelectItem>
-                      <SelectItem value="arts">Arts</SelectItem>
                       <SelectItem value="sports">Sports</SelectItem>
+                      <SelectItem value="literary">Literary</SelectItem>
+                      <SelectItem value="social">Social</SelectItem>
+                      <SelectItem value="hobby">Hobby</SelectItem>
                     </SelectContent>
                   </Select>
                   <Select
-                    value={followedFilter}
-                    onValueChange={setFollowedFilter}
+                    value={statusFilter}
+                    onValueChange={setStatusFilter}
                   >
                     <SelectTrigger className="w-full md:w-[200px]">
-                      <SelectValue placeholder="Following" />
+                      <SelectValue placeholder="Recruitment" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Clubs</SelectItem>
-                      <SelectItem value="following">Following</SelectItem>
-                      <SelectItem value="not_following">
-                        Not Following
-                      </SelectItem>
+                      <SelectItem value="Open">Recruiting</SelectItem>
+                      <SelectItem value="Closed">Closed</SelectItem>
+                      <SelectItem value="Coming Soon">Coming Soon</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </CardContent>
             </Card>
 
+            {/* Error Display */}
+            {error && (
+              <Card className="border-destructive bg-destructive/10">
+                <CardContent className="p-4 text-destructive">
+                  {error}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Loading State */}
+            {loading && clubs.length === 0 && (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
+                  <p className="text-muted-foreground">Loading clubs...</p>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Clubs Grid */}
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredClubs.length === 0 ? (
+              {!loading && filteredClubs.length === 0 ? (
                 <div className="col-span-full">
                   <Card>
                     <CardContent className="py-12 text-center">
-                      <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <UsersRound className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                       <h3 className="text-lg font-medium text-foreground mb-2">
                         No clubs found
                       </h3>
                       <p className="text-muted-foreground">
-                        Try adjusting your filters to discover more clubs.
+                        {clubs.length === 0
+                          ? "No clubs have been registered yet."
+                          : "Try adjusting your filters to discover more clubs."}
                       </p>
                     </CardContent>
                   </Card>
@@ -411,49 +234,42 @@ const StudentClubs = () => {
               ) : (
                 filteredClubs.map((club) => (
                   <Card
-                    key={club.id}
+                    key={club._id}
                     className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
                   >
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
-                          <div
-                            className={`w-12 h-12 ${club.color} rounded-lg flex items-center justify-center text-white`}
-                          >
-                            {club.icon}
+                          <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center text-white">
+                            <UsersRound className="w-6 h-6" />
                           </div>
                           <div>
-                            <h3 className="font-bold text-foreground">
-                              {club.name}
-                            </h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-bold text-foreground">
+                                {club.name}
+                              </h3>
+                              {club.featured && (
+                                <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                              )}
+                            </div>
                             <p className="text-xs text-muted-foreground">
-                              Est. {club.established}
+                              {club.foundedYear ? `Est. ${club.foundedYear}` : club.club_id}
                             </p>
                           </div>
                         </div>
-                        <Button
-                          variant={club.isFollowing ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => toggleFollow(club.id)}
-                          className={
-                            club.isFollowing
-                              ? "bg-red-500 hover:bg-red-600"
-                              : ""
-                          }
-                        >
-                          {club.isFollowing ? (
-                            <Heart className="w-4 h-4 mr-1 fill-current" />
-                          ) : (
+                        {club.recruitmentStatus === "Open" && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleJoinClub(club._id)}
+                          >
                             <UserPlus className="w-4 h-4 mr-1" />
-                          )}
-                          {club.isFollowing ? "Following" : "Follow"}
-                        </Button>
+                            Join
+                          </Button>
+                        )}
                       </div>
                       <div className="flex flex-wrap gap-1 mt-2">
-                        <Badge variant="outline" className="text-xs">
-                          {getCategoryIcon(club.category)}
-                          <span className="ml-1">{club.category}</span>
-                        </Badge>
+                        {getCategoryBadge(club.category)}
+                        {getRecruitmentBadge(club.recruitmentStatus)}
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -465,7 +281,7 @@ const StudentClubs = () => {
                       <div className="grid grid-cols-3 gap-4 py-3 border-y">
                         <div className="text-center">
                           <div className="text-lg font-bold text-foreground">
-                            {club.members}
+                            {club.memberCount || 0}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             Members
@@ -473,44 +289,60 @@ const StudentClubs = () => {
                         </div>
                         <div className="text-center">
                           <div className="text-lg font-bold text-foreground">
-                            {club.followers}
+                            {club.maxMembers || "∞"}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            Followers
+                            Max
                           </div>
                         </div>
                         <div className="text-center">
                           <div className="text-lg font-bold text-foreground">
-                            {club.events}
+                            {club.membershipFee || "Free"}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            Events
+                            Fee
                           </div>
                         </div>
                       </div>
 
-                      {/* Upcoming Events */}
-                      <div>
-                        <h4 className="font-medium text-sm mb-2 flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          Upcoming Events
-                        </h4>
-                        <div className="space-y-1">
-                          {club.upcomingEvents.slice(0, 2).map((event, idx) => (
-                            <div
-                              key={idx}
-                              className="flex justify-between items-center text-xs"
-                            >
-                              <span className="text-muted-foreground">
-                                {event.title}
-                              </span>
-                              <Badge variant="outline" className="text-xs">
-                                {formatDate(event.date)}
-                              </Badge>
-                            </div>
-                          ))}
-                        </div>
+                      {/* Details */}
+                      <div className="space-y-2 text-sm text-muted-foreground">
+                        {club.venue && (
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4" />
+                            <span>{club.venue}</span>
+                          </div>
+                        )}
+                        {club.meetingSchedule && (
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4" />
+                            <span>{club.meetingSchedule}</span>
+                          </div>
+                        )}
+                        {club.president?.name && (
+                          <div className="flex items-center gap-2">
+                            <Users className="w-4 h-4" />
+                            <span>President: {club.president.name}</span>
+                          </div>
+                        )}
                       </div>
+
+                      {/* Achievements */}
+                      {club.achievements && club.achievements.length > 0 && (
+                        <div>
+                          <h4 className="font-medium text-sm mb-2 flex items-center gap-1">
+                            <Trophy className="w-4 h-4" />
+                            Achievements
+                          </h4>
+                          <div className="flex flex-wrap gap-1">
+                            {club.achievements.slice(0, 2).map((achievement, idx) => (
+                              <Badge key={idx} variant="outline" className="text-xs">
+                                {achievement}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Actions */}
                       <div className="flex gap-2 pt-2">
@@ -518,16 +350,6 @@ const StudentClubs = () => {
                           View Details
                           <ExternalLink className="w-3 h-3 ml-1" />
                         </Button>
-                        {!club.isFollowing && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="px-3"
-                            onClick={() => toggleFollow(club.id)}
-                          >
-                            <UserPlus className="w-4 h-4" />
-                          </Button>
-                        )}
                       </div>
                     </CardContent>
                   </Card>

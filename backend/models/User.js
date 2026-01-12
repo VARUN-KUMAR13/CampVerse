@@ -99,6 +99,16 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    // Extended Profile Fields
+    phone: { type: String, default: "" },
+    address: { type: String, default: "" },
+    dateOfBirth: { type: String, default: "" }, // Format: YYYY-MM-DD
+    bio: { type: String, default: "" },
+    cgpa: { type: String, default: "" },
+    semester: { type: String, default: "" },
+    skills: { type: [String], default: [] },
+    achievements: { type: [String], default: [] },
+    avatar: { type: String, default: "" },
   },
   {
     timestamps: true,

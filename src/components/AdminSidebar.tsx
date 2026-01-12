@@ -9,6 +9,8 @@ import {
   Settings,
   BarChart3,
   LogOut,
+  Bell,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -43,12 +45,22 @@ const AdminSidebar = () => {
     {
       icon: <CalendarDays className="w-5 h-5" />,
       label: "Events",
-      path: "/admin/events",
+      path: "/admin/event",
     },
     {
       icon: <UsersRound className="w-5 h-5" />,
       label: "Clubs",
-      path: "/admin/clubs",
+      path: "/admin/club",
+    },
+    {
+      icon: <FileText className="w-5 h-5" />,
+      label: "Exams",
+      path: "/admin/exam",
+    },
+    {
+      icon: <Bell className="w-5 h-5" />,
+      label: "Alerts",
+      path: "/admin/alerts",
     },
     {
       icon: <BarChart3 className="w-5 h-5" />,
@@ -98,7 +110,7 @@ const AdminSidebar = () => {
             className={cn(
               "flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors",
               isActiveRoute(item.path) &&
-                "bg-sidebar-primary text-sidebar-primary-foreground font-medium",
+              "bg-sidebar-primary text-sidebar-primary-foreground font-medium",
             )}
           >
             {item.icon}

@@ -4,14 +4,26 @@ const admin = require("firebase-admin");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const { generateToken, authenticateToken, adminOnly } = require("../middleware/auth");
+const { verifyRecaptchaToken } = require("../middleware/recaptcha");
 
 // Login route
 router.post("/login", async (req, res) => {
   try {
-    const { collegeId, password } = req.body;
+    const { collegeId, password, recaptchaToken } = req.body;
 
     if (!collegeId || !password) {
       return res.status(400).json({ message: "College ID and password are required" });
+    }
+
+    // Verify reCAPTCHA token (optional - won't block if verification fails)
+    if (recaptchaToken) {
+      const recaptchaResult = await verifyRecaptchaToken(recaptchaToken, 'LOGIN');
+      console.log(`Login attempt for ${collegeId} - reCAPTCHA score: ${recaptchaResult.score}`);
+
+      // Optionally block low scores (uncomment in production)
+      // if (!recaptchaResult.valid) {
+      //   return res.status(403).json({ message: "Security verification failed. Please try again." });
+      // }
     }
 
     // Handle admin login
@@ -44,10 +56,47 @@ router.post("/login", async (req, res) => {
     }
 
     // Find user by college ID
-    const user = await User.findOne({ collegeId: collegeId.toUpperCase() });
+    let user = await User.findOne({ collegeId: collegeId.toUpperCase() });
 
+    // If user doesn't exist, try to create them (for development/demo)
     if (!user) {
-      return res.status(401).json({ message: "Invalid college ID or password" });
+      // Validate college ID format: YYBBBSBBR (e.g., 22B81A05C3)
+      const collegeIdPattern = /^[0-9]{2}[A-Z0-9]{3}[A-Z][0-9]{2}[A-Z0-9]{1,2}$/;
+
+      if (!collegeIdPattern.test(collegeId.toUpperCase())) {
+        return res.status(401).json({ message: "Invalid college ID format" });
+      }
+
+      // Password should match college ID for new users
+      if (password !== collegeId) {
+        return res.status(401).json({ message: "Invalid college ID or password" });
+      }
+
+      // Parse college ID for user info
+      const upperCollegeId = collegeId.toUpperCase();
+      const year = upperCollegeId.substring(0, 2);
+      const section = upperCollegeId.substring(5, 6);
+      const branch = upperCollegeId.substring(6, 8);
+      const rollNumber = upperCollegeId.substring(8);
+
+      // Determine role based on section (Z = faculty, others = student)
+      const role = section === "Z" ? "faculty" : "student";
+
+      // Create new user
+      user = new User({
+        uid: `${upperCollegeId}-uid`,
+        name: `User ${upperCollegeId}`,
+        collegeId: upperCollegeId,
+        email: `${upperCollegeId}@cvr.ac.in`,
+        role,
+        year,
+        section,
+        branch,
+        rollNumber,
+      });
+
+      await user.save();
+      console.log(`Auto-created new ${role} user: ${upperCollegeId}`);
     }
 
     if (!user.isActive) {
@@ -56,7 +105,7 @@ router.post("/login", async (req, res) => {
 
     // For development/demo, password is the college ID
     // In production, you should hash passwords
-    if (password !== collegeId) {
+    if (password !== user.collegeId && password !== collegeId) {
       return res.status(401).json({ message: "Invalid college ID or password" });
     }
 

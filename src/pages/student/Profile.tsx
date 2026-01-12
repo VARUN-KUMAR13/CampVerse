@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { api } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,7 @@ import {
 const StudentProfile = () => {
   const { userData } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [studentName, setStudentName] = useState<string | null>(null);
   const [profileData, setProfileData] = useState({
     firstName: '',
     lastName: '',
@@ -48,7 +50,7 @@ const StudentProfile = () => {
     phone: "",
     address: "",
     dateOfBirth: "",
-    branch: "Computer Science & Business Systems",
+    branch: "Computer Science and Engineering",
     semester: "VI",
     rollNumber: userData?.collegeId || "",
     cgpa: "",
@@ -63,37 +65,114 @@ const StudentProfile = () => {
   const [newAchievement, setNewAchievement] = useState("");
   const printRef = useRef<HTMLDivElement | null>(null);
 
+  // Fetch student name from Firebase Realtime Database using REST API
   useEffect(() => {
     if (!userData?.collegeId) return;
-    // Sync core fields when auth changes
-    setProfileData(prev => ({
-      ...prev,
-      rollNumber: userData.collegeId,
-      email: userData.email || `${userData.collegeId}@cvr.ac.in`,
-    }));
 
-  }, [userData?.collegeId, userData?.name, userData?.email]);
+    const fetchStudentName = async () => {
+      try {
+        // Fetch all student records from Firebase
+        // Structure: /{index} -> { "Name of the student": "...", "ROLL NO": "..." }
+        const response = await fetch(
+          `https://campverse-1374-default-rtdb.firebaseio.com/.json`
+        );
+
+        if (response.ok) {
+          const allData = await response.json();
+
+          if (allData) {
+            // Search through all entries to find the one with matching ROLL NO
+            for (const key in allData) {
+              const student = allData[key];
+              if (student && student["ROLL NO"] === userData.collegeId) {
+                // Found the student! Get the name
+                const name = student["Name of the student"] || student["Name"] || student["name"] || null;
+                console.log("Found student:", student);
+                console.log("Student name:", name);
+
+                if (name) {
+                  setStudentName(name);
+                  const nameParts = name.trim().split(' ');
+                  setProfileData(prev => ({
+                    ...prev,
+                    firstName: nameParts[0] || '',
+                    lastName: nameParts.slice(1).join(' ') || '',
+                  }));
+                }
+                break; // Found the student, exit loop
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching from Firebase:", error);
+      }
+    };
+
+    fetchStudentName();
+  }, [userData?.collegeId]);
+
+  useEffect(() => {
+    if (!userData?.collegeId) return;
+
+    const fetchProfile = async () => {
+      try {
+        // Core auth data sync
+        setProfileData(prev => ({
+          ...prev,
+          rollNumber: userData.collegeId,
+          email: userData.email || `${userData.collegeId}@cvr.ac.in`,
+        }));
+
+        // Fetch additional profile data from Backend
+        if (userData?.uid) {
+          const studentProfile = await api.get(`/users/${userData.uid}`);
+
+          if (studentProfile) {
+            setProfileData(prev => ({
+              ...prev,
+              firstName: studentProfile.name?.split(' ')[0] || prev.firstName,
+              lastName: studentProfile.name?.split(' ').slice(1).join(' ') || prev.lastName,
+              phone: studentProfile.phone || prev.phone,
+              address: studentProfile.address || prev.address,
+              dateOfBirth: studentProfile.dateOfBirth || prev.dateOfBirth,
+              bio: studentProfile.bio || prev.bio,
+              avatar: studentProfile.avatar || prev.avatar,
+              branch: studentProfile.branchInfo || studentProfile.branch || prev.branch, // branchInfo is virtual, fallback to code
+              semester: studentProfile.semester || prev.semester,
+              cgpa: studentProfile.cgpa || prev.cgpa,
+              skills: studentProfile.skills || [],
+              achievements: studentProfile.achievements || [],
+            }));
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      }
+    };
+
+    fetchProfile();
+  }, [userData?.collegeId, userData?.uid, userData?.name, userData?.email]);
 
   const handleAvatarUpload = async (file: File) => {
     try {
       const localUrl = URL.createObjectURL(file);
       setProfileData(prev => ({ ...prev, avatar: localUrl }));
 
-      const { default: app, isDevelopment, firebaseReady } = await import('@/lib/firebase');
-      let finalUrl = localUrl;
-      if (!isDevelopment && firebaseReady && app) {
-        const { getStorage, ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
-        const storage = getStorage(app);
+      const { storage, isDevelopment, firebaseReady } = await import('@/lib/firebase');
+
+      if (!isDevelopment && firebaseReady && storage) {
+        const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
         const path = `avatars/${userData?.uid || userData?.collegeId}.jpg`;
         const storageRef = ref(storage, path);
         await uploadBytes(storageRef, file);
-        finalUrl = await getDownloadURL(storageRef);
-        setProfileData(prev => ({ ...prev, avatar: finalUrl }));
-      }
+        const downloadUrl = await getDownloadURL(storageRef);
 
-      const { StudentService } = await import('@/services/firestoreService');
-      if (userData?.uid) {
-        await StudentService.updateStudentProfile(userData.uid, { profile: { avatar: finalUrl } } as any);
+        // Update via API
+        if (userData?.uid) {
+          await api.put(`/users/${userData.uid}`, { avatar: downloadUrl });
+          setProfileData(prev => ({ ...prev, avatar: downloadUrl }));
+        }
       }
     } catch (e) {
       console.error('Avatar upload failed:', e);
@@ -136,8 +215,27 @@ const StudentProfile = () => {
     }));
   };
 
-  const handleSave = () => {
-    console.log("Saving profile data:", profileData);
+  const handleSave = async () => {
+    try {
+      if (userData?.uid) {
+        await api.put(`/users/${userData.uid}`, {
+          name: `${profileData.firstName} ${profileData.lastName}`,
+          phone: profileData.phone,
+          address: profileData.address,
+          dateOfBirth: profileData.dateOfBirth,
+          bio: profileData.bio,
+          cgpa: profileData.cgpa,
+          semester: profileData.semester,
+          skills: profileData.skills,
+          achievements: profileData.achievements,
+          // branch is usually immutable or set by admin, but sending it if needed or just skipping
+        });
+
+        console.log("Profile saved to Backend");
+      }
+    } catch (e) {
+      console.error("Error saving profile:", e);
+    }
     setIsEditing(false);
   };
 
@@ -248,10 +346,10 @@ const StudentProfile = () => {
                     )}
                   </div>
                   <div className="text-center md:text-left flex-1">
-                    <h2 className="text-2xl font-bold text-foreground">
-                      {profileData.firstName} {profileData.lastName}
+                    <h2 className="text-2xl font-bold text-primary">
+                      {studentName || `${profileData.firstName} ${profileData.lastName}`}
                     </h2>
-                    <p className="text-lg text-primary font-medium">
+                    <p className="text-lg text-foreground font-medium">
                       {profileData.rollNumber}
                     </p>
                     <div className="flex flex-wrap gap-2 mt-2 justify-center md:justify-start">

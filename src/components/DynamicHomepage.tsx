@@ -1,9 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
+import { Navigate } from "react-router-dom";
 import Navigation from "./Navigation";
 import Index from "@/pages/Index";
-import StudentDashboard from "@/pages/student/Dashboard";
-import FacultyDashboard from "@/pages/faculty/Dashboard";
-import AdminDashboard from "@/pages/admin/Dashboard";
 
 const DynamicHomepage = () => {
   const { currentUser, userData, loading } = useAuth();
@@ -29,14 +27,14 @@ const DynamicHomepage = () => {
     );
   }
 
-  // If user is authenticated, show their respective dashboard
+  // If user is authenticated, redirect to their respective dashboard URL
   switch (userData.role) {
     case "student":
-      return <StudentDashboard />;
+      return <Navigate to="/student" replace />;
     case "faculty":
-      return <FacultyDashboard />;
+      return <Navigate to="/faculty" replace />;
     case "admin":
-      return <AdminDashboard />;
+      return <Navigate to="/admin" replace />;
     default:
       return (
         <>

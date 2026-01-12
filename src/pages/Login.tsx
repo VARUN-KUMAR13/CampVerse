@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { validateCollegeId } from "@/lib/auth";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
+import { executeRecaptcha, isRecaptchaAvailable } from "@/lib/recaptcha";
 
 const Login = () => {
   const [userType, setUserType] = useState<"Student" | "Faculty">("Student");
@@ -36,7 +37,19 @@ const Login = () => {
     setError("");
 
     try {
-      await login(userId, password);
+      // Execute reCAPTCHA to get token
+      let recaptchaToken = '';
+      if (isRecaptchaAvailable()) {
+        try {
+          recaptchaToken = await executeRecaptcha('LOGIN');
+          console.log('reCAPTCHA token generated for LOGIN action');
+        } catch (recaptchaError) {
+          console.warn('reCAPTCHA failed, proceeding without it:', recaptchaError);
+        }
+      }
+
+      // Pass recaptcha token to login (backend will verify)
+      await login(userId, password, recaptchaToken);
       // Redirect to homepage - DynamicHomepage will show the appropriate dashboard
       navigate("/", { replace: true });
     } catch (error: any) {
@@ -156,22 +169,20 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => setUserType("Student")}
-                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                    userType === "Student"
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${userType === "Student"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                    }`}
                 >
                   Student
                 </button>
                 <button
                   type="button"
                   onClick={() => setUserType("Faculty")}
-                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                    userType === "Faculty"
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${userType === "Faculty"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                    }`}
                 >
                   Faculty
                 </button>

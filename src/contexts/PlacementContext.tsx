@@ -1,6 +1,16 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useCallback,
+} from "react";
+import { api } from "@/lib/api";
+import { useAuth } from "./AuthContext";
 
 export interface PlacementJob {
+  _id?: string;
   job_id: string;
   title: string;
   company: string;
@@ -13,219 +23,263 @@ export interface PlacementJob {
   appliedCount: number;
   shortlistedCount: number;
   selectedCount: number;
-  postedDate: string;
-  attachments: string[];
+  postedDate?: string;
+  createdAt?: string;
+  attachments: string[] | { filename: string; url: string }[];
   description?: string;
   bond?: string;
   rounds?: string | string[];
   applied?: boolean;
   eligible?: boolean;
+  canApply?: boolean;
+  applicationStatus?: string | null;
+  location?: string;
+  requirements?: string[];
+  benefits?: string[];
 }
 
 interface PlacementContextType {
   jobs: PlacementJob[];
+  loading: boolean;
+  error: string | null;
   addJob: (
     job: Omit<
       PlacementJob,
+      | "_id"
       | "appliedCount"
       | "shortlistedCount"
       | "selectedCount"
       | "postedDate"
-      | "attachments"
+      | "createdAt"
       | "status"
-    >,
-  ) => void;
-  updateJob: (jobId: string, updates: Partial<PlacementJob>) => void;
-  deleteJob: (jobId: string) => void;
-  applyToJob: (jobId: string, studentId: string) => void;
+      | "applied"
+      | "eligible"
+      | "canApply"
+      | "applicationStatus"
+    >
+  ) => Promise<void>;
+  updateJob: (jobId: string, updates: Partial<PlacementJob>) => Promise<void>;
+  deleteJob: (jobId: string) => Promise<void>;
+  applyToJob: (jobId: string, studentId: string) => Promise<void>;
+  refreshJobs: () => Promise<void>;
 }
 
 const PlacementContext = createContext<PlacementContextType | undefined>(
-  undefined,
+  undefined
 );
-
-const initialJobs: PlacementJob[] = [
-  {
-    job_id: "APT2025",
-    title: "Technical Consultant I",
-    company: "apty",
-    type: "Intern + Full Time",
-    ctc: "5.00 LPA - 8.00 LPA",
-    stipend: "₹25,000/month",
-    deadline: "2025-07-05T10:00:00",
-    status: "Open",
-    eligibility: ["CSE", "IT", "ECE"],
-    appliedCount: 45,
-    shortlistedCount: 12,
-    selectedCount: 0,
-    postedDate: "2025-01-20T10:00:00",
-    attachments: ["CVR_APTY_Proposal.pdf"],
-    description: "Software development role with modern tech stack",
-    bond: "2 years",
-    rounds: ["Online Test", "Technical Interview", "HR Interview"],
-    applied: false,
-    eligible: true,
-  },
-  {
-    job_id: "TCS2025",
-    title: "Assistant System Engineer",
-    company: "TCS",
-    type: "Full Time",
-    ctc: "3.36 LPA",
-    stipend: "N/A",
-    deadline: "2025-06-15T23:59:00",
-    status: "Open",
-    eligibility: ["All Branches"],
-    appliedCount: 156,
-    shortlistedCount: 45,
-    selectedCount: 8,
-    postedDate: "2025-01-15T09:00:00",
-    attachments: ["TCS_JD.pdf"],
-    description: "Entry-level position in system engineering",
-    bond: "2 years",
-    rounds: ["Online Test", "Technical Interview", "HR Round"],
-    applied: true,
-    eligible: true,
-  },
-  {
-    job_id: "WIPRO2025",
-    title: "Project Engineer",
-    company: "Wipro",
-    type: "Full Time",
-    ctc: "4.50 LPA",
-    stipend: "N/A",
-    deadline: "2025-05-20T18:00:00",
-    status: "Closed",
-    eligibility: ["CSE", "IT"],
-    appliedCount: 89,
-    shortlistedCount: 25,
-    selectedCount: 15,
-    postedDate: "2025-01-10T14:00:00",
-    attachments: ["Wipro_Details.pdf"],
-    description: "Software development and project management",
-    bond: "18 months",
-    rounds: ["Aptitude Test", "Technical Round", "HR Interview"],
-    applied: false,
-    eligible: false,
-  },
-];
 
 export const PlacementProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [jobs, setJobs] = useState<PlacementJob[]>(() => {
-    // Try to load jobs from localStorage first
+  const [jobs, setJobs] = useState<PlacementJob[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { currentUser } = useAuth();
+
+  // Fetch jobs from MongoDB API
+  const fetchJobs = useCallback(async () => {
+    if (!currentUser) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      const savedJobs = localStorage.getItem("placement_jobs");
-      if (savedJobs && savedJobs !== "undefined" && savedJobs !== "null") {
-        const parsedJobs = JSON.parse(savedJobs);
-        if (Array.isArray(parsedJobs) && parsedJobs.length > 0) {
-          console.log("Loaded jobs from localStorage:", parsedJobs);
-          return parsedJobs;
-        }
-      }
-    } catch (error) {
-      console.error("Error loading jobs from localStorage:", error);
-      // Clear corrupted data
-      localStorage.removeItem("placement_jobs");
-    }
-    console.log("Using initial jobs:", initialJobs);
-    return initialJobs;
-  });
+      setLoading(true);
+      setError(null);
+      console.log("Fetching jobs from MongoDB API...");
 
-  // Save jobs to localStorage whenever jobs change
-  React.useEffect(() => {
-    if (jobs && Array.isArray(jobs) && jobs.length > 0) {
-      try {
-        const serializedJobs = JSON.stringify(jobs);
-        localStorage.setItem("placement_jobs", serializedJobs);
-        console.log("Saved jobs to localStorage:", jobs.length, "jobs");
-      } catch (error) {
-        console.error("Error saving jobs to localStorage:", error);
-        // If localStorage is full or unavailable, clear it
-        try {
-          localStorage.removeItem("placement_jobs");
-        } catch (clearError) {
-          console.error("Could not clear localStorage:", clearError);
-        }
-      }
-    }
-  }, [jobs]);
+      const response = await api.get("/placements");
+      console.log("API Response:", response);
 
-  const addJob = (
+      // Handle the response structure from the backend
+      const jobsData = response.jobs || response;
+
+      if (Array.isArray(jobsData)) {
+        // Normalize job data for frontend compatibility
+        const normalizedJobs = jobsData.map((job: any) => ({
+          ...job,
+          // Ensure consistent field names
+          postedDate: job.postedDate || job.createdAt,
+          attachments: job.attachments || [],
+          // Set eligibility flags for students
+          eligible: job.canApply !== undefined ? job.canApply : true,
+          applied: job.applied || false,
+        }));
+
+        setJobs(normalizedJobs);
+        console.log("Jobs loaded from MongoDB:", normalizedJobs.length);
+      } else {
+        console.warn("Unexpected response format:", response);
+        setJobs([]);
+      }
+    } catch (err: any) {
+      console.error("Error fetching jobs from API:", err);
+      setError(err.message || "Failed to load jobs");
+      // Don't clear jobs on error, keep the last known state
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser]);
+
+  // Fetch jobs when user logs in
+  useEffect(() => {
+    if (currentUser) {
+      fetchJobs();
+    } else {
+      setJobs([]);
+      setLoading(false);
+    }
+  }, [currentUser, fetchJobs]);
+
+  // Add a new job via API
+  const addJob = async (
     newJobData: Omit<
       PlacementJob,
+      | "_id"
       | "appliedCount"
       | "shortlistedCount"
       | "selectedCount"
       | "postedDate"
-      | "attachments"
+      | "createdAt"
       | "status"
       | "applied"
       | "eligible"
-    >,
+      | "canApply"
+      | "applicationStatus"
+    >
   ) => {
-    const job: PlacementJob = {
-      ...newJobData,
-      status: "Open",
-      appliedCount: 0,
-      shortlistedCount: 0,
-      selectedCount: 0,
-      postedDate: new Date().toISOString(),
-      attachments: [],
-      applied: false,
-      eligible: true, // All students can see all jobs by default
-      // Ensure eligibility is an array
-      eligibility: Array.isArray(newJobData.eligibility)
-        ? newJobData.eligibility
-        : newJobData.eligibility
-          ? [newJobData.eligibility as any]
-          : ["All Branches"],
-      // Ensure rounds is an array
-      rounds: Array.isArray(newJobData.rounds)
-        ? newJobData.rounds
-        : newJobData.rounds
-          ? [newJobData.rounds as any]
-          : [],
-    };
-    console.log("Adding new job:", job); // Debug log
-    setJobs((prevJobs) => {
-      const updatedJobs = [job, ...prevJobs];
-      console.log("Updated jobs list:", updatedJobs); // Debug log
-      return updatedJobs;
-    });
+    try {
+      setError(null);
+      console.log("Adding new job to MongoDB:", newJobData);
+
+      // Prepare job data for API
+      const jobPayload = {
+        ...newJobData,
+        status: "Open",
+        // Ensure eligibility is an array
+        eligibility: Array.isArray(newJobData.eligibility)
+          ? newJobData.eligibility
+          : newJobData.eligibility
+            ? [newJobData.eligibility as any]
+            : ["All Branches"],
+        // Ensure rounds is an array
+        rounds: Array.isArray(newJobData.rounds)
+          ? newJobData.rounds
+          : newJobData.rounds
+            ? (newJobData.rounds as string).split(",").map((r) => r.trim())
+            : [],
+      };
+
+      const response = await api.post("/placements", jobPayload);
+      console.log("Job created successfully:", response);
+
+      // Refresh jobs list to get the new job from MongoDB
+      await fetchJobs();
+    } catch (err: any) {
+      console.error("Error adding job:", err);
+      setError(err.message || "Failed to add job");
+      throw err;
+    }
   };
 
-  const updateJob = (jobId: string, updates: Partial<PlacementJob>) => {
-    setJobs((prevJobs) =>
-      prevJobs.map((job) =>
-        job.job_id === jobId ? { ...job, ...updates } : job,
-      ),
-    );
+  // Update a job via API
+  const updateJob = async (jobId: string, updates: Partial<PlacementJob>) => {
+    try {
+      setError(null);
+      console.log("Updating job:", jobId, updates);
+
+      // Find the job's MongoDB _id
+      const job = jobs.find((j) => j.job_id === jobId || j._id === jobId);
+      if (!job?._id) {
+        throw new Error("Job not found");
+      }
+
+      const response = await api.put(`/placements/${job._id}`, updates);
+      console.log("Job updated successfully:", response);
+
+      // Refresh jobs list
+      await fetchJobs();
+    } catch (err: any) {
+      console.error("Error updating job:", err);
+      setError(err.message || "Failed to update job");
+      throw err;
+    }
   };
 
-  const deleteJob = (jobId: string) => {
-    setJobs((prevJobs) => prevJobs.filter((job) => job.job_id !== jobId));
+  // Delete a job via API
+  const deleteJob = async (jobId: string) => {
+    try {
+      setError(null);
+      console.log("Deleting job:", jobId);
+
+      // Find the job's MongoDB _id
+      const job = jobs.find((j) => j.job_id === jobId || j._id === jobId);
+      if (!job?._id) {
+        throw new Error("Job not found");
+      }
+
+      await api.delete(`/placements/${job._id}`);
+      console.log("Job deleted successfully");
+
+      // Remove job from local state immediately for better UX
+      setJobs((prevJobs) =>
+        prevJobs.filter((j) => j.job_id !== jobId && j._id !== jobId)
+      );
+    } catch (err: any) {
+      console.error("Error deleting job:", err);
+      setError(err.message || "Failed to delete job");
+      throw err;
+    }
   };
 
-  const applyToJob = (jobId: string, studentId: string) => {
-    setJobs((prevJobs) =>
-      prevJobs.map((job) =>
-        job.job_id === jobId
-          ? { ...job, applied: true, appliedCount: job.appliedCount + 1 }
-          : job,
-      ),
-    );
+  // Apply to a job via API
+  const applyToJob = async (jobId: string, studentId: string) => {
+    try {
+      setError(null);
+      console.log("Applying to job:", jobId);
+
+      // Find the job's MongoDB _id
+      const job = jobs.find((j) => j.job_id === jobId || j._id === jobId);
+      if (!job?._id) {
+        throw new Error("Job not found");
+      }
+
+      const response = await api.post(`/placements/${job._id}/apply`, {
+        notes: `Applied by ${studentId}`,
+      });
+      console.log("Application submitted:", response);
+
+      // Update local state to reflect the application
+      setJobs((prevJobs) =>
+        prevJobs.map((j) =>
+          j.job_id === jobId || j._id === jobId
+            ? { ...j, applied: true, appliedCount: j.appliedCount + 1 }
+            : j
+        )
+      );
+    } catch (err: any) {
+      console.error("Error applying to job:", err);
+      setError(err.message || "Failed to apply to job");
+      throw err;
+    }
+  };
+
+  // Manual refresh function
+  const refreshJobs = async () => {
+    await fetchJobs();
   };
 
   return (
     <PlacementContext.Provider
       value={{
         jobs,
+        loading,
+        error,
         addJob,
         updateJob,
         deleteJob,
         applyToJob,
+        refreshJobs,
       }}
     >
       {children}

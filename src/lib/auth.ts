@@ -6,6 +6,7 @@ import {
   User,
 } from "firebase/auth";
 import { auth, isDevelopment, firebaseReady } from "./firebase";
+import { setAuthToken, clearAuthToken } from "./api";
 
 export interface CollegeUser {
   uid: string;
@@ -40,7 +41,7 @@ export const parseCollegeId = (id: string) => {
   const rollNumber = id.substring(8);
 
   // Determine role based on section
-  const role = section === "Z" ? "faculty" : "student";
+  const role: "student" | "faculty" = section === "Z" ? "faculty" : "student";
 
   return {
     year,
@@ -57,7 +58,11 @@ export const collegeIdToEmail = (id: string): string => {
   return `${id}@cvr.ac.in`;
 };
 
-// Mock users for development
+// API base URL (should be environment variable)
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+
+// Mock users for development (fallback only)
 const mockUsers: Record<string, CollegeUser> = {
   admin: {
     uid: "admin-uid",
@@ -94,13 +99,62 @@ const mockUsers: Record<string, CollegeUser> = {
   },
 };
 
-// Development mode authentication
+// Backend API login - Primary authentication method
+const backendLogin = async (
+  collegeId: string,
+  password: string,
+  recaptchaToken?: string,
+): Promise<CollegeUser> => {
+  try {
+    console.log("Attempting backend login for:", collegeId);
+
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ collegeId, password, recaptchaToken }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Login failed");
+    }
+
+    const data = await response.json();
+    console.log("Backend login successful, storing JWT token");
+
+    // Store the JWT token
+    if (data.token) {
+      setAuthToken(data.token);
+    }
+
+    // Return user data normalized to CollegeUser interface
+    const user = data.user;
+    return {
+      uid: user.uid || user._id,
+      name: user.name,
+      collegeId: user.collegeId,
+      email: user.email,
+      role: user.role,
+      year: user.year || "",
+      section: user.section || "",
+      branch: user.branch || "",
+      rollNumber: user.rollNumber || "",
+    };
+  } catch (error: any) {
+    console.error("Backend login error:", error);
+    throw error;
+  }
+};
+
+// Development mode authentication (fallback)
 const devSignIn = async (
   collegeId: string,
   password: string,
 ): Promise<CollegeUser> => {
   // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  await new Promise((resolve) => setTimeout(resolve, 500));
 
   // Check for admin login
   if (collegeId === "admin" && password === "admin") {
@@ -109,7 +163,6 @@ const devSignIn = async (
 
   // Check if user exists in mock data
   if (mockUsers[collegeId]) {
-    // In development mode, password should match college ID (default password)
     if (password === collegeId) {
       return mockUsers[collegeId];
     } else {
@@ -119,7 +172,6 @@ const devSignIn = async (
 
   // If user doesn't exist, try to create based on college ID format
   if (validateCollegeId(collegeId)) {
-    // Check if password matches college ID (default password)
     if (password === collegeId) {
       const parsedInfo = parseCollegeId(collegeId);
       const newUser: CollegeUser = {
@@ -129,10 +181,7 @@ const devSignIn = async (
         email: collegeIdToEmail(collegeId),
         ...parsedInfo,
       };
-
-      // Add to mock users for future logins
       mockUsers[collegeId] = newUser;
-
       return newUser;
     } else {
       throw new Error("Invalid password");
@@ -158,10 +207,6 @@ const devResetPassword = async (collegeId: string): Promise<void> => {
     `Development mode: Password reset email would be sent to ${collegeIdToEmail(collegeId)}`,
   );
 };
-
-// API base URL (should be environment variable)
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
 // Create user account
 export const createUserAccount = async (collegeId: string, name: string) => {
@@ -228,80 +273,30 @@ export const createUserAccount = async (collegeId: string, name: string) => {
 };
 
 // Sign in user
-export const signInUser = async (collegeId: string, password: string) => {
+export const signInUser = async (
+  collegeId: string,
+  password: string,
+  recaptchaToken?: string,
+) => {
   try {
-    // Development mode or Firebase not ready
-    if (isDevelopment || !firebaseReady || !auth) {
-      console.log("Using development mode authentication");
-      return await devSignIn(collegeId, password);
-    }
-
-    // Handle admin login
-    if (collegeId === "admin" && password === "admin") {
-      try {
-        // For admin, we'll use a special email
-        const email = "admin@cvr.ac.in";
-        const userCredential = await signInWithEmailAndPassword(
-          auth,
-          email,
-          password,
-        );
-
-        return {
-          uid: userCredential.user.uid,
-          collegeId: "admin",
-          email,
-          role: "admin" as const,
-          name: "Administrator",
-          year: "",
-          section: "",
-          branch: "",
-          rollNumber: "",
-        };
-      } catch (firebaseError: any) {
-        // If Firebase fails, fall back to development mode for admin
-        if (firebaseError.code === 'auth/network-request-failed' ||
-            firebaseError.code === 'auth/user-not-found') {
-          console.warn("Firebase Authentication not configured properly, falling back to development mode");
-          return mockUsers.admin;
-        }
-        throw firebaseError;
-      }
-    }
-
-    // Validate college ID format
-    if (!validateCollegeId(collegeId)) {
-      throw new Error("Invalid college ID format");
-    }
-
-    const email = collegeIdToEmail(collegeId);
-
+    // ALWAYS try backend login first to get JWT token
+    // This works for both development and production
     try {
-      // Sign in with Firebase
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password,
-      );
-      const user = userCredential.user;
-
-      // Get user data from MongoDB
-      const response = await fetch(`${API_BASE_URL}/users/${user.uid}`);
-      if (!response.ok) {
-        throw new Error("User not found in database");
-      }
-
-      const userData = await response.json();
+      console.log("Attempting backend authentication...");
+      const userData = await backendLogin(collegeId, password, recaptchaToken);
+      console.log("Backend login successful for:", collegeId);
       return userData;
-    } catch (firebaseError: any) {
-      // If Firebase is not configured or user doesn't exist, fall back to development mode
-      if (firebaseError.code === 'auth/network-request-failed' ||
-          firebaseError.code === 'auth/user-not-found' ||
-          firebaseError.code === 'auth/wrong-password') {
-        console.warn("Firebase Authentication issue, falling back to development mode for user:", collegeId);
+    } catch (backendError: any) {
+      console.warn("Backend login failed, trying fallback:", backendError.message);
+
+      // If backend is unreachable (network error), use dev fallback
+      if (backendError.message?.includes("fetch") || backendError.message?.includes("network")) {
+        console.log("Backend unreachable, using development mode fallback");
         return await devSignIn(collegeId, password);
       }
-      throw firebaseError;
+
+      // If it's an auth error (wrong password, user not found), propagate it
+      throw backendError;
     }
   } catch (error) {
     console.error("Error signing in:", error);
@@ -336,9 +331,13 @@ export const resetPassword = async (collegeId: string) => {
 // Sign out user
 export const signOutUser = async () => {
   try {
+    // Always clear the JWT token
+    clearAuthToken();
+    console.log("Auth token cleared");
+
     if (isDevelopment || !firebaseReady || !auth) {
       // In development mode, just clear any stored state
-      console.log("Development mode: User signed out");
+      console.log("User signed out");
       return;
     }
     await signOut(auth);

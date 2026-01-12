@@ -20,28 +20,44 @@ mongoose
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
-// Firebase Admin Setup
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      type: "service_account",
-      project_id: process.env.FIREBASE_PROJECT_ID,
-      private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
-      private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-      client_email: process.env.FIREBASE_CLIENT_EMAIL,
-      client_id: process.env.FIREBASE_CLIENT_ID,
-      auth_uri: "https://accounts.google.com/o/oauth2/auth",
-      token_uri: "https://oauth2.googleapis.com/token",
-      auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-      client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
-    }),
-  });
+// Firebase Admin Setup (optional - only if service account env vars are present)
+try {
+  const hasFirebaseServiceAccount =
+    process.env.FIREBASE_PROJECT_ID &&
+    process.env.FIREBASE_PRIVATE_KEY &&
+    process.env.FIREBASE_CLIENT_EMAIL;
+
+  if (hasFirebaseServiceAccount && !admin.apps.length) {
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        type: "service_account",
+        project_id: process.env.FIREBASE_PROJECT_ID,
+        private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+        private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+        client_email: process.env.FIREBASE_CLIENT_EMAIL,
+        client_id: process.env.FIREBASE_CLIENT_ID,
+        auth_uri: "https://accounts.google.com/o/oauth2/auth",
+        token_uri: "https://oauth2.googleapis.com/token",
+        auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+        client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
+      }),
+    });
+    console.log("Firebase Admin initialized");
+  } else {
+    console.log("Firebase Admin not configured; skipping admin initialization");
+  }
+} catch (firebaseError) {
+  console.warn("Failed to initialize Firebase Admin, continuing without it:", firebaseError.message);
 }
 
 // Import routes
 const userRoutes = require("./routes/users");
 const authRoutes = require("./routes/auth");
 const placementRoutes = require("./routes/placements");
+const eventRoutes = require("./routes/events");
+const clubRoutes = require("./routes/clubs");
+const examRoutes = require("./routes/exams");
+const paymentRoutes = require("./routes/payments");
 
 // Import middleware
 const { corsHandler, rateLimiter, validateApiVersion } = require("./middleware/auth");
@@ -55,6 +71,10 @@ app.use(validateApiVersion());
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/placements", placementRoutes);
+app.use("/api/events", eventRoutes);
+app.use("/api/clubs", clubRoutes);
+app.use("/api/exams", examRoutes);
+app.use("/api/payments", paymentRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

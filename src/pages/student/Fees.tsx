@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,17 +33,138 @@ import {
   Filter,
   Calculator,
   GraduationCap,
+  XCircle,
+  Loader2,
 } from "lucide-react";
 
 declare global { interface Window { Razorpay: any } }
+
+interface Transaction {
+  _id: string;
+  orderId: string;
+  paymentId: string | null;
+  amount: number;
+  status: 'created' | 'pending' | 'success' | 'failed' | 'refunded';
+  feeType: string;
+  feeDescription?: string;
+  receipt: string;
+  createdAt: string;
+}
 
 const StudentFees = () => {
   const { userData } = useAuth();
   const [selectedTab, setSelectedTab] = useState("dashboard");
   const [selectedYear, setSelectedYear] = useState("2025-26");
   const [paymentAmount, setPaymentAmount] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
 
   const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID as string | undefined;
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
+  // Fetch transactions from MongoDB
+  useEffect(() => {
+    if (!userData?.collegeId) return;
+
+    const fetchTransactions = async () => {
+      setLoadingTransactions(true);
+      try {
+        const response = await fetch(`${API_BASE_URL}/payments/history/${userData.collegeId}`);
+        const data = await response.json();
+        if (data.success && data.payments) {
+          setTransactions(data.payments);
+        }
+      } catch (error) {
+        console.error('Error fetching transactions:', error);
+      } finally {
+        setLoadingTransactions(false);
+      }
+    };
+
+    fetchTransactions();
+  }, [userData?.collegeId, API_BASE_URL]);
+
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  // Download receipt as PDF
+  const downloadReceipt = async (transaction: Transaction) => {
+    try {
+      // Create receipt HTML content
+      const receiptHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Payment Receipt - ${transaction.receipt}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
+            .header { text-align: center; border-bottom: 2px solid #4F46E5; padding-bottom: 20px; margin-bottom: 30px; }
+            .header h1 { color: #4F46E5; margin: 0; }
+            .header p { color: #666; margin: 5px 0; }
+            .details { margin: 20px 0; }
+            .row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+            .label { color: #666; }
+            .value { font-weight: bold; }
+            .amount { font-size: 24px; color: #4F46E5; text-align: center; margin: 30px 0; }
+            .status { text-align: center; padding: 10px; border-radius: 5px; margin: 20px 0; }
+            .success { background: #d4edda; color: #155724; }
+            .failed { background: #f8d7da; color: #721c24; }
+            .footer { text-align: center; margin-top: 40px; color: #666; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>CVR College of Engineering</h1>
+            <p>Payment Receipt</p>
+          </div>
+          <div class="details">
+            <div class="row"><span class="label">Receipt No:</span><span class="value">${transaction.receipt}</span></div>
+            <div class="row"><span class="label">Order ID:</span><span class="value">${transaction.orderId}</span></div>
+            <div class="row"><span class="label">Transaction ID:</span><span class="value">${transaction.paymentId || 'N/A'}</span></div>
+            <div class="row"><span class="label">Student ID:</span><span class="value">${userData?.collegeId || ''}</span></div>
+            <div class="row"><span class="label">Fee Type:</span><span class="value">${transaction.feeType}</span></div>
+            <div class="row"><span class="label">Date:</span><span class="value">${formatDate(transaction.createdAt)}</span></div>
+          </div>
+          <div class="amount">₹${transaction.amount.toLocaleString()}/-</div>
+          <div class="status ${transaction.status === 'success' ? 'success' : 'failed'}">
+            Payment ${transaction.status === 'success' ? 'Successful' : 'Failed'}
+          </div>
+          <div class="footer">
+            <p>This is a computer-generated receipt and does not require a signature.</p>
+            <p>For any queries, contact: accounts@cvr.ac.in</p>
+          </div>
+        </body>
+        </html>
+      `;
+
+      // Create blob and download
+      const blob = new Blob([receiptHtml], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Receipt_${transaction.receipt}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({ title: 'Receipt Downloaded', description: `Receipt ${transaction.receipt} saved successfully.` });
+    } catch (error) {
+      console.error('Error downloading receipt:', error);
+      toast({ title: 'Download Failed', description: 'Could not download receipt.', variant: 'destructive' });
+    }
+  };
 
   const loadRazorpay = (): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -56,52 +177,138 @@ const StudentFees = () => {
     });
   };
 
-  const openRazorpay = async (amountInRupees: number) => {
+  const openRazorpay = async (amountInRupees: number, feeType: string = 'Other', feeDescription: string = 'Fee Payment') => {
     if (!amountInRupees || amountInRupees <= 0) {
       toast({ title: 'No pending amount', description: 'You have no dues to pay.' });
       return;
     }
     if (!RAZORPAY_KEY_ID) {
-      toast({ title: 'Missing Razorpay Key', description: 'Set VITE_RAZORPAY_KEY_ID in your environment to enable payments.' });
-      return;
-    }
-    const loaded = await loadRazorpay();
-    if (!loaded) {
-      toast({ title: 'Payment unavailable', description: 'Could not load Razorpay. Check your network and try again.' });
+      toast({ title: 'Missing Razorpay Key', description: 'Payment configuration is missing. Contact admin.' });
       return;
     }
 
-    const options: any = {
-      key: RAZORPAY_KEY_ID,
-      amount: Math.round(amountInRupees * 100),
-      currency: 'INR',
-      name: 'CampVerse Fees',
-      description: 'Fee Payment',
-      prefill: {
-        name: userData?.name || userData?.collegeId || 'Student',
-        email: userData?.email || 'student@example.com',
-      },
-      notes: {
-        studentId: userData?.collegeId || '',
-        year: selectedYear,
-      },
-      theme: { color: '#4F46E5' },
-      handler: function (response: any) {
-        toast({ title: 'Payment initiated', description: `Razorpay ref: ${response.razorpay_payment_id || ''}` });
-      },
-      modal: { ondismiss: () => {} },
-    };
+    setIsProcessing(true);
 
-    const rzp = new window.Razorpay(options);
-    rzp.open();
+    try {
+      // Create order via backend
+      const orderResponse = await fetch(`${API_BASE_URL}/payments/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: amountInRupees,
+          studentId: userData?.collegeId || '',
+          studentName: userData?.name || userData?.collegeId || '',
+          email: userData?.email || `${userData?.collegeId}@cvr.ac.in`,
+          feeType,
+          feeDescription,
+          academicYear: selectedYear,
+          notes: { source: 'CampVerse Student Portal' }
+        })
+      });
+
+      const orderData = await orderResponse.json();
+
+      if (!orderResponse.ok || !orderData.success) {
+        throw new Error(orderData.error || 'Failed to create order');
+      }
+
+      const loaded = await loadRazorpay();
+      if (!loaded) {
+        toast({ title: 'Payment unavailable', description: 'Could not load Razorpay. Check your network and try again.' });
+        return;
+      }
+
+      const options: any = {
+        key: RAZORPAY_KEY_ID,
+        amount: orderData.order.amount,
+        currency: orderData.order.currency,
+        name: 'CVR College of Engineering',
+        description: feeDescription,
+        order_id: orderData.order.id,
+        prefill: {
+          name: userData?.name || userData?.collegeId || 'Student',
+          email: userData?.email || `${userData?.collegeId}@cvr.ac.in`,
+        },
+        notes: {
+          studentId: userData?.collegeId || '',
+          year: selectedYear,
+          feeType
+        },
+        theme: { color: '#4F46E5' },
+        handler: async function (response: any) {
+          // Verify payment on backend
+          try {
+            const verifyResponse = await fetch(`${API_BASE_URL}/payments/verify`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              })
+            });
+
+            const verifyData = await verifyResponse.json();
+
+            if (verifyData.verified) {
+              toast({
+                title: 'Payment Successful! ✅',
+                description: `Transaction ID: ${response.razorpay_payment_id}. Receipt: ${verifyData.payment?.receipt || ''}`
+              });
+            } else {
+              toast({
+                title: 'Payment Verification Failed',
+                description: 'Please contact admin with your transaction ID.',
+                variant: 'destructive'
+              });
+            }
+          } catch (verifyError) {
+            console.error('Verification error:', verifyError);
+            toast({
+              title: 'Payment Received',
+              description: `Transaction ID: ${response.razorpay_payment_id}. Verification pending.`
+            });
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            toast({ title: 'Payment Cancelled', description: 'You cancelled the payment.' });
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (response: any) {
+        toast({
+          title: 'Payment Failed',
+          description: response.error?.description || 'Payment could not be completed.',
+          variant: 'destructive'
+        });
+      });
+      rzp.open();
+    } catch (error: any) {
+      console.error('Payment error:', error);
+      toast({
+        title: 'Payment Error',
+        description: error.message || 'Could not initiate payment. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  // Mock fee data - replace with real data
+  // Calculate fee data dynamically from transactions
+  const TOTAL_FEES = 156000; // Total fees for the year
+  const paidAmount = transactions
+    .filter(t => t.status === 'success')
+    .reduce((sum, t) => sum + t.amount, 0);
+
   const feeData = {
-    totalFees: 156385,
-    paidFees: 156385,
-    pendingFees: 0,
-    completionPercentage: 100,
+    totalFees: TOTAL_FEES,
+    paidFees: paidAmount,
+    pendingFees: Math.max(0, TOTAL_FEES - paidAmount),
+    completionPercentage: Math.min(100, Math.round((paidAmount / TOTAL_FEES) * 100)),
   };
 
   const feeStructure = {
@@ -110,28 +317,28 @@ const StudentFees = () => {
         headType: "Template",
         name: "B.Tech 2022 Batch Tuition Fee",
         totalAmount: 156385,
-        balanceAmount: 0,
+        balanceAmount: 50000,
         color: "bg-blue-100",
       },
       {
         headType: "Fee",
         name: "Tuition Fee",
         totalAmount: 150000,
-        balanceAmount: 0,
+        balanceAmount: 45000,
         color: "bg-green-100",
       },
       {
         headType: "Fee",
         name: "JNTUH Special Fee",
         totalAmount: 3385,
-        balanceAmount: 0,
+        balanceAmount: 3385,
         color: "bg-purple-100",
       },
       {
         headType: "Fee",
         name: "Accreditation Fee",
         totalAmount: 3000,
-        balanceAmount: 0,
+        balanceAmount: 1615,
         color: "bg-cyan-100",
       },
     ],
@@ -140,7 +347,7 @@ const StudentFees = () => {
         headType: "Fee",
         name: "Hostel Fee (New)",
         totalAmount: 160000,
-        balanceAmount: 0,
+        balanceAmount: 80000,
         color: "bg-orange-100",
       },
     ],
@@ -149,7 +356,7 @@ const StudentFees = () => {
         headType: "Fee",
         name: "Bus Fee",
         totalAmount: 25000,
-        balanceAmount: 0,
+        balanceAmount: 12500,
         color: "bg-yellow-100",
       },
     ],
@@ -158,38 +365,11 @@ const StudentFees = () => {
         headType: "Fee",
         name: "Library Fee",
         totalAmount: 5000,
-        balanceAmount: 0,
+        balanceAmount: 2500,
         color: "bg-pink-100",
       },
     ],
   };
-
-  const transactionHistory = [
-    {
-      orderId: "175332508494358409",
-      transactionId: "pay_QwkCnrqaQFdPFG",
-      amount: 60000,
-      date: "24th Jul, 2025 08:14 AM",
-      status: "Success",
-      receiptNo: "ACF - 9965711",
-    },
-    {
-      orderId: "175319930301858228",
-      transactionId: "pay_QwAVmekS5JVsVs",
-      amount: 46385,
-      date: "22nd Jul, 2025 09:19 PM",
-      status: "Success",
-      receiptNo: "ACF - 9965683",
-    },
-    {
-      orderId: "175319864018753344",
-      transactionId: "pay_QwAIb62bCrmfGm",
-      amount: 50000,
-      date: "22nd Jul, 2025 09:07 PM",
-      status: "Success",
-      receiptNo: "ACF - 9965691",
-    },
-  ];
 
   const optionalFees = [
     { name: "ID CARD 300", amount: 300, color: "bg-pink-100" },
@@ -204,8 +384,8 @@ const StudentFees = () => {
     { name: "Hostel Caution Deposit", amount: 10000, color: "bg-yellow-100" },
   ];
 
-  const handlePayment = (amount: number) => {
-    openRazorpay(amount);
+  const handlePayment = (amount: number, feeType: string = 'Other', description: string = 'Fee Payment') => {
+    openRazorpay(amount, feeType, description);
   };
 
   const FeeProgressCircle = ({ percentage }: { percentage: number }) => {
@@ -362,27 +542,55 @@ const StudentFees = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      {transactionHistory.slice(0, 3).map((transaction, index) => (
-                        <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                          <div className="space-y-1">
-                            <p className="font-medium">₹{transaction.amount.toLocaleString()}/-</p>
-                            <p className="text-sm text-muted-foreground">{transaction.date}</p>
-                            <p className="text-xs text-muted-foreground">ID: {transaction.transactionId}</p>
+                    {loadingTransactions ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                        <span className="ml-2 text-muted-foreground">Loading transactions...</span>
+                      </div>
+                    ) : transactions.filter(t => t.status === 'success' || t.status === 'failed').length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Receipt className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                        <p>No completed transactions yet</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {transactions.filter(t => t.status === 'success' || t.status === 'failed').slice(0, 5).map((transaction) => (
+                          <div key={transaction._id} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div className="space-y-1">
+                              <p className="font-medium">₹{transaction.amount.toLocaleString()}/-</p>
+                              <p className="text-sm text-muted-foreground">{formatDate(transaction.createdAt)}</p>
+                              <p className="text-xs text-muted-foreground">ID: {transaction.paymentId || transaction.orderId}</p>
+                            </div>
+                            <div className="text-right space-y-2">
+                              {transaction.status === 'success' ? (
+                                <Badge className="bg-green-100 text-green-800">
+                                  <CheckCircle className="w-3 h-3 mr-1" />
+                                  Success
+                                </Badge>
+                              ) : transaction.status === 'failed' ? (
+                                <Badge className="bg-red-100 text-red-800">
+                                  <XCircle className="w-3 h-3 mr-1" />
+                                  Failed
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-yellow-100 text-yellow-800">
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  {transaction.status}
+                                </Badge>
+                              )}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => downloadReceipt(transaction)}
+                              >
+                                <Download className="w-4 h-4 mr-2" />
+                                Receipt
+                              </Button>
+                            </div>
                           </div>
-                          <div className="text-right space-y-2">
-                            <Badge className="bg-green-100 text-green-800">
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              {transaction.status}
-                            </Badge>
-                            <Button variant="outline" size="sm">
-                              <Receipt className="w-4 h-4 mr-2" />
-                              Receipt
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -690,10 +898,10 @@ const StudentFees = () => {
                               <h4 className="font-semibold text-lg">{fee.name}</h4>
                               <p className="text-sm text-muted-foreground">
                                 {fee.name.includes('ID CARD') ? 'Identity card services' :
-                                 fee.name.includes('Fine') ? 'Penalty charges' :
-                                 fee.name.includes('Bus') ? 'Transport services' :
-                                 fee.name.includes('Hostel') ? 'Accommodation charges' :
-                                 'Administrative services'}
+                                  fee.name.includes('Fine') ? 'Penalty charges' :
+                                    fee.name.includes('Bus') ? 'Transport services' :
+                                      fee.name.includes('Hostel') ? 'Accommodation charges' :
+                                        'Administrative services'}
                               </p>
                             </div>
 

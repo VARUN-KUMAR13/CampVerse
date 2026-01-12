@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePlacement } from "@/contexts/PlacementContext";
+import { useToast } from "@/hooks/use-toast";
 import {
   Users,
   GraduationCap,
@@ -40,29 +43,47 @@ import {
   Plus,
   Upload,
   Send,
+  Loader2,
+  Clock,
+  X,
+  Link,
+  FileText,
+  Trophy,
+  Users as UsersIcon,
 } from "lucide-react";
+import { useEvents } from "@/contexts/EventContext";
+import { useClubs } from "@/contexts/ClubContext";
+import { useNotifications } from "@/contexts/NotificationContext";
+import { useExams } from "@/contexts/ExamContext";
+
+interface AttachedFile {
+  name: string;
+  url: string;
+  type: "local" | "drive";
+  size?: number;
+}
 
 const AdminDashboard = () => {
   const { userData, logout } = useAuth();
+  const { addJob } = usePlacement();
+  const { addEvent } = useEvents();
+  const { addClub } = useClubs();
+  const { sendNotification } = useNotifications();
+  const { addExam } = useExams();
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   const createEmptyExamForm = () => ({
     title: "",
-    course: "",
-    examType: "",
+    examType: "Mid-Term" as const,
     date: "",
     startTime: "",
     endTime: "",
-    description: "",
-    classesEnabled: false,
-    classes: "",
-    groupsEnabled: false,
-    groups: "",
-    eventsEnabled: false,
-    events: "",
-    branchesEnabled: false,
+    venue: "",
     branches: "",
-    individualsEnabled: false,
-    individuals: "",
+    sections: "",
+    years: "",
   });
 
   // Modal states
@@ -71,44 +92,91 @@ const AdminDashboard = () => {
   const [isExamModalOpen, setIsExamModalOpen] = useState(false);
   const [isClubModalOpen, setIsClubModalOpen] = useState(false);
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
+  const [isJobSubmitting, setIsJobSubmitting] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+  const [driveLink, setDriveLink] = useState("");
+  const [showDriveLinkInput, setShowDriveLinkInput] = useState(false);
 
   // Form states
   const [jobForm, setJobForm] = useState({
+    job_id: "",
     company: "",
     title: "",
     type: "",
     ctc: "",
-    deadline: "",
+    stipend: "",
+    deadlineDate: "",
+    deadlineTime: "",
+    deadlineAmPm: "PM",
     eligibility: "",
     description: "",
-    targetAudience: "all",
+    bond: "",
+    rounds: "",
+    location: "",
   });
 
   const [eventForm, setEventForm] = useState({
-    name: "",
+    event_id: "",
+    title: "",
+    category: "",
     date: "",
+    endDate: "",
     time: "",
+    endTime: "",
     venue: "",
+    organizer: "",
     description: "",
-    entryFee: "",
-    notifyAll: true,
+    entryFee: "Free",
+    maxParticipants: "",
+    prizes: "",
+    registrationDeadline: "",
+    highlights: "",
+    contactEmail: "",
+    contactPhone: "",
+    featured: false,
   });
+  const [isEventSubmitting, setIsEventSubmitting] = useState(false);
 
   const [clubForm, setClubForm] = useState({
+    club_id: "",
     name: "",
     category: "",
     description: "",
-    members: "",
-    followers: "",
+    foundedYear: "",
+    presidentName: "",
+    presidentEmail: "",
+    presidentPhone: "",
+    advisorName: "",
+    advisorEmail: "",
+    advisorDepartment: "",
+    venue: "",
+    meetingSchedule: "",
+    membershipFee: "Free",
+    maxMembers: "",
+    eligibility: "All Students",
+    achievements: "",
+    recruitmentStatus: "Open",
+    recruitmentDeadline: "",
+    instagram: "",
+    linkedin: "",
+    website: "",
+    featured: false,
   });
+  const [isClubSubmitting, setIsClubSubmitting] = useState(false);
 
   const [examForm, setExamForm] = useState(createEmptyExamForm);
 
   const [notificationForm, setNotificationForm] = useState({
+    title: "",
     message: "",
-    urgency: "normal",
-    targetAudience: "all",
+    urgency: "normal" as "normal" | "important" | "critical",
+    targetType: "all" as "all" | "students" | "faculty" | "custom",
+    category: "general" as "general" | "academic" | "placement" | "event" | "emergency",
+    branches: [] as string[],
+    sections: [] as string[],
+    years: [] as string[],
   });
+  const [isNotificationSubmitting, setIsNotificationSubmitting] = useState(false);
 
   const stats = [
     {
@@ -228,7 +296,7 @@ const AdminDashboard = () => {
       action: () => setIsExamModalOpen(true),
     },
     {
-      title: "Add Club",
+      title: "Club",
       description: "Register new club",
       icon: <UsersRound className="w-5 h-5" />,
       color: "bg-green-600",
@@ -243,92 +311,470 @@ const AdminDashboard = () => {
     },
   ];
 
+  // Generate unique Job ID
+  const generateJobId = () => {
+    const company = jobForm.company.replace(/\s+/g, "").toUpperCase().slice(0, 6);
+    const year = new Date().getFullYear();
+    return `${company || "JOB"}${year}`;
+  };
+
+  // Format deadline for submit
+  const formatDeadlineForSubmit = () => {
+    if (!jobForm.deadlineDate || !jobForm.deadlineTime) return "";
+
+    const [hours, minutes] = jobForm.deadlineTime.split(":");
+    let hour = parseInt(hours);
+
+    if (jobForm.deadlineAmPm === "PM" && hour !== 12) {
+      hour += 12;
+    } else if (jobForm.deadlineAmPm === "AM" && hour === 12) {
+      hour = 0;
+    }
+
+    const formattedHour = hour.toString().padStart(2, "0");
+    return `${jobForm.deadlineDate}T${formattedHour}:${minutes}:00`;
+  };
+
+  // Handle file upload
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    const newFiles: AttachedFile[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const url = URL.createObjectURL(file);
+      newFiles.push({
+        name: file.name,
+        url: url,
+        type: "local",
+        size: file.size,
+      });
+    }
+    setAttachedFiles([...attachedFiles, ...newFiles]);
+  };
+
+  // Handle Google Drive link
+  const handleAddDriveLink = () => {
+    if (!driveLink.trim()) return;
+    setAttachedFiles([
+      ...attachedFiles,
+      { name: "Google Drive File", url: driveLink, type: "drive" },
+    ]);
+    setDriveLink("");
+    setShowDriveLinkInput(false);
+  };
+
+  // Remove attached file
+  const removeFile = (index: number) => {
+    const newFiles = [...attachedFiles];
+    newFiles.splice(index, 1);
+    setAttachedFiles(newFiles);
+  };
+
   // Form handlers
-  const handleJobSubmit = () => {
-    console.log("Job posted:", jobForm);
-    // API call to create job
-    setJobForm({
-      company: "",
-      title: "",
-      type: "",
-      ctc: "",
-      deadline: "",
-      eligibility: "",
-      description: "",
-      targetAudience: "all",
-    });
-    setIsJobModalOpen(false);
+  const handleJobSubmit = async () => {
+    // Validate required fields
+    if (!jobForm.job_id || !jobForm.title || !jobForm.company || !jobForm.type || !jobForm.ctc) {
+      toast({
+        title: "Missing Fields",
+        description: "Please fill in Job ID, Title, Company, Type, and CTC.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!jobForm.deadlineDate || !jobForm.deadlineTime) {
+      toast({
+        title: "Missing Deadline",
+        description: "Please set the application deadline.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const deadline = formatDeadlineForSubmit();
+
+    const jobData = {
+      job_id: jobForm.job_id,
+      title: jobForm.title,
+      company: jobForm.company,
+      type: jobForm.type,
+      ctc: jobForm.ctc,
+      stipend: jobForm.stipend || "N/A",
+      deadline,
+      description: jobForm.description,
+      bond: jobForm.bond,
+      location: jobForm.location,
+      eligibility: jobForm.eligibility ? [jobForm.eligibility] : ["All Branches"],
+      rounds: jobForm.rounds ? jobForm.rounds.split(",").map((r) => r.trim()) : [],
+      attachments: attachedFiles.map((f) => ({ filename: f.name, url: f.url })),
+    };
+
+    try {
+      setIsJobSubmitting(true);
+      console.log("Posting job to MongoDB:", jobData);
+      await addJob(jobData);
+
+      toast({
+        title: "Success!",
+        description: "Job posted successfully. Students can now see it!",
+      });
+
+      // Reset form
+      setJobForm({
+        job_id: "",
+        company: "",
+        title: "",
+        type: "",
+        ctc: "",
+        stipend: "",
+        deadlineDate: "",
+        deadlineTime: "",
+        deadlineAmPm: "PM",
+        eligibility: "",
+        description: "",
+        bond: "",
+        rounds: "",
+        location: "",
+      });
+      setAttachedFiles([]);
+      setIsJobModalOpen(false);
+    } catch (err: any) {
+      console.error("Error posting job:", err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to post job. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsJobSubmitting(false);
+    }
   };
 
-  const handleEventSubmit = () => {
-    console.log("Event created:", eventForm);
-    // API call to create event
-    setEventForm({
-      name: "",
-      date: "",
-      time: "",
-      venue: "",
-      description: "",
-      entryFee: "",
-      notifyAll: true,
-    });
-    setIsEventModalOpen(false);
+  // Generate unique Event ID
+  const generateEventId = () => {
+    const title = eventForm.title.replace(/\s+/g, "").toUpperCase().slice(0, 8);
+    const year = new Date().getFullYear();
+    return `${title || "EVENT"}${year}`;
   };
 
-  const handleClubSubmit = () => {
-    console.log("Club added:", clubForm);
-    // API call to create club
-    setClubForm({
-      name: "",
-      category: "",
-      description: "",
-      members: "",
-      followers: "",
-    });
-    setIsClubModalOpen(false);
+  const handleEventSubmit = async () => {
+    // Validate required fields
+    if (!eventForm.event_id || !eventForm.title || !eventForm.category || !eventForm.date || !eventForm.venue || !eventForm.organizer) {
+      toast({
+        title: "Missing Fields",
+        description: "Please fill in Event ID, Title, Category, Date, Venue, and Organizer.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Combine date and time
+    let eventDate = eventForm.date;
+    if (eventForm.time) {
+      eventDate = `${eventForm.date}T${eventForm.time}:00`;
+    }
+
+    let eventEndDate = eventForm.endDate || eventForm.date;
+    if (eventForm.endTime) {
+      eventEndDate = `${eventForm.endDate || eventForm.date}T${eventForm.endTime}:00`;
+    }
+
+    const eventData = {
+      event_id: eventForm.event_id,
+      title: eventForm.title,
+      category: eventForm.category,
+      date: eventDate,
+      endDate: eventEndDate,
+      venue: eventForm.venue,
+      organizer: eventForm.organizer,
+      description: eventForm.description,
+      entryFee: eventForm.entryFee || "Free",
+      maxParticipants: eventForm.maxParticipants ? parseInt(eventForm.maxParticipants) : 0,
+      prizes: eventForm.prizes,
+      registrationDeadline: eventForm.registrationDeadline || eventForm.date,
+      highlights: eventForm.highlights ? eventForm.highlights.split(",").map((h) => h.trim()) : [],
+      contactEmail: eventForm.contactEmail,
+      contactPhone: eventForm.contactPhone,
+      featured: eventForm.featured,
+      status: "Open",
+    };
+
+    try {
+      setIsEventSubmitting(true);
+      console.log("Creating event in MongoDB:", eventData);
+      await addEvent(eventData as any);
+
+      toast({
+        title: "Success!",
+        description: "Event created successfully. Students can now see it!",
+      });
+
+      // Reset form
+      setEventForm({
+        event_id: "",
+        title: "",
+        category: "",
+        date: "",
+        endDate: "",
+        time: "",
+        endTime: "",
+        venue: "",
+        organizer: "",
+        description: "",
+        entryFee: "Free",
+        maxParticipants: "",
+        prizes: "",
+        registrationDeadline: "",
+        highlights: "",
+        contactEmail: "",
+        contactPhone: "",
+        featured: false,
+      });
+      setIsEventModalOpen(false);
+    } catch (err: any) {
+      console.error("Error creating event:", err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to create event. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsEventSubmitting(false);
+    }
   };
 
-  const handleExamSubmit = () => {
-    const scopes = [
-      "classes",
-      "groups",
-      "events",
-      "branches",
-      "individuals",
-    ] as const;
-
-    const targetedAudiences = scopes
-      .filter((scope) => examForm[`${scope}Enabled` as const])
-      .map((scope) => ({
-        scope,
-        values: examForm[scope] || "",
-      }))
-      .filter((entry) => entry.values.trim().length > 0);
-
-    console.log("Exam scheduled:", {
-      title: examForm.title,
-      course: examForm.course,
-      examType: examForm.examType,
-      date: examForm.date,
-      startTime: examForm.startTime,
-      endTime: examForm.endTime,
-      description: examForm.description,
-      audiences: targetedAudiences,
-    });
-
-    setExamForm(createEmptyExamForm());
-    setIsExamModalOpen(false);
+  // Generate unique Club ID
+  const generateClubId = () => {
+    const name = clubForm.name.replace(/\s+/g, "").toUpperCase().slice(0, 8);
+    return `${name || "CLUB"}${new Date().getFullYear()}`;
   };
 
-  const handleNotificationSubmit = () => {
-    console.log("Notification sent:", notificationForm);
-    // API call to send notification
-    setNotificationForm({
-      message: "",
-      urgency: "normal",
-      targetAudience: "all",
-    });
-    setIsNotificationModalOpen(false);
+  const handleClubSubmit = async () => {
+    // Validate required fields
+    if (!clubForm.club_id || !clubForm.name || !clubForm.category || !clubForm.description) {
+      toast({
+        title: "Missing Fields",
+        description: "Please fill in Club ID, Name, Category, and Description.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const clubData = {
+      club_id: clubForm.club_id,
+      name: clubForm.name,
+      category: clubForm.category,
+      description: clubForm.description,
+      foundedYear: clubForm.foundedYear ? parseInt(clubForm.foundedYear) : undefined,
+      president: {
+        name: clubForm.presidentName,
+        email: clubForm.presidentEmail,
+        phone: clubForm.presidentPhone,
+      },
+      faculty_advisor: {
+        name: clubForm.advisorName,
+        email: clubForm.advisorEmail,
+        department: clubForm.advisorDepartment,
+      },
+      venue: clubForm.venue,
+      meetingSchedule: clubForm.meetingSchedule,
+      membershipFee: clubForm.membershipFee || "Free",
+      maxMembers: clubForm.maxMembers ? parseInt(clubForm.maxMembers) : 0,
+      eligibility: clubForm.eligibility || "All Students",
+      achievements: clubForm.achievements ? clubForm.achievements.split(",").map((a) => a.trim()) : [],
+      recruitmentStatus: clubForm.recruitmentStatus || "Open",
+      recruitmentDeadline: clubForm.recruitmentDeadline || undefined,
+      socialLinks: {
+        instagram: clubForm.instagram,
+        linkedin: clubForm.linkedin,
+        website: clubForm.website,
+      },
+      featured: clubForm.featured,
+      status: "Active",
+    };
+
+    try {
+      setIsClubSubmitting(true);
+      console.log("Creating club in MongoDB:", clubData);
+      await addClub(clubData as any);
+
+      toast({
+        title: "Success!",
+        description: "Club created successfully. Students can now see it!",
+      });
+
+      // Reset form
+      setClubForm({
+        club_id: "",
+        name: "",
+        category: "",
+        description: "",
+        foundedYear: "",
+        presidentName: "",
+        presidentEmail: "",
+        presidentPhone: "",
+        advisorName: "",
+        advisorEmail: "",
+        advisorDepartment: "",
+        venue: "",
+        meetingSchedule: "",
+        membershipFee: "Free",
+        maxMembers: "",
+        eligibility: "All Students",
+        achievements: "",
+        recruitmentStatus: "Open",
+        recruitmentDeadline: "",
+        instagram: "",
+        linkedin: "",
+        website: "",
+        featured: false,
+      });
+      setIsClubModalOpen(false);
+    } catch (err: any) {
+      console.error("Error creating club:", err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to create club. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsClubSubmitting(false);
+    }
+  };
+
+  const [isExamSubmitting, setIsExamSubmitting] = useState(false);
+
+  const handleExamSubmit = async () => {
+    // Validate required fields
+    if (!examForm.title.trim() || !examForm.date || !examForm.startTime || !examForm.endTime) {
+      toast({
+        title: "Missing Fields",
+        description: "Please fill in Title, Date, Start Time and End Time.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsExamSubmitting(true);
+
+      // Build target audience
+      const branches = examForm.branches.split(",").map((b) => b.trim()).filter((b) => b);
+      const sections = examForm.sections.split(",").map((s) => s.trim()).filter((s) => s);
+      const years = examForm.years.split(",").map((y) => y.trim()).filter((y) => y);
+
+      const examData: any = {
+        exam_id: `EXAM${Date.now()}`,
+        title: examForm.title,
+        course: examForm.title, // Use title as course name
+        examType: examForm.examType,
+        date: examForm.date,
+        startTime: examForm.startTime,
+        endTime: examForm.endTime,
+        venue: examForm.venue || undefined,
+        status: "Scheduled" as const,
+        postedBy: userData?.collegeId || "admin",
+      };
+
+      // Add target audience if specified
+      if (branches.length || sections.length || years.length) {
+        examData.targetAudience = {
+          branches: branches.length ? branches : undefined,
+          sections: sections.length ? sections : undefined,
+          years: years.length ? years : undefined,
+        };
+      }
+
+      await addExam(examData);
+
+      toast({
+        title: "Success!",
+        description: "Exam scheduled successfully. Students will see it on their dashboard.",
+      });
+
+      setExamForm(createEmptyExamForm());
+      setIsExamModalOpen(false);
+    } catch (err: any) {
+      console.error("Error scheduling exam:", err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to schedule exam. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExamSubmitting(false);
+    }
+  };
+
+  const handleNotificationSubmit = async () => {
+    // Validate required fields
+    if (!notificationForm.title.trim() || !notificationForm.message.trim()) {
+      toast({
+        title: "Missing Fields",
+        description: "Please fill in Title and Message.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsNotificationSubmitting(true);
+
+      // Build target audience object
+      const targetAudience: any = {
+        type: notificationForm.targetType,
+      };
+
+      // Add optional targeting
+      if (notificationForm.targetType === 'custom') {
+        if (notificationForm.branches.length > 0) {
+          targetAudience.branches = notificationForm.branches;
+        }
+        if (notificationForm.sections.length > 0) {
+          targetAudience.sections = notificationForm.sections;
+        }
+        if (notificationForm.years.length > 0) {
+          targetAudience.years = notificationForm.years;
+        }
+      }
+
+      await sendNotification({
+        title: notificationForm.title,
+        message: notificationForm.message,
+        urgency: notificationForm.urgency,
+        targetAudience,
+        category: notificationForm.category,
+      });
+
+      toast({
+        title: "Success!",
+        description: "Notification sent successfully to targeted users.",
+      });
+
+      // Reset form
+      setNotificationForm({
+        title: "",
+        message: "",
+        urgency: "normal",
+        targetType: "all",
+        category: "general",
+        branches: [],
+        sections: [],
+        years: [],
+      });
+      setIsNotificationModalOpen(false);
+    } catch (err: any) {
+      console.error("Error sending notification:", err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to send notification. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsNotificationSubmitting(false);
+    }
   };
 
   const getActivityIcon = (type: string) => {
@@ -425,13 +871,12 @@ const AdminDashboard = () => {
                       {stat.value}
                     </p>
                     <p
-                      className={`text-xs ${
-                        stat.changeType === "positive"
-                          ? "text-green-600"
-                          : stat.changeType === "negative"
-                            ? "text-red-600"
-                            : "text-gray-600"
-                      }`}
+                      className={`text-xs ${stat.changeType === "positive"
+                        ? "text-green-600"
+                        : stat.changeType === "negative"
+                          ? "text-red-600"
+                          : "text-gray-600"
+                        }`}
                     >
                       {stat.change}
                     </p>
@@ -583,17 +1028,43 @@ const AdminDashboard = () => {
 
         {/* Job Posting Modal */}
         <Dialog open={isJobModalOpen} onOpenChange={setIsJobModalOpen}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Building2 className="w-5 h-5" />
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <Building2 className="w-6 h-6 text-primary" />
                 Post New Job Opportunity
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-5 py-4">
+              {/* Job ID and Company */}
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Company Name</label>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">
+                    Job ID <span className="text-destructive">*</span>
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={jobForm.job_id}
+                      onChange={(e) =>
+                        setJobForm({ ...jobForm, job_id: e.target.value.toUpperCase() })
+                      }
+                      placeholder="e.g., GOOGLE2025"
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setJobForm({ ...jobForm, job_id: generateJobId() })}
+                    >
+                      Auto
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">
+                    Company Name <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     value={jobForm.company}
                     onChange={(e) =>
@@ -602,21 +1073,28 @@ const AdminDashboard = () => {
                     placeholder="e.g., Google, Microsoft"
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Job Title</label>
-                  <Input
-                    value={jobForm.title}
-                    onChange={(e) =>
-                      setJobForm({ ...jobForm, title: e.target.value })
-                    }
-                    placeholder="Software Engineer, Data Analyst"
-                  />
-                </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Job Type</label>
+              {/* Job Title */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">
+                  Job Title <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  value={jobForm.title}
+                  onChange={(e) =>
+                    setJobForm({ ...jobForm, title: e.target.value })
+                  }
+                  placeholder="e.g., Software Engineer, Data Analyst"
+                />
+              </div>
+
+              {/* Job Type and CTC */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">
+                    Job Type <span className="text-destructive">*</span>
+                  </Label>
                   <Select
                     value={jobForm.type}
                     onValueChange={(value) =>
@@ -624,106 +1102,292 @@ const AdminDashboard = () => {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
+                      <SelectValue placeholder="Select job type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Full Time">Full Time</SelectItem>
                       <SelectItem value="Internship">Internship</SelectItem>
-                      <SelectItem value="Intern + Full Time">
-                        Intern + Full Time
-                      </SelectItem>
+                      <SelectItem value="Intern + Full Time">Intern + Full Time</SelectItem>
+                      <SelectItem value="Contract">Contract</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <label className="text-sm font-medium">CTC</label>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">
+                    CTC / Package <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     value={jobForm.ctc}
                     onChange={(e) =>
                       setJobForm({ ...jobForm, ctc: e.target.value })
                     }
-                    placeholder="5.00 LPA - 8.00 LPA"
+                    placeholder="e.g., 12 LPA, 8-15 LPA"
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Deadline</label>
+              </div>
+
+              {/* Stipend and Location */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Stipend (for internship)</Label>
                   <Input
-                    type="datetime-local"
-                    value={jobForm.deadline}
+                    value={jobForm.stipend}
                     onChange={(e) =>
-                      setJobForm({ ...jobForm, deadline: e.target.value })
+                      setJobForm({ ...jobForm, stipend: e.target.value })
                     }
+                    placeholder="e.g., ₹50,000/month or N/A"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Location</Label>
+                  <Input
+                    value={jobForm.location}
+                    onChange={(e) =>
+                      setJobForm({ ...jobForm, location: e.target.value })
+                    }
+                    placeholder="e.g., Bangalore, Remote, Hybrid"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="text-sm font-medium">
-                  Eligibility Criteria
-                </label>
-                <Input
-                  value={jobForm.eligibility}
-                  onChange={(e) =>
-                    setJobForm({ ...jobForm, eligibility: e.target.value })
-                  }
-                  placeholder="CSE, IT, ECE or All Branches"
-                />
+              {/* Deadline Section */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Application Deadline <span className="text-destructive">*</span>
+                </Label>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Date (DD-MM-YYYY)</Label>
+                    <Input
+                      type="date"
+                      value={jobForm.deadlineDate}
+                      onChange={(e) =>
+                        setJobForm({ ...jobForm, deadlineDate: e.target.value })
+                      }
+                      min={new Date().toISOString().split("T")[0]}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Time (HH:MM)</Label>
+                    <Input
+                      type="time"
+                      value={jobForm.deadlineTime}
+                      onChange={(e) =>
+                        setJobForm({ ...jobForm, deadlineTime: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">AM/PM</Label>
+                    <Select
+                      value={jobForm.deadlineAmPm}
+                      onValueChange={(value) =>
+                        setJobForm({ ...jobForm, deadlineAmPm: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="AM">AM</SelectItem>
+                        <SelectItem value="PM">PM</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <label className="text-sm font-medium">Job Description</label>
+              {/* Description */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Job Description</Label>
                 <Textarea
                   value={jobForm.description}
                   onChange={(e) =>
                     setJobForm({ ...jobForm, description: e.target.value })
                   }
-                  placeholder="Detailed job description..."
+                  placeholder="Describe the role, responsibilities, requirements..."
                   rows={3}
                 />
               </div>
 
-              <div>
-                <label className="text-sm font-medium">Target Audience</label>
+              {/* Eligibility */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Eligible Branches</Label>
                 <Select
-                  value={jobForm.targetAudience}
+                  value={jobForm.eligibility}
                   onValueChange={(value) =>
-                    setJobForm({ ...jobForm, targetAudience: value })
+                    setJobForm({ ...jobForm, eligibility: value })
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select eligible branches" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Students</SelectItem>
-                    <SelectItem value="batch_2024">Batch 2024</SelectItem>
-                    <SelectItem value="batch_2025">Batch 2025</SelectItem>
-                    <SelectItem value="specific_branches">
-                      Specific Branches
-                    </SelectItem>
+                    <SelectItem value="All Branches">All Branches</SelectItem>
+                    <SelectItem value="CSE">Computer Science & Engineering</SelectItem>
+                    <SelectItem value="IT">Information Technology</SelectItem>
+                    <SelectItem value="ECE">Electronics & Communication</SelectItem>
+                    <SelectItem value="EEE">Electrical & Electronics</SelectItem>
+                    <SelectItem value="MECH">Mechanical Engineering</SelectItem>
+                    <SelectItem value="CIVIL">Civil Engineering</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <div>
-                <label className="text-sm font-medium">
-                  Attach Files (PDFs)
-                </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                  <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                  <p className="text-sm text-gray-500">
-                    Click to upload job description, proposal files
-                  </p>
+              {/* Bond and Rounds */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Bond Period</Label>
+                  <Input
+                    value={jobForm.bond}
+                    onChange={(e) =>
+                      setJobForm({ ...jobForm, bond: e.target.value })
+                    }
+                    placeholder="e.g., 2 years, No Bond"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Selection Rounds</Label>
+                  <Input
+                    value={jobForm.rounds}
+                    onChange={(e) =>
+                      setJobForm({ ...jobForm, rounds: e.target.value })
+                    }
+                    placeholder="e.g., Aptitude, Technical, HR"
+                  />
+                  <p className="text-xs text-muted-foreground">Separate with commas</p>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2">
+              {/* File Attachments Section */}
+              <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+                <Label className="text-sm font-semibold flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Attachments (Job Description, Forms, etc.)
+                </Label>
+
+                {/* Attached Files List */}
+                {attachedFiles.length > 0 && (
+                  <div className="space-y-2">
+                    {attachedFiles.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-2 bg-background rounded border"
+                      >
+                        <div className="flex items-center gap-2">
+                          {file.type === "drive" ? (
+                            <Link className="w-4 h-4 text-blue-500" />
+                          ) : (
+                            <FileText className="w-4 h-4 text-muted-foreground" />
+                          )}
+                          <span className="text-sm truncate max-w-[200px]">{file.name}</span>
+                          {file.size && (
+                            <span className="text-xs text-muted-foreground">
+                              ({(file.size / 1024).toFixed(1)} KB)
+                            </span>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFile(index)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Upload Buttons */}
+                <div className="flex flex-wrap gap-2">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    multiple
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png"
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload from Computer
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowDriveLinkInput(!showDriveLinkInput)}
+                  >
+                    <Link className="w-4 h-4 mr-2" />
+                    Add Google Drive Link
+                  </Button>
+                </div>
+
+                {/* Google Drive Link Input */}
+                {showDriveLinkInput && (
+                  <div className="flex gap-2 mt-2">
+                    <Input
+                      value={driveLink}
+                      onChange={(e) => setDriveLink(e.target.value)}
+                      placeholder="Paste Google Drive link here..."
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleAddDriveLink}
+                    >
+                      Add
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setShowDriveLinkInput(false);
+                        setDriveLink("");
+                      }}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex justify-end gap-3 pt-4 border-t">
                 <Button
                   variant="outline"
                   onClick={() => setIsJobModalOpen(false)}
+                  disabled={isJobSubmitting}
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleJobSubmit}>Post Job</Button>
+                <Button
+                  onClick={handleJobSubmit}
+                  disabled={isJobSubmitting}
+                  className="min-w-[120px]"
+                >
+                  {isJobSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Posting...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Post Job
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
           </DialogContent>
@@ -731,168 +1395,365 @@ const AdminDashboard = () => {
 
         {/* Event Creation Modal */}
         <Dialog open={isEventModalOpen} onOpenChange={setIsEventModalOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <CalendarDays className="w-5 h-5" />
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <CalendarDays className="w-6 h-6 text-primary" />
                 Create Campus Event
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Event Name</label>
-                  <Input
-                    value={eventForm.name}
-                    onChange={(e) =>
-                      setEventForm((prev) => ({ ...prev, name: e.target.value }))
-                    }
-                    placeholder="e.g., Alumni Meetup"
-                  />
+            <div className="space-y-5 py-4">
+              {/* Event ID and Title */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">
+                    Event ID <span className="text-destructive">*</span>
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={eventForm.event_id}
+                      onChange={(e) =>
+                        setEventForm({ ...eventForm, event_id: e.target.value.toUpperCase() })
+                      }
+                      placeholder="e.g., HACKATHON2025"
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEventForm({ ...eventForm, event_id: generateEventId() })}
+                    >
+                      Auto
+                    </Button>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Venue</label>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">
+                    Event Title <span className="text-destructive">*</span>
+                  </Label>
                   <Input
-                    value={eventForm.venue}
+                    value={eventForm.title}
                     onChange={(e) =>
-                      setEventForm((prev) => ({ ...prev, venue: e.target.value }))
+                      setEventForm({ ...eventForm, title: e.target.value })
                     }
-                    placeholder="e.g., Seminar Hall - 2"
-                  />
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-3 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Date</label>
-                  <Input
-                    type="date"
-                    value={eventForm.date}
-                    onChange={(e) =>
-                      setEventForm((prev) => ({ ...prev, date: e.target.value }))
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Time</label>
-                  <Input
-                    type="time"
-                    value={eventForm.time}
-                    onChange={(e) =>
-                      setEventForm((prev) => ({ ...prev, time: e.target.value }))
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Entry Fee</label>
-                  <Input
-                    value={eventForm.entryFee}
-                    onChange={(e) =>
-                      setEventForm((prev) => ({ ...prev, entryFee: e.target.value }))
-                    }
-                    placeholder="Optional"
+                    placeholder="e.g., CodeStorm Hackathon"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="text-sm font-medium">Event Description</label>
+              {/* Category and Organizer */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">
+                    Category <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={eventForm.category}
+                    onValueChange={(value) =>
+                      setEventForm({ ...eventForm, category: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Technical">Technical</SelectItem>
+                      <SelectItem value="Cultural">Cultural</SelectItem>
+                      <SelectItem value="Sports">Sports</SelectItem>
+                      <SelectItem value="Workshop">Workshop</SelectItem>
+                      <SelectItem value="Seminar">Seminar</SelectItem>
+                      <SelectItem value="Competition">Competition</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">
+                    Organizer <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    value={eventForm.organizer}
+                    onChange={(e) =>
+                      setEventForm({ ...eventForm, organizer: e.target.value })
+                    }
+                    placeholder="e.g., IEEE Student Branch"
+                  />
+                </div>
+              </div>
+
+              {/* Venue */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">
+                  Venue <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  value={eventForm.venue}
+                  onChange={(e) =>
+                    setEventForm({ ...eventForm, venue: e.target.value })
+                  }
+                  placeholder="e.g., Main Auditorium, Computer Science Block"
+                />
+              </div>
+
+              {/* Dates and Times */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    Start Date & Time <span className="text-destructive">*</span>
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="date"
+                      value={eventForm.date}
+                      onChange={(e) =>
+                        setEventForm({ ...eventForm, date: e.target.value })
+                      }
+                      min={new Date().toISOString().split("T")[0]}
+                      className="flex-1"
+                    />
+                    <Input
+                      type="time"
+                      value={eventForm.time}
+                      onChange={(e) =>
+                        setEventForm({ ...eventForm, time: e.target.value })
+                      }
+                      className="w-32"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    End Date & Time
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="date"
+                      value={eventForm.endDate}
+                      onChange={(e) =>
+                        setEventForm({ ...eventForm, endDate: e.target.value })
+                      }
+                      min={eventForm.date || new Date().toISOString().split("T")[0]}
+                      className="flex-1"
+                    />
+                    <Input
+                      type="time"
+                      value={eventForm.endTime}
+                      onChange={(e) =>
+                        setEventForm({ ...eventForm, endTime: e.target.value })
+                      }
+                      className="w-32"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Event Description</Label>
                 <Textarea
                   value={eventForm.description}
                   onChange={(e) =>
-                    setEventForm((prev) => ({
-                      ...prev,
-                      description: e.target.value,
-                    }))
+                    setEventForm({ ...eventForm, description: e.target.value })
                   }
-                  placeholder="Share agenda, key speakers, and participation instructions."
-                  rows={4}
+                  placeholder="Share agenda, key speakers, eligibility, and participation instructions..."
+                  rows={3}
                 />
               </div>
 
+              {/* Entry Fee, Max Participants, Prizes */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Entry Fee</Label>
+                  <Input
+                    value={eventForm.entryFee}
+                    onChange={(e) =>
+                      setEventForm({ ...eventForm, entryFee: e.target.value })
+                    }
+                    placeholder="Free, ₹200, etc."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Max Participants</Label>
+                  <Input
+                    type="number"
+                    value={eventForm.maxParticipants}
+                    onChange={(e) =>
+                      setEventForm({ ...eventForm, maxParticipants: e.target.value })
+                    }
+                    placeholder="0 = unlimited"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold flex items-center gap-1">
+                    <Trophy className="w-4 h-4" />
+                    Prizes
+                  </Label>
+                  <Input
+                    value={eventForm.prizes}
+                    onChange={(e) =>
+                      setEventForm({ ...eventForm, prizes: e.target.value })
+                    }
+                    placeholder="₹50,000 Prize Pool"
+                  />
+                </div>
+              </div>
+
+              {/* Registration Deadline and Highlights */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Registration Deadline</Label>
+                  <Input
+                    type="date"
+                    value={eventForm.registrationDeadline}
+                    onChange={(e) =>
+                      setEventForm({ ...eventForm, registrationDeadline: e.target.value })
+                    }
+                    max={eventForm.date}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Highlights</Label>
+                  <Input
+                    value={eventForm.highlights}
+                    onChange={(e) =>
+                      setEventForm({ ...eventForm, highlights: e.target.value })
+                    }
+                    placeholder="Free Food, Networking, Certificates"
+                  />
+                  <p className="text-xs text-muted-foreground">Separate with commas</p>
+                </div>
+              </div>
+
+              {/* Contact Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Contact Email</Label>
+                  <Input
+                    type="email"
+                    value={eventForm.contactEmail}
+                    onChange={(e) =>
+                      setEventForm({ ...eventForm, contactEmail: e.target.value })
+                    }
+                    placeholder="events@college.ac.in"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Contact Phone</Label>
+                  <Input
+                    value={eventForm.contactPhone}
+                    onChange={(e) =>
+                      setEventForm({ ...eventForm, contactPhone: e.target.value })
+                    }
+                    placeholder="+91 9876543210"
+                  />
+                </div>
+              </div>
+
+              {/* Featured Toggle */}
               <div className="flex items-center justify-between rounded-lg border border-border bg-muted/20 p-3">
                 <div>
                   <p className="text-sm font-medium text-foreground">
-                    Notify all users
+                    Featured Event
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Toggle off to limit visibility to specific groups later.
+                    Featured events are highlighted on the student dashboard
                   </p>
                 </div>
                 <Switch
-                  checked={eventForm.notifyAll}
+                  checked={eventForm.featured}
                   onCheckedChange={(checked) =>
-                    setEventForm((prev) => ({ ...prev, notifyAll: checked }))
+                    setEventForm({ ...eventForm, featured: checked })
                   }
                 />
               </div>
 
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsEventModalOpen(false)}>
+              {/* Form Actions */}
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEventModalOpen(false)}
+                  disabled={isEventSubmitting}
+                >
                   Cancel
                 </Button>
-                <Button onClick={handleEventSubmit}>Create Event</Button>
+                <Button
+                  onClick={handleEventSubmit}
+                  disabled={isEventSubmitting}
+                  className="min-w-[140px]"
+                >
+                  {isEventSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Event
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
           </DialogContent>
         </Dialog>
 
+
         {/* Exam Scheduling Modal */}
         <Dialog open={isExamModalOpen} onOpenChange={setIsExamModalOpen}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                Schedule Upcoming Exam
+                <Calendar className="w-5 h-5 text-primary" />
+                Post Upcoming Exam
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Exam Title</label>
-                  <Input
-                    value={examForm.title}
-                    onChange={(e) =>
-                      setExamForm((prev) => ({ ...prev, title: e.target.value }))
-                    }
-                    placeholder="e.g., Midterm Examination"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Course / Subject</label>
-                  <Input
-                    value={examForm.course}
-                    onChange={(e) =>
-                      setExamForm((prev) => ({ ...prev, course: e.target.value }))
-                    }
-                    placeholder="e.g., Data Structures (CS301)"
-                  />
-                </div>
+              {/* Exam Title */}
+              <div>
+                <label className="text-sm font-medium">
+                  Exam Title <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  value={examForm.title}
+                  onChange={(e) =>
+                    setExamForm((prev) => ({ ...prev, title: e.target.value }))
+                  }
+                  placeholder="e.g., Mid Semester Examination - I"
+                />
               </div>
 
-              <div className="grid md:grid-cols-3 gap-4">
+              {/* Exam Type and Date */}
+              <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Exam Type</label>
                   <Select
                     value={examForm.examType}
                     onValueChange={(value) =>
-                      setExamForm((prev) => ({ ...prev, examType: value }))
+                      setExamForm((prev) => ({ ...prev, examType: value as any }))
                     }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Choose type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="midterm">Midterm</SelectItem>
-                      <SelectItem value="final">Final</SelectItem>
-                      <SelectItem value="quiz">Quiz</SelectItem>
-                      <SelectItem value="lab">Lab Evaluation</SelectItem>
-                      <SelectItem value="viva">Viva / Oral</SelectItem>
+                      <SelectItem value="Mid-Term">Mid-Term</SelectItem>
+                      <SelectItem value="End-Term">End-Term</SelectItem>
+                      <SelectItem value="Quiz">Quiz</SelectItem>
+                      <SelectItem value="Practical">Practical</SelectItem>
+                      <SelectItem value="Viva">Viva</SelectItem>
+                      <SelectItem value="Assignment">Assignment</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Exam Date</label>
+                  <label className="text-sm font-medium">
+                    Exam Date <span className="text-destructive">*</span>
+                  </label>
                   <Input
                     type="date"
                     value={examForm.date}
@@ -901,122 +1762,97 @@ const AdminDashboard = () => {
                     }
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-sm font-medium">Start</label>
-                    <Input
-                      type="time"
-                      value={examForm.startTime}
-                      onChange={(e) =>
-                        setExamForm((prev) => ({
-                          ...prev,
-                          startTime: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">End</label>
-                    <Input
-                      type="time"
-                      value={examForm.endTime}
-                      onChange={(e) =>
-                        setExamForm((prev) => ({
-                          ...prev,
-                          endTime: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
+              </div>
+
+              {/* Time and Venue */}
+              <div className="grid md:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm font-medium">
+                    Start Time <span className="text-destructive">*</span>
+                  </label>
+                  <Input
+                    type="time"
+                    value={examForm.startTime}
+                    onChange={(e) =>
+                      setExamForm((prev) => ({
+                        ...prev,
+                        startTime: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">
+                    End Time <span className="text-destructive">*</span>
+                  </label>
+                  <Input
+                    type="time"
+                    value={examForm.endTime}
+                    onChange={(e) =>
+                      setExamForm((prev) => ({
+                        ...prev,
+                        endTime: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Venue</label>
+                  <Input
+                    value={examForm.venue}
+                    onChange={(e) =>
+                      setExamForm((prev) => ({ ...prev, venue: e.target.value }))
+                    }
+                    placeholder="e.g., Block A, Room 101"
+                  />
                 </div>
               </div>
 
-              <div>
-                <label className="text-sm font-medium">Important Details</label>
-                <Textarea
-                  value={examForm.description}
-                  onChange={(e) =>
-                    setExamForm((prev) => ({ ...prev, description: e.target.value }))
-                  }
-                  placeholder="Outline syllabus coverage, exam rules, and permitted materials."
-                  rows={4}
-                />
-              </div>
-
-              <div className="space-y-4 rounded-lg border border-border bg-muted/20 p-4">
+              {/* Target Audience */}
+              <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-4">
                 <div>
                   <p className="text-sm font-semibold text-foreground">
-                    Target dashboards
+                    Target Audience (Optional)
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Enable the audiences that should see this update on their dashboards, then
-                    list the specific classes, groups, events, branches, or individuals.
+                    Leave empty to show to all students. Separate multiple entries with commas.
                   </p>
                 </div>
-
-                {(
-                  [
-                    {
-                      key: "classes" as const,
-                      label: "Classes",
-                      placeholder: "e.g., CSE VII-A, IT VI-B",
-                    },
-                    {
-                      key: "groups" as const,
-                      label: "Groups",
-                      placeholder: "e.g., Robotics Club, GDSC Core",
-                    },
-                    {
-                      key: "events" as const,
-                      label: "Events",
-                      placeholder: "e.g., Hackathon Prep, NSS",
-                    },
-                    {
-                      key: "branches" as const,
-                      label: "Branches",
-                      placeholder: "e.g., CSE, ECE, ME",
-                    },
-                    {
-                      key: "individuals" as const,
-                      label: "Individuals",
-                      placeholder: "e.g., 22B81A0501, 22B81Z05F1",
-                    },
-                  ]
-                ).map(({ key, label, placeholder }) => (
-                  <div
-                    key={key}
-                    className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{label}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Separate multiple entries with commas.
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3 md:w-1/2">
-                      <Switch
-                        checked={examForm[`${key}Enabled`]}
-                        onCheckedChange={(checked) =>
-                          setExamForm((prev) => ({
-                            ...prev,
-                            [`${key}Enabled`]: checked,
-                            [key]: checked ? prev[key] : "",
-                          }))
-                        }
-                      />
-                      <Input
-                        value={examForm[key]}
-                        onChange={(e) =>
-                          setExamForm((prev) => ({ ...prev, [key]: e.target.value }))
-                        }
-                        placeholder={placeholder}
-                        disabled={!examForm[`${key}Enabled`]}
-                      />
-                    </div>
+                <div className="grid md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground">Branches</label>
+                    <Input
+                      value={examForm.branches}
+                      onChange={(e) =>
+                        setExamForm((prev) => ({ ...prev, branches: e.target.value }))
+                      }
+                      placeholder="CSE, ECE, EEE"
+                    />
                   </div>
-                ))}
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground">Sections</label>
+                    <Input
+                      value={examForm.sections}
+                      onChange={(e) =>
+                        setExamForm((prev) => ({ ...prev, sections: e.target.value }))
+                      }
+                      placeholder="A, B, C"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground">Years</label>
+                    <Input
+                      value={examForm.years}
+                      onChange={(e) =>
+                        setExamForm((prev) => ({ ...prev, years: e.target.value }))
+                      }
+                      placeholder="1, 2, 3, 4"
+                    />
+                  </div>
+                </div>
               </div>
 
+              {/* Submit Buttons */}
               <div className="flex justify-end gap-3 pt-2">
                 <Button
                   variant="outline"
@@ -1024,207 +1860,354 @@ const AdminDashboard = () => {
                     setExamForm(createEmptyExamForm());
                     setIsExamModalOpen(false);
                   }}
+                  disabled={isExamSubmitting}
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleExamSubmit}>Publish Exam Update</Button>
+                <Button onClick={handleExamSubmit} disabled={isExamSubmitting}>
+                  {isExamSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Posting...
+                    </>
+                  ) : (
+                    "Post Exam"
+                  )}
+                </Button>
               </div>
             </div>
           </DialogContent>
         </Dialog>
 
-        {/* Event Creation Modal */}
-        <Dialog open={isEventModalOpen} onOpenChange={setIsEventModalOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <CalendarDays className="w-5 h-5" />
-                Create Campus Event
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Event Name</label>
-                <Input
-                  value={eventForm.name}
-                  onChange={(e) =>
-                    setEventForm({ ...eventForm, name: e.target.value })
-                  }
-                  placeholder="Tech Fest 2025, Cultural Night"
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Date</label>
-                  <Input
-                    type="date"
-                    value={eventForm.date}
-                    onChange={(e) =>
-                      setEventForm({ ...eventForm, date: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Time</label>
-                  <Input
-                    type="time"
-                    value={eventForm.time}
-                    onChange={(e) =>
-                      setEventForm({ ...eventForm, time: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Entry Fee</label>
-                  <Input
-                    value={eventForm.entryFee}
-                    onChange={(e) =>
-                      setEventForm({ ...eventForm, entryFee: e.target.value })
-                    }
-                    placeholder="₹200 or Free"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Venue</label>
-                <Input
-                  value={eventForm.venue}
-                  onChange={(e) =>
-                    setEventForm({ ...eventForm, venue: e.target.value })
-                  }
-                  placeholder="Main Auditorium, Sports Complex"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Description</label>
-                <Textarea
-                  value={eventForm.description}
-                  onChange={(e) =>
-                    setEventForm({ ...eventForm, description: e.target.value })
-                  }
-                  placeholder="Event details, activities, prizes..."
-                  rows={3}
-                />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="notifyAll"
-                  checked={eventForm.notifyAll}
-                  onChange={(e) =>
-                    setEventForm({ ...eventForm, notifyAll: e.target.checked })
-                  }
-                />
-                <label htmlFor="notifyAll" className="text-sm font-medium">
-                  Notify all students
-                </label>
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsEventModalOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={handleEventSubmit}>Create Event</Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
 
         {/* Club Addition Modal */}
         <Dialog open={isClubModalOpen} onOpenChange={setIsClubModalOpen}>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <UsersRound className="w-5 h-5" />
-                Add New Club
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <UsersRound className="w-6 h-6 text-primary" />
+                Register New Club
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Club Name</label>
-                <Input
-                  value={clubForm.name}
-                  onChange={(e) =>
-                    setClubForm({ ...clubForm, name: e.target.value })
-                  }
-                  placeholder="ENIGMA, IEEE Society"
-                />
+            <div className="space-y-5 py-4">
+              {/* Club ID and Name */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">
+                    Club ID <span className="text-destructive">*</span>
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={clubForm.club_id}
+                      onChange={(e) =>
+                        setClubForm({ ...clubForm, club_id: e.target.value.toUpperCase() })
+                      }
+                      placeholder="e.g., IEEE2025"
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setClubForm({ ...clubForm, club_id: generateClubId() })}
+                    >
+                      Auto
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">
+                    Club Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    value={clubForm.name}
+                    onChange={(e) =>
+                      setClubForm({ ...clubForm, name: e.target.value })
+                    }
+                    placeholder="e.g., IEEE Student Branch"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="text-sm font-medium">Category</label>
-                <Select
-                  value={clubForm.category}
-                  onValueChange={(value) =>
-                    setClubForm({ ...clubForm, category: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Technical">Technical</SelectItem>
-                    <SelectItem value="Cultural">Cultural</SelectItem>
-                    <SelectItem value="Sports">Sports</SelectItem>
-                    <SelectItem value="Arts">Arts</SelectItem>
-                  </SelectContent>
-                </Select>
+              {/* Category and Founded Year */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">
+                    Category <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={clubForm.category}
+                    onValueChange={(value) =>
+                      setClubForm({ ...clubForm, category: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Technical">Technical</SelectItem>
+                      <SelectItem value="Cultural">Cultural</SelectItem>
+                      <SelectItem value="Sports">Sports</SelectItem>
+                      <SelectItem value="Literary">Literary</SelectItem>
+                      <SelectItem value="Social">Social</SelectItem>
+                      <SelectItem value="Professional">Professional</SelectItem>
+                      <SelectItem value="Hobby">Hobby</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Founded Year</Label>
+                  <Input
+                    type="number"
+                    value={clubForm.foundedYear}
+                    onChange={(e) =>
+                      setClubForm({ ...clubForm, foundedYear: e.target.value })
+                    }
+                    placeholder="e.g., 2020"
+                    min={1990}
+                    max={new Date().getFullYear()}
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="text-sm font-medium">Description</label>
+              {/* Description */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">
+                  Description <span className="text-destructive">*</span>
+                </Label>
                 <Textarea
                   value={clubForm.description}
                   onChange={(e) =>
                     setClubForm({ ...clubForm, description: e.target.value })
                   }
-                  placeholder="Club objectives, activities..."
+                  placeholder="Club objectives, activities, achievements..."
                   rows={3}
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Initial Members</label>
+              {/* President Info */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">President Details</Label>
+                <div className="grid grid-cols-3 gap-3">
                   <Input
-                    type="number"
-                    value={clubForm.members}
+                    value={clubForm.presidentName}
                     onChange={(e) =>
-                      setClubForm({ ...clubForm, members: e.target.value })
+                      setClubForm({ ...clubForm, presidentName: e.target.value })
                     }
-                    placeholder="50"
+                    placeholder="President Name"
                   />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">
-                    Initial Followers
-                  </label>
                   <Input
-                    type="number"
-                    value={clubForm.followers}
+                    type="email"
+                    value={clubForm.presidentEmail}
                     onChange={(e) =>
-                      setClubForm({ ...clubForm, followers: e.target.value })
+                      setClubForm({ ...clubForm, presidentEmail: e.target.value })
                     }
-                    placeholder="100"
+                    placeholder="president@email.com"
+                  />
+                  <Input
+                    value={clubForm.presidentPhone}
+                    onChange={(e) =>
+                      setClubForm({ ...clubForm, presidentPhone: e.target.value })
+                    }
+                    placeholder="+91 9876543210"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2">
+              {/* Faculty Advisor Info */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Faculty Advisor</Label>
+                <div className="grid grid-cols-3 gap-3">
+                  <Input
+                    value={clubForm.advisorName}
+                    onChange={(e) =>
+                      setClubForm({ ...clubForm, advisorName: e.target.value })
+                    }
+                    placeholder="Advisor Name"
+                  />
+                  <Input
+                    type="email"
+                    value={clubForm.advisorEmail}
+                    onChange={(e) =>
+                      setClubForm({ ...clubForm, advisorEmail: e.target.value })
+                    }
+                    placeholder="advisor@college.ac.in"
+                  />
+                  <Input
+                    value={clubForm.advisorDepartment}
+                    onChange={(e) =>
+                      setClubForm({ ...clubForm, advisorDepartment: e.target.value })
+                    }
+                    placeholder="Department"
+                  />
+                </div>
+              </div>
+
+              {/* Venue and Meeting Schedule */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Venue</Label>
+                  <Input
+                    value={clubForm.venue}
+                    onChange={(e) =>
+                      setClubForm({ ...clubForm, venue: e.target.value })
+                    }
+                    placeholder="Room 201, CS Block"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Meeting Schedule</Label>
+                  <Input
+                    value={clubForm.meetingSchedule}
+                    onChange={(e) =>
+                      setClubForm({ ...clubForm, meetingSchedule: e.target.value })
+                    }
+                    placeholder="Every Saturday, 3 PM"
+                  />
+                </div>
+              </div>
+
+              {/* Membership Fee, Max Members, Eligibility */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Membership Fee</Label>
+                  <Input
+                    value={clubForm.membershipFee}
+                    onChange={(e) =>
+                      setClubForm({ ...clubForm, membershipFee: e.target.value })
+                    }
+                    placeholder="Free, ₹500/year"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Max Members</Label>
+                  <Input
+                    type="number"
+                    value={clubForm.maxMembers}
+                    onChange={(e) =>
+                      setClubForm({ ...clubForm, maxMembers: e.target.value })
+                    }
+                    placeholder="0 = unlimited"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Eligibility</Label>
+                  <Input
+                    value={clubForm.eligibility}
+                    onChange={(e) =>
+                      setClubForm({ ...clubForm, eligibility: e.target.value })
+                    }
+                    placeholder="All Students"
+                  />
+                </div>
+              </div>
+
+              {/* Achievements and Recruitment */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Achievements</Label>
+                  <Input
+                    value={clubForm.achievements}
+                    onChange={(e) =>
+                      setClubForm({ ...clubForm, achievements: e.target.value })
+                    }
+                    placeholder="Winners of XYZ, National Award"
+                  />
+                  <p className="text-xs text-muted-foreground">Separate with commas</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Recruitment Status</Label>
+                  <Select
+                    value={clubForm.recruitmentStatus}
+                    onValueChange={(value) =>
+                      setClubForm({ ...clubForm, recruitmentStatus: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Open">Open</SelectItem>
+                      <SelectItem value="Closed">Closed</SelectItem>
+                      <SelectItem value="Coming Soon">Coming Soon</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Social Links */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Social Links</Label>
+                <div className="grid grid-cols-3 gap-3">
+                  <Input
+                    value={clubForm.instagram}
+                    onChange={(e) =>
+                      setClubForm({ ...clubForm, instagram: e.target.value })
+                    }
+                    placeholder="Instagram URL"
+                  />
+                  <Input
+                    value={clubForm.linkedin}
+                    onChange={(e) =>
+                      setClubForm({ ...clubForm, linkedin: e.target.value })
+                    }
+                    placeholder="LinkedIn URL"
+                  />
+                  <Input
+                    value={clubForm.website}
+                    onChange={(e) =>
+                      setClubForm({ ...clubForm, website: e.target.value })
+                    }
+                    placeholder="Website URL"
+                  />
+                </div>
+              </div>
+
+              {/* Featured Toggle */}
+              <div className="flex items-center justify-between rounded-lg border border-border bg-muted/20 p-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    Featured Club
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Featured clubs are highlighted on the student dashboard
+                  </p>
+                </div>
+                <Switch
+                  checked={clubForm.featured}
+                  onCheckedChange={(checked) =>
+                    setClubForm({ ...clubForm, featured: checked })
+                  }
+                />
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex justify-end gap-3 pt-4 border-t">
                 <Button
                   variant="outline"
                   onClick={() => setIsClubModalOpen(false)}
+                  disabled={isClubSubmitting}
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleClubSubmit}>Add Club</Button>
+                <Button
+                  onClick={handleClubSubmit}
+                  disabled={isClubSubmitting}
+                  className="min-w-[140px]"
+                >
+                  {isClubSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Register Club
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
           </DialogContent>
@@ -1235,39 +2218,51 @@ const AdminDashboard = () => {
           open={isNotificationModalOpen}
           onOpenChange={setIsNotificationModalOpen}
         >
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <MessageSquare className="w-5 h-5" />
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <Bell className="w-6 h-6 text-primary" />
                 Send Notification Alert
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Message</label>
+            <div className="space-y-5 py-4">
+              {/* Title */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">
+                  Alert Title <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  value={notificationForm.title}
+                  onChange={(e) =>
+                    setNotificationForm({ ...notificationForm, title: e.target.value })
+                  }
+                  placeholder="e.g., Important: Exam Schedule Update"
+                />
+              </div>
+
+              {/* Message */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">
+                  Message <span className="text-destructive">*</span>
+                </Label>
                 <Textarea
                   value={notificationForm.message}
                   onChange={(e) =>
-                    setNotificationForm({
-                      ...notificationForm,
-                      message: e.target.value,
-                    })
+                    setNotificationForm({ ...notificationForm, message: e.target.value })
                   }
-                  placeholder="Important announcement, deadline reminder..."
+                  placeholder="Enter your notification message..."
                   rows={4}
                 />
               </div>
 
+              {/* Urgency and Category */}
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Urgency Level</label>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Urgency Level</Label>
                   <Select
                     value={notificationForm.urgency}
-                    onValueChange={(value) =>
-                      setNotificationForm({
-                        ...notificationForm,
-                        urgency: value,
-                      })
+                    onValueChange={(value: "normal" | "important" | "critical") =>
+                      setNotificationForm({ ...notificationForm, urgency: value })
                     }
                   >
                     <SelectTrigger>
@@ -1275,45 +2270,147 @@ const AdminDashboard = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="normal">Normal</SelectItem>
-                      <SelectItem value="priority">Priority</SelectItem>
-                      <SelectItem value="urgent">Urgent</SelectItem>
+                      <SelectItem value="important">Important</SelectItem>
+                      <SelectItem value="critical">Critical/Urgent</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Target Audience</label>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Category</Label>
                   <Select
-                    value={notificationForm.targetAudience}
-                    onValueChange={(value) =>
-                      setNotificationForm({
-                        ...notificationForm,
-                        targetAudience: value,
-                      })
+                    value={notificationForm.category}
+                    onValueChange={(value: "general" | "academic" | "placement" | "event" | "emergency") =>
+                      setNotificationForm({ ...notificationForm, category: value })
                     }
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Users</SelectItem>
-                      <SelectItem value="students">Students Only</SelectItem>
-                      <SelectItem value="faculty">Faculty Only</SelectItem>
-                      <SelectItem value="admins">Admins Only</SelectItem>
+                      <SelectItem value="general">General</SelectItem>
+                      <SelectItem value="academic">Academic</SelectItem>
+                      <SelectItem value="placement">Placement</SelectItem>
+                      <SelectItem value="event">Event</SelectItem>
+                      <SelectItem value="emergency">Emergency</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2">
+              {/* Target Audience */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Target Audience</Label>
+                <Select
+                  value={notificationForm.targetType}
+                  onValueChange={(value: "all" | "students" | "faculty" | "custom") =>
+                    setNotificationForm({ ...notificationForm, targetType: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Users</SelectItem>
+                    <SelectItem value="students">All Students</SelectItem>
+                    <SelectItem value="faculty">All Faculty</SelectItem>
+                    <SelectItem value="custom">Custom (Specific Branches/Sections)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Custom Targeting Options */}
+              {notificationForm.targetType === "custom" && (
+                <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/20">
+                  <p className="text-sm font-medium text-foreground">Custom Targeting Options</p>
+
+                  {/* Branches */}
+                  <div className="space-y-2">
+                    <Label className="text-sm">Branches (comma-separated)</Label>
+                    <Input
+                      value={notificationForm.branches.join(", ")}
+                      onChange={(e) =>
+                        setNotificationForm({
+                          ...notificationForm,
+                          branches: e.target.value.split(",").map((b) => b.trim()).filter((b) => b),
+                        })
+                      }
+                      placeholder="e.g., CSE, ECE, EEE"
+                    />
+                    <p className="text-xs text-muted-foreground">Leave empty to include all branches</p>
+                  </div>
+
+                  {/* Sections */}
+                  <div className="space-y-2">
+                    <Label className="text-sm">Sections (comma-separated)</Label>
+                    <Input
+                      value={notificationForm.sections.join(", ")}
+                      onChange={(e) =>
+                        setNotificationForm({
+                          ...notificationForm,
+                          sections: e.target.value.split(",").map((s) => s.trim()).filter((s) => s),
+                        })
+                      }
+                      placeholder="e.g., A, B, C"
+                    />
+                    <p className="text-xs text-muted-foreground">Leave empty to include all sections</p>
+                  </div>
+
+                  {/* Years */}
+                  <div className="space-y-2">
+                    <Label className="text-sm">Years (comma-separated)</Label>
+                    <Input
+                      value={notificationForm.years.join(", ")}
+                      onChange={(e) =>
+                        setNotificationForm({
+                          ...notificationForm,
+                          years: e.target.value.split(",").map((y) => y.trim()).filter((y) => y),
+                        })
+                      }
+                      placeholder="e.g., 1, 2, 3, 4"
+                    />
+                    <p className="text-xs text-muted-foreground">Leave empty to include all years</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Preview */}
+              <div className="flex items-center justify-between rounded-lg border border-border bg-muted/20 p-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    Real-time Sync
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    This notification will be sent instantly via Firebase to all targeted users
+                  </p>
+                </div>
+                <Bell className="w-5 h-5 text-primary animate-pulse" />
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex justify-end gap-3 pt-4 border-t">
                 <Button
                   variant="outline"
                   onClick={() => setIsNotificationModalOpen(false)}
+                  disabled={isNotificationSubmitting}
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleNotificationSubmit}>
-                  <Send className="w-4 h-4 mr-2" />
-                  Send Alert
+                <Button
+                  onClick={handleNotificationSubmit}
+                  disabled={isNotificationSubmitting}
+                  className="min-w-[140px]"
+                >
+                  {isNotificationSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 mr-2" />
+                      Send Alert
+                    </>
+                  )}
                 </Button>
               </div>
             </div>

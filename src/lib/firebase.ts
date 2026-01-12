@@ -1,5 +1,9 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getAnalytics } from "firebase/analytics";
+import { getDatabase } from "firebase/database";
+import { getStorage } from "firebase/storage";
+import { getFirestore } from "firebase/firestore";
 import { config, validateConfig, logConfig } from "@/config/environment";
 
 // Validate configuration on startup
@@ -23,12 +27,26 @@ const isDevelopment = config.IS_DEVELOPMENT || !config.IS_PRODUCTION;
 // Initialize Firebase
 let app: any;
 let auth: any;
+let analytics: any;
+let database: any;
+let storage: any;
+let firestore: any;
 let firebaseReady = false;
 
 try {
-  if (import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_API_KEY !== 'AIzaSyBRY5horWW28vr3UhqVbG-uAVZahHTPVLU') {
+  // Check if API key is present (and not an empty string)
+  if (config.FIREBASE_CONFIG.apiKey) {
     app = initializeApp(config.FIREBASE_CONFIG);
     auth = getAuth(app);
+    database = getDatabase(app);
+    storage = getStorage(app);
+    firestore = getFirestore(app);
+
+    // Initialize Analytics if supported and in browser environment
+    if (typeof window !== 'undefined' && config.FIREBASE_CONFIG.measurementId) {
+      analytics = getAnalytics(app);
+    }
+
     firebaseReady = true;
     console.log("Firebase initialized successfully");
   } else {
@@ -45,5 +63,6 @@ try {
 // Export environment flags
 export const isProduction = config.IS_PRODUCTION;
 
-export { auth, isDevelopment, firebaseReady };
+export { auth, analytics, database, storage, firestore, isDevelopment, firebaseReady };
 export default app;
+

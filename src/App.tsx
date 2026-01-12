@@ -12,6 +12,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PlacementProvider } from "@/contexts/PlacementContext";
+import { EventProvider } from "@/contexts/EventContext";
+import { ClubProvider } from "@/contexts/ClubContext";
+import { ExamProvider } from "@/contexts/ExamContext";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 import Navigation from "./components/Navigation";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DynamicHomepage from "./components/DynamicHomepage";
@@ -33,6 +37,7 @@ import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
 // Student Dashboard Pages
+import StudentDashboard from "./pages/student/Dashboard";
 import StudentCourses from "./pages/student/Courses";
 import StudentSchedule from "./pages/student/Schedule";
 import StudentResults from "./pages/student/Results";
@@ -47,6 +52,7 @@ import StudentSettings from "./pages/student/Settings";
 import StudentFees from "./pages/student/Fees";
 
 // Faculty Dashboard Pages
+import FacultyDashboard from "./pages/faculty/Dashboard";
 import FacultyCourses from "./pages/faculty/Courses";
 import FacultyStudents from "./pages/faculty/Students";
 import FacultyAssignments from "./pages/faculty/Assignments";
@@ -58,6 +64,10 @@ import FacultySettings from "./pages/faculty/Settings";
 // Admin Dashboard Pages
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminPlacement from "./pages/admin/Placement";
+import AdminEvents from "./pages/admin/Events";
+import AdminClubs from "./pages/admin/Clubs";
+import AdminExams from "./pages/admin/Exams";
+import AdminAlerts from "./pages/admin/Alerts";
 import StudentDataManagement from "./pages/admin/StudentDataManagement";
 
 const queryClient = new QueryClient();
@@ -289,6 +299,14 @@ const AppContent = () => {
 
         {/* Admin Dashboard Routes (protected, no navigation) */}
         <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/admin/dashboard"
           element={
             <ProtectedRoute requiredRole="admin">
@@ -312,8 +330,60 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/admin/event"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminEvents />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/club"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminClubs />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/alerts"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminAlerts />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/exam"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminExams />
+            </ProtectedRoute>
+          }
+        />
 
-        {/* Legacy Dashboard Routes - Redirect to Homepage */}
+        {/* Student Main Dashboard Route */}
+        <Route
+          path="/student"
+          element={
+            <ProtectedRoute requiredRole="student">
+              <StudentDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Faculty Main Dashboard Route */}
+        <Route
+          path="/faculty"
+          element={
+            <ProtectedRoute requiredRole="faculty">
+              <FacultyDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Legacy Dashboard Routes - Redirect to main dashboard */}
         <Route path="/student/dashboard" element={<DynamicHomepage />} />
         <Route path="/faculty/dashboard" element={<DynamicHomepage />} />
 
@@ -329,11 +399,19 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <PlacementProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <AppContent />
-          </TooltipProvider>
+          <EventProvider>
+            <ClubProvider>
+              <ExamProvider>
+                <NotificationProvider>
+                  <TooltipProvider>
+                    <Toaster />
+                    <Sonner />
+                    <AppContent />
+                  </TooltipProvider>
+                </NotificationProvider>
+              </ExamProvider>
+            </ClubProvider>
+          </EventProvider>
         </PlacementProvider>
       </AuthProvider>
     </QueryClientProvider>

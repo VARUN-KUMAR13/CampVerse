@@ -9,6 +9,7 @@
     "seed": "node scripts/seedAdmin.js"
   },
   "dependencies": {
+    "@google-cloud/recaptcha-enterprise": "^6.3.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
@@ -20,7 +21,8 @@
     "joi": "^17.9.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^7.5.0",
-    "multer": "^2.0.2"
+    "multer": "^2.0.2",
+    "razorpay": "^2.9.6"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

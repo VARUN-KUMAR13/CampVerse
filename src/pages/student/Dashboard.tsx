@@ -11,11 +11,46 @@ import {
   BarChart3,
   Calendar as CalendarIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const StudentDashboard = () => {
   const { userData } = useAuth();
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [studentName, setStudentName] = useState<string | null>(null);
+
+  // Fetch student name from Firebase Realtime Database
+  useEffect(() => {
+    if (!userData?.collegeId) return;
+
+    const fetchStudentName = async () => {
+      try {
+        const response = await fetch(
+          `https://campverse-1374-default-rtdb.firebaseio.com/.json`
+        );
+
+        if (response.ok) {
+          const allData = await response.json();
+
+          if (allData) {
+            for (const key in allData) {
+              const student = allData[key];
+              if (student && student["ROLL NO"] === userData.collegeId) {
+                const name = student["Name of the student"] || student["Name"] || student["name"] || null;
+                if (name) {
+                  setStudentName(name);
+                }
+                break;
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching from Firebase:", error);
+      }
+    };
+
+    fetchStudentName();
+  }, [userData?.collegeId]);
 
   const stats = [
     {
@@ -144,7 +179,7 @@ const StudentDashboard = () => {
           {/* Welcome Section */}
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              Hello {userData?.collegeId} <span className="text-2xl">👋</span>
+              Hello <span className="text-primary">{studentName || userData?.collegeId}</span> <span className="text-2xl">👋</span>
             </h1>
             <p className="text-muted-foreground">
               Let's learn something new today!
@@ -229,7 +264,9 @@ const StudentDashboard = () => {
             <div className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">May 2025</CardTitle>
+                  <CardTitle className="text-lg">
+                    {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Calendar

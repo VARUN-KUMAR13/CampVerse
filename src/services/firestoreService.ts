@@ -1,14 +1,13 @@
-import { 
-  getFirestore, 
-  collection, 
-  doc, 
-  setDoc, 
-  getDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
-  where, 
-  getDocs, 
+import {
+  collection,
+  doc,
+  setDoc,
+  getDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  getDocs,
   orderBy,
   addDoc,
   onSnapshot,
@@ -16,11 +15,8 @@ import {
   type QuerySnapshot,
   serverTimestamp
 } from 'firebase/firestore';
-import app, { isDevelopment } from '@/lib/firebase';
+import app, { firestore as db, isDevelopment, firebaseReady } from '@/lib/firebase';
 import { CollegeUser } from '@/lib/auth';
-
-// Initialize Firestore
-const db = isDevelopment ? null : getFirestore(app);
 
 // Mock data storage for development mode
 const mockStorage: Record<string, any> = {};
@@ -91,7 +87,7 @@ export interface AssignmentSubmission {
 }
 
 // Development mode helpers
-const getMockKey = (collection: string, id?: string) => 
+const getMockKey = (collection: string, id?: string) =>
   id ? `${collection}/${id}` : collection;
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -111,7 +107,7 @@ class FirestoreService {
     }
 
     if (!db) throw new Error('Firestore not initialized');
-    
+
     const docRef = doc(db, collectionName, docId);
     await setDoc(docRef, {
       ...data,
@@ -126,10 +122,10 @@ class FirestoreService {
     }
 
     if (!db) throw new Error('Firestore not initialized');
-    
+
     const docRef = doc(db, collectionName, docId);
     const docSnap = await getDoc(docRef);
-    
+
     if (docSnap.exists()) {
       return { id: docSnap.id, ...docSnap.data() };
     }
@@ -151,7 +147,7 @@ class FirestoreService {
     }
 
     if (!db) throw new Error('Firestore not initialized');
-    
+
     const docRef = doc(db, collectionName, docId);
     await updateDoc(docRef, {
       ...data,
@@ -167,19 +163,19 @@ class FirestoreService {
     }
 
     if (!db) throw new Error('Firestore not initialized');
-    
+
     const docRef = doc(db, collectionName, docId);
     await deleteDoc(docRef);
   }
 
   // Query documents
   async queryDocuments(
-    collectionName: string, 
+    collectionName: string,
     whereClause?: { field: string; operator: any; value: any },
     orderByClause?: { field: string; direction?: 'asc' | 'desc' }
   ): Promise<any[]> {
     if (isDevelopment) {
-      let results = Object.values(mockStorage).filter(item => 
+      let results = Object.values(mockStorage).filter(item =>
         typeof item === 'object' && item !== null
       );
 
@@ -212,13 +208,13 @@ class FirestoreService {
     }
 
     if (!db) throw new Error('Firestore not initialized');
-    
+
     let q = collection(db, collectionName);
-    
+
     if (whereClause) {
       q = query(q, where(whereClause.field, whereClause.operator, whereClause.value)) as any;
     }
-    
+
     if (orderByClause) {
       q = query(q, orderBy(orderByClause.field, orderByClause.direction || 'asc')) as any;
     }
@@ -241,31 +237,31 @@ class FirestoreService {
     }
 
     if (!db) throw new Error('Firestore not initialized');
-    
+
     const docRef = await addDoc(collection(db, collectionName), {
       ...data,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
-    
+
     return docRef.id;
   }
 
   // Real-time listener
   subscribeToDocument(
-    collectionName: string, 
-    docId: string, 
+    collectionName: string,
+    docId: string,
     callback: (data: any) => void
   ): () => void {
     if (isDevelopment) {
       // Simulate real-time updates in development
       const data = mockStorage[getMockKey(collectionName, docId)];
       callback(data);
-      return () => {}; // Return empty unsubscribe function
+      return () => { }; // Return empty unsubscribe function
     }
 
     if (!db) throw new Error('Firestore not initialized');
-    
+
     const docRef = doc(db, collectionName, docId);
     return onSnapshot(docRef, (doc) => {
       if (doc.exists()) {
@@ -323,13 +319,13 @@ export class StudentService {
 
   // Bulk import students from dataset
   static async importStudentsFromDataset(students: StudentProfile[]): Promise<void> {
-    const promises = students.map(student => 
+    const promises = students.map(student =>
       this.saveStudentProfile({
         ...student,
         createdAt: isDevelopment ? new Date() : serverTimestamp()
       })
     );
-    
+
     await Promise.all(promises);
   }
 }
@@ -390,13 +386,13 @@ export class AssignmentService {
 
   // Submit assignment
   static async submitAssignment(
-    assignmentId: string, 
+    assignmentId: string,
     submission: AssignmentSubmission
   ): Promise<void> {
     const assignment = await firestoreService.getDocument('assignments', assignmentId);
     if (assignment) {
       const submissions = assignment.submissions || [];
-      const existingIndex = submissions.findIndex((s: AssignmentSubmission) => 
+      const existingIndex = submissions.findIndex((s: AssignmentSubmission) =>
         s.studentId === submission.studentId
       );
 

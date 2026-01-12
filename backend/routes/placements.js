@@ -62,7 +62,7 @@ router.get("/", authenticateToken, async (req, res) => {
     if (user.role === "student") {
       const branchMap = {
         "05": "CSE",
-        "06": "IT", 
+        "06": "IT",
         "04": "ECE",
         "03": "EEE",
         "02": "MECH",
@@ -183,14 +183,19 @@ router.get("/:id", authenticateToken, async (req, res) => {
 // @access  Admin, Faculty
 router.post("/", authenticateToken, authorizeRoles(["admin", "faculty"]), async (req, res) => {
   try {
+    console.log("=== CREATE PLACEMENT JOB ===");
+    console.log("User:", req.user?.collegeId, "Role:", req.user?.role);
+    console.log("Request body:", JSON.stringify(req.body, null, 2));
+
     const jobData = {
       ...req.body,
       postedBy: req.user._id,
-      status: req.body.status || "Draft",
+      status: req.body.status || "Open",  // Default to "Open" instead of "Draft"
     };
 
     // Validate required fields
     if (!jobData.job_id || !jobData.title || !jobData.company || !jobData.type || !jobData.ctc || !jobData.deadline) {
+      console.log("Missing required fields!");
       return res.status(400).json({
         message: "Missing required fields: job_id, title, company, type, ctc, deadline",
       });
@@ -199,6 +204,7 @@ router.post("/", authenticateToken, authorizeRoles(["admin", "faculty"]), async 
     // Check if job_id already exists
     const existingJob = await PlacementJob.findOne({ job_id: jobData.job_id });
     if (existingJob) {
+      console.log("Job ID already exists:", jobData.job_id);
       return res.status(400).json({
         message: "Job ID already exists. Please use a unique job ID.",
       });
@@ -206,6 +212,7 @@ router.post("/", authenticateToken, authorizeRoles(["admin", "faculty"]), async 
 
     const job = new PlacementJob(jobData);
     await job.save();
+    console.log("✅ Job saved successfully! ID:", job._id);
 
     await job.populate("postedBy", "name collegeId");
 
@@ -214,7 +221,7 @@ router.post("/", authenticateToken, authorizeRoles(["admin", "faculty"]), async 
       job,
     });
   } catch (error) {
-    console.error("Error creating placement job:", error);
+    console.error("❌ Error creating placement job:", error);
     if (error.name === "ValidationError") {
       return res.status(400).json({
         message: "Validation error",

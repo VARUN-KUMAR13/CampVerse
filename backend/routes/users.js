@@ -139,7 +139,18 @@ router.get("/college-id/:collegeId", async (req, res) => {
 router.put("/:uid", verifyToken, async (req, res) => {
   try {
     // Only allow updating certain fields
-    const allowedUpdates = ["name"];
+    const allowedUpdates = [
+      "name",
+      "phone",
+      "address",
+      "dateOfBirth",
+      "bio",
+      "cgpa",
+      "semester",
+      "skills",
+      "achievements",
+      "avatar",
+    ];
     const updates = {};
 
     for (const field of allowedUpdates) {

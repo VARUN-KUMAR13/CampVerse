@@ -1,10 +1,9 @@
-import app, { isDevelopment } from '@/lib/firebase';
-import { getDatabase, ref, get, child } from 'firebase/database';
+import { database, isDevelopment, firebaseReady } from '@/lib/firebase';
+import { ref, get } from 'firebase/database';
 
 export const getStudentNameByRoll = async (rollNumber: string): Promise<string | null> => {
   try {
-    if (isDevelopment || !app) return null;
-    const db = getDatabase(app);
+    if (isDevelopment || !firebaseReady || !database) return null;
 
     // Try common paths
     const candidatePaths = [
@@ -14,7 +13,7 @@ export const getStudentNameByRoll = async (rollNumber: string): Promise<string |
     ];
 
     for (const path of candidatePaths) {
-      const snapshot = await get(ref(db, path));
+      const snapshot = await get(ref(database, path));
       if (snapshot.exists()) {
         const val = snapshot.val();
         if (typeof val === 'string') return val;

@@ -26,6 +26,11 @@ const StudentSidebar = () => {
 
   const menuItems = [
     {
+      icon: <User className="w-5 h-5" />,
+      label: "My Profile",
+      path: "/student/profile",
+    },
+    {
       icon: <LayoutDashboard className="w-5 h-5" />,
       label: "Dashboard",
       path: "/",
@@ -121,7 +126,7 @@ const StudentSidebar = () => {
             className={cn(
               "flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors",
               isActiveRoute(item.path) &&
-                "bg-sidebar-primary text-sidebar-primary-foreground font-medium",
+              "bg-sidebar-primary text-sidebar-primary-foreground font-medium",
             )}
           >
             {item.icon}

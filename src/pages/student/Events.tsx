@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ import {
 import StudentSidebar from "@/components/StudentSidebar";
 import StudentTopbar from "@/components/StudentTopbar";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEvents, Event } from "@/contexts/EventContext";
 import {
   Search,
   Calendar,
@@ -22,141 +23,27 @@ import {
   DollarSign,
   Star,
   ExternalLink,
+  RefreshCw,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 
 const StudentEvents = () => {
   const { userData } = useAuth();
+  const { events, loading, error, fetchEvents } = useEvents();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const eventsData = [
-    {
-      id: "ANUDHAHAN2025",
-      title: "Anudhahan 2025",
-      description:
-        "Anurag University National Cultural Festival - A celebration of arts, culture, and talent with competitions, performances, and workshops.",
-      category: "Cultural",
-      date: "2025-03-15T09:00:00",
-      endDate: "2025-03-17T18:00:00",
-      venue: "Anurag University Campus",
-      organizer: "Cultural Committee",
-      entryFee: "₹200",
-      maxParticipants: 500,
-      registeredParticipants: 324,
-      status: "Open",
-      featured: true,
-      image: "/events/anudhahan.jpg",
-      highlights: [
-        "Dance Competition",
-        "Music Concert",
-        "Art Exhibition",
-        "Drama Performance",
-      ],
-      prizes: "₹50,000+ Prize Pool",
-      registrationDeadline: "2025-03-10T23:59:00",
-    },
-    {
-      id: "HACKATHON2025",
-      title: "CodeStorm Hackathon",
-      description:
-        "48-hour coding challenge to build innovative solutions for real-world problems. Teams of 3-4 members can participate.",
-      category: "Technical",
-      date: "2025-02-20T18:00:00",
-      endDate: "2025-02-22T18:00:00",
-      venue: "Computer Science Block",
-      organizer: "IEEE Computer Society",
-      entryFee: "Free",
-      maxParticipants: 200,
-      registeredParticipants: 156,
-      status: "Open",
-      featured: true,
-      image: "/events/hackathon.jpg",
-      highlights: [
-        "Industry Mentors",
-        "Free Food & Swag",
-        "Job Opportunities",
-        "Networking Session",
-      ],
-      prizes: "₹1,00,000+ Prize Pool",
-      registrationDeadline: "2025-02-15T23:59:00",
-    },
-    {
-      id: "WORKSHOP2025",
-      title: "AI/ML Workshop Series",
-      description:
-        "Comprehensive workshop series on Artificial Intelligence and Machine Learning with hands-on projects and industry insights.",
-      category: "Workshop",
-      date: "2025-02-10T10:00:00",
-      endDate: "2025-02-12T16:00:00",
-      venue: "Seminar Hall A",
-      organizer: "Computer Science Department",
-      entryFee: "₹500",
-      maxParticipants: 100,
-      registeredParticipants: 87,
-      status: "Open",
-      featured: false,
-      image: "/events/aiml.jpg",
-      highlights: [
-        "Expert Sessions",
-        "Hands-on Projects",
-        "Certificate",
-        "Industry Exposure",
-      ],
-      prizes: "Certificate of Completion",
-      registrationDeadline: "2025-02-05T23:59:00",
-    },
-    {
-      id: "SPORTS2025",
-      title: "Inter-College Sports Meet",
-      description:
-        "Annual sports championship featuring multiple indoor and outdoor games with participation from various colleges.",
-      category: "Sports",
-      date: "2025-04-01T08:00:00",
-      endDate: "2025-04-03T17:00:00",
-      venue: "Sports Complex",
-      organizer: "Sports Committee",
-      entryFee: "₹100",
-      maxParticipants: 300,
-      registeredParticipants: 89,
-      status: "Open",
-      featured: false,
-      image: "/events/sports.jpg",
-      highlights: ["Cricket", "Football", "Basketball", "Athletics"],
-      prizes: "Trophies & Medals",
-      registrationDeadline: "2025-03-25T23:59:00",
-    },
-    {
-      id: "ENIGMA2024",
-      title: "ENIGMA Technical Symposium",
-      description:
-        "Technical symposium with paper presentations, project exhibitions, and technical competitions.",
-      category: "Technical",
-      date: "2025-01-15T09:00:00",
-      endDate: "2025-01-15T17:00:00",
-      venue: "Main Auditorium",
-      organizer: "ENIGMA Club",
-      entryFee: "₹150",
-      maxParticipants: 250,
-      registeredParticipants: 250,
-      status: "Closed",
-      featured: false,
-      image: "/events/enigma.jpg",
-      highlights: [
-        "Paper Presentation",
-        "Project Expo",
-        "Technical Quiz",
-        "Guest Lectures",
-      ],
-      prizes: "₹25,000 Prize Pool",
-      registrationDeadline: "2025-01-10T23:59:00",
-    },
-  ];
+  // Fetch events on mount
+  useEffect(() => {
+    fetchEvents();
+  }, []);
 
-  const filteredEvents = eventsData.filter((event) => {
+  const filteredEvents = events.filter((event) => {
     const matchesSearch =
       event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.description.toLowerCase().includes(searchTerm.toLowerCase());
+      (event.description?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
     const matchesCategory =
       categoryFilter === "all" ||
       event.category.toLowerCase() === categoryFilter.toLowerCase();
@@ -169,11 +56,14 @@ const StudentEvents = () => {
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  const getStatusBadge = (event: any) => {
-    if (event.status === "Closed") {
+  const getStatusBadge = (event: Event) => {
+    if (event.status === "Closed" || event.status === "Cancelled") {
       return <Badge variant="destructive">Registration Closed</Badge>;
     }
-    if (event.registeredParticipants >= event.maxParticipants) {
+    if (event.status === "Completed") {
+      return <Badge variant="secondary">Completed</Badge>;
+    }
+    if (event.maxParticipants > 0 && event.registeredParticipants >= event.maxParticipants) {
       return <Badge variant="secondary">Full</Badge>;
     }
     return <Badge className="bg-green-500">Open for Registration</Badge>;
@@ -215,7 +105,30 @@ const StudentEvents = () => {
                   activities
                 </p>
               </div>
+              <Button
+                onClick={fetchEvents}
+                disabled={loading}
+                variant="outline"
+                className="gap-2"
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                Refresh
+              </Button>
             </div>
+
+            {/* Error Alert */}
+            {error && (
+              <Card className="border-destructive bg-destructive/10">
+                <CardContent className="py-4 flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-destructive" />
+                  <span className="text-destructive">{error}</span>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Filters */}
             <Card>
@@ -248,6 +161,8 @@ const StudentEvents = () => {
                       <SelectItem value="cultural">Cultural</SelectItem>
                       <SelectItem value="sports">Sports</SelectItem>
                       <SelectItem value="workshop">Workshop</SelectItem>
+                      <SelectItem value="seminar">Seminar</SelectItem>
+                      <SelectItem value="competition">Competition</SelectItem>
                     </SelectContent>
                   </Select>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -265,6 +180,18 @@ const StudentEvents = () => {
               </CardContent>
             </Card>
 
+            {/* Loading State */}
+            {loading && events.length === 0 && (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">
+                    Loading events...
+                  </h3>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Featured Events Banner */}
             {filteredEvents.some((event) => event.featured) && (
               <div>
@@ -277,7 +204,7 @@ const StudentEvents = () => {
                     .filter((event) => event.featured)
                     .map((event) => (
                       <Card
-                        key={event.id}
+                        key={event._id}
                         className="overflow-hidden border-2 border-primary/20 hover:shadow-xl transition-all"
                       >
                         <div className="h-48 bg-gradient-to-r from-primary/20 to-purple-500/20 flex items-center justify-center">
@@ -302,8 +229,10 @@ const StudentEvents = () => {
                             <div className="flex items-center gap-2">
                               <Calendar className="w-4 h-4 text-primary" />
                               <span>
-                                {formatDate(event.date)} -{" "}
-                                {formatDate(event.endDate)}
+                                {formatDate(event.date)}
+                                {event.endDate && event.endDate !== event.date && (
+                                  <> - {formatDate(event.endDate)}</>
+                                )}
                               </span>
                             </div>
                             <div className="flex items-center gap-2">
@@ -330,7 +259,7 @@ const StudentEvents = () => {
             <div>
               <h2 className="text-xl font-semibold mb-4">All Events</h2>
               <div className="grid gap-6">
-                {filteredEvents.length === 0 ? (
+                {!loading && filteredEvents.length === 0 ? (
                   <Card>
                     <CardContent className="py-12 text-center">
                       <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
@@ -338,14 +267,16 @@ const StudentEvents = () => {
                         No events found
                       </h3>
                       <p className="text-muted-foreground">
-                        Try adjusting your filters to see more events.
+                        {events.length === 0
+                          ? "No events have been posted yet. Check back later!"
+                          : "Try adjusting your filters to see more events."}
                       </p>
                     </CardContent>
                   </Card>
                 ) : (
                   filteredEvents.map((event) => (
                     <Card
-                      key={event.id}
+                      key={event._id}
                       className="hover:shadow-lg transition-shadow"
                     >
                       <CardHeader>
@@ -375,14 +306,16 @@ const StudentEvents = () => {
                               )}
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="text-sm text-muted-foreground">
-                              Registration Deadline
-                            </p>
-                            <p className="font-medium text-destructive">
-                              {formatDate(event.registrationDeadline)}
-                            </p>
-                          </div>
+                          {event.registrationDeadline && (
+                            <div className="text-right">
+                              <p className="text-sm text-muted-foreground">
+                                Registration Deadline
+                              </p>
+                              <p className="font-medium text-destructive">
+                                {formatDate(event.registrationDeadline)}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-4">
@@ -396,17 +329,16 @@ const StudentEvents = () => {
                               <Calendar className="w-4 h-4 text-primary" />
                               <span className="font-medium">Date:</span>
                               <span>
-                                {formatDate(event.date)} -{" "}
-                                {formatDate(event.endDate)}
+                                {formatDate(event.date)}
+                                {event.endDate && event.endDate !== event.date && (
+                                  <> - {formatDate(event.endDate)}</>
+                                )}
                               </span>
                             </div>
                             <div className="flex items-center gap-2">
                               <Clock className="w-4 h-4 text-primary" />
                               <span className="font-medium">Time:</span>
-                              <span>
-                                {formatTime(event.date)} -{" "}
-                                {formatTime(event.endDate)}
-                              </span>
+                              <span>{formatTime(event.date)}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <MapPin className="w-4 h-4 text-primary" />
@@ -420,36 +352,41 @@ const StudentEvents = () => {
                               <span className="font-medium">Entry Fee:</span>
                               <span>{event.entryFee}</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Users className="w-4 h-4 text-blue-500" />
-                              <span className="font-medium">Registered:</span>
-                              <span>
-                                {event.registeredParticipants}/
-                                {event.maxParticipants}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Star className="w-4 h-4 text-yellow-500" />
-                              <span className="font-medium">Prizes:</span>
-                              <span>{event.prizes}</span>
-                            </div>
+                            {event.maxParticipants > 0 && (
+                              <div className="flex items-center gap-2">
+                                <Users className="w-4 h-4 text-blue-500" />
+                                <span className="font-medium">Registered:</span>
+                                <span>
+                                  {event.registeredParticipants}/{event.maxParticipants}
+                                </span>
+                              </div>
+                            )}
+                            {event.prizes && (
+                              <div className="flex items-center gap-2">
+                                <Star className="w-4 h-4 text-yellow-500" />
+                                <span className="font-medium">Prizes:</span>
+                                <span>{event.prizes}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
 
-                        <div>
-                          <span className="font-medium">Highlights:</span>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {event.highlights.map((highlight) => (
-                              <Badge
-                                key={highlight}
-                                variant="outline"
-                                className="text-xs"
-                              >
-                                {highlight}
-                              </Badge>
-                            ))}
+                        {event.highlights && event.highlights.length > 0 && (
+                          <div>
+                            <span className="font-medium">Highlights:</span>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {event.highlights.map((highlight, idx) => (
+                                <Badge
+                                  key={idx}
+                                  variant="outline"
+                                  className="text-xs"
+                                >
+                                  {highlight}
+                                </Badge>
+                              ))}
+                            </div>
                           </div>
-                        </div>
+                        )}
 
                         <div className="flex items-center justify-between pt-4 border-t">
                           <div className="text-sm text-muted-foreground">
@@ -460,8 +397,8 @@ const StudentEvents = () => {
                           </div>
                           <div className="flex gap-2">
                             {event.status === "Open" &&
-                              event.registeredParticipants <
-                                event.maxParticipants && (
+                              (event.maxParticipants === 0 ||
+                                event.registeredParticipants < event.maxParticipants) && (
                                 <Button className="bg-green-600 hover:bg-green-700">
                                   Register Now
                                 </Button>

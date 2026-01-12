@@ -14,6 +14,7 @@ import StudentSidebar from "@/components/StudentSidebar";
 import StudentTopbar from "@/components/StudentTopbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlacement } from "@/contexts/PlacementContext";
+import { useToast } from "@/hooks/use-toast";
 import {
   Search,
   Building2,
@@ -21,11 +22,15 @@ import {
   DollarSign,
   FileText,
   ExternalLink,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 
 const StudentPlacement = () => {
   const { userData } = useAuth();
-  const { jobs: placementData, applyToJob, addJob } = usePlacement();
+  const { jobs: placementData, loading, error, applyToJob, refreshJobs } = usePlacement();
+  const { toast } = useToast();
+  const [isApplying, setIsApplying] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [jobTypeFilter, setJobTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -94,26 +99,33 @@ const StudentPlacement = () => {
     });
   };
 
-  const handleApply = (jobId: string) => {
-    if (userData?.collegeId) {
-      applyToJob(jobId, userData.collegeId);
+  const handleApply = async (jobId: string) => {
+    if (!userData?.collegeId) {
+      toast({
+        title: "Error",
+        description: "Please log in to apply for jobs.",
+        variant: "destructive",
+      });
+      return;
     }
-  };
 
-  const testAddJob = () => {
-    addJob({
-      job_id: `TEST${Date.now()}`,
-      title: "Test Job from Student",
-      company: "Test Company",
-      type: "Full Time",
-      ctc: "5.00 LPA",
-      stipend: "N/A",
-      deadline: "2025-12-31T23:59:00",
-      eligibility: ["All Branches"],
-      description: "This is a test job added from student dashboard",
-      bond: "2 years",
-      rounds: ["Online Test", "Interview"],
-    });
+    try {
+      setIsApplying(jobId);
+      await applyToJob(jobId, userData.collegeId);
+      toast({
+        title: "Application Submitted!",
+        description: "Your application has been submitted successfully.",
+      });
+    } catch (err: any) {
+      console.error("Error applying to job:", err);
+      toast({
+        title: "Application Failed",
+        description: err.message || "Failed to submit application. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsApplying(null);
+    }
   };
 
   return (
@@ -135,13 +147,34 @@ const StudentPlacement = () => {
                   Explore job opportunities and internships posted by companies
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-4">
                 <div className="text-sm text-muted-foreground">
                   Total Jobs: {placementData.length} | Filtered:{" "}
                   {filteredJobs.length}
                 </div>
+                <Button
+                  variant="outline"
+                  onClick={refreshJobs}
+                  disabled={loading}
+                  className="flex items-center gap-2"
+                >
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                  Refresh
+                </Button>
               </div>
             </div>
+
+            {/* Error Alert */}
+            {error && (
+              <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg">
+                <p className="font-medium">Error loading jobs</p>
+                <p className="text-sm">{error}</p>
+              </div>
+            )}
 
             {/* Filters */}
             <Card>
@@ -191,7 +224,20 @@ const StudentPlacement = () => {
 
             {/* Job Listings */}
             <div className="grid gap-6">
-              {filteredJobs.length === 0 ? (
+              {loading ? (
+                // Loading skeleton
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">
+                      Loading job opportunities...
+                    </h3>
+                    <p className="text-muted-foreground">
+                      Fetching jobs from database
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : filteredJobs.length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center">
                     <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
@@ -199,7 +245,9 @@ const StudentPlacement = () => {
                       No opportunities found
                     </h3>
                     <p className="text-muted-foreground">
-                      Try adjusting your filters to see more results.
+                      {placementData.length === 0
+                        ? "No jobs have been posted yet. Check back later!"
+                        : "Try adjusting your filters to see more results."}
                     </p>
                   </CardContent>
                 </Card>
@@ -286,8 +334,8 @@ const StudentPlacement = () => {
                             <ul className="text-sm text-muted-foreground mt-1">
                               {Array.isArray(job.rounds)
                                 ? job.rounds.map((round, index) => (
-                                    <li key={index}>• {round}</li>
-                                  ))
+                                  <li key={index}>• {round}</li>
+                                ))
                                 : job.rounds && <li>• {job.rounds}</li>}
                             </ul>
                           </div>
@@ -296,10 +344,10 @@ const StudentPlacement = () => {
 
                       <div className="flex items-center justify-between pt-4 border-t">
                         <div className="flex gap-2">
-                          {job.attachments.map((file) => (
-                            <Button key={file} variant="outline" size="sm">
+                          {job.attachments && job.attachments.length > 0 && job.attachments.map((file: any, index: number) => (
+                            <Button key={typeof file === 'string' ? file : file.filename || index} variant="outline" size="sm">
                               <FileText className="w-4 h-4 mr-2" />
-                              {file}
+                              {typeof file === 'string' ? file : file.filename || 'Attachment'}
                               <ExternalLink className="w-3 h-3 ml-1" />
                             </Button>
                           ))}
@@ -311,8 +359,16 @@ const StudentPlacement = () => {
                               <Button
                                 className="bg-green-600 hover:bg-green-700"
                                 onClick={() => handleApply(job.job_id)}
+                                disabled={isApplying === job.job_id}
                               >
-                                Apply Now
+                                {isApplying === job.job_id ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Applying...
+                                  </>
+                                ) : (
+                                  "Apply Now"
+                                )}
                               </Button>
                             )}
                           <Button variant="outline">View Details</Button>
