@@ -4,26 +4,14 @@ const admin = require("firebase-admin");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const { generateToken, authenticateToken, adminOnly } = require("../middleware/auth");
-const { verifyRecaptchaToken } = require("../middleware/recaptcha");
 
 // Login route
 router.post("/login", async (req, res) => {
   try {
-    const { collegeId, password, recaptchaToken } = req.body;
+    const { collegeId, password } = req.body;
 
     if (!collegeId || !password) {
       return res.status(400).json({ message: "College ID and password are required" });
-    }
-
-    // Verify reCAPTCHA token (optional - won't block if verification fails)
-    if (recaptchaToken) {
-      const recaptchaResult = await verifyRecaptchaToken(recaptchaToken, 'LOGIN');
-      console.log(`Login attempt for ${collegeId} - reCAPTCHA score: ${recaptchaResult.score}`);
-
-      // Optionally block low scores (uncomment in production)
-      // if (!recaptchaResult.valid) {
-      //   return res.status(403).json({ message: "Security verification failed. Please try again." });
-      // }
     }
 
     // Handle admin login

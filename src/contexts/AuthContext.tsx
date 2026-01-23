@@ -7,7 +7,7 @@ interface AuthContextType {
   currentUser: User | null;
   userData: CollegeUser | null;
   loading: boolean;
-  login: (collegeId: string, password: string, recaptchaToken?: string) => Promise<CollegeUser>;
+  login: (collegeId: string, password: string) => Promise<CollegeUser>;
   logout: () => Promise<void>;
   resetPassword: (collegeId: string) => Promise<void>;
 }
@@ -78,10 +78,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const login = async (
     collegeId: string,
     password: string,
-    recaptchaToken?: string,
   ): Promise<CollegeUser> => {
     const { signInUser } = await import("@/lib/auth");
-    const userData = await signInUser(collegeId, password, recaptchaToken);
+    const userData = await signInUser(collegeId, password);
 
     if (isDevelopment || !firebaseReady) {
       // Store user data in localStorage for development mode

@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 @layer base {
+
   /**
    * CampVerse theme - Dark mode focused design
    * tailwind.config.ts expects the following color variables to be expressed as HSL values.
@@ -149,11 +150,4 @@
       0 3px 5px rgba(0, 0, 0, 0.2),
       0 5px 10px rgba(0, 0, 0, 0.25);
   }
-}
-
-/* Hide reCAPTCHA badge - required text disclosure is on the login page */
-.grecaptcha-badge {
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
 }

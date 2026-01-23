@@ -103,7 +103,6 @@ const mockUsers: Record<string, CollegeUser> = {
 const backendLogin = async (
   collegeId: string,
   password: string,
-  recaptchaToken?: string,
 ): Promise<CollegeUser> => {
   try {
     console.log("Attempting backend login for:", collegeId);
@@ -113,7 +112,7 @@ const backendLogin = async (
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ collegeId, password, recaptchaToken }),
+      body: JSON.stringify({ collegeId, password }),
     });
 
     if (!response.ok) {
@@ -276,14 +275,13 @@ export const createUserAccount = async (collegeId: string, name: string) => {
 export const signInUser = async (
   collegeId: string,
   password: string,
-  recaptchaToken?: string,
 ) => {
   try {
     // ALWAYS try backend login first to get JWT token
     // This works for both development and production
     try {
       console.log("Attempting backend authentication...");
-      const userData = await backendLogin(collegeId, password, recaptchaToken);
+      const userData = await backendLogin(collegeId, password);
       console.log("Backend login successful for:", collegeId);
       return userData;
     } catch (backendError: any) {

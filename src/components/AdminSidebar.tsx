@@ -11,6 +11,7 @@ import {
   LogOut,
   Bell,
   FileText,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,6 +27,11 @@ const AdminSidebar = () => {
       icon: <LayoutDashboard className="w-5 h-5" />,
       label: "Dashboard",
       path: "/admin/dashboard",
+    },
+    {
+      icon: <Shield className="w-5 h-5" />,
+      label: "Attendance",
+      path: "/admin/attendance",
     },
     {
       icon: <Users className="w-5 h-5" />,

@@ -68,6 +68,7 @@ import AdminEvents from "./pages/admin/Events";
 import AdminClubs from "./pages/admin/Clubs";
 import AdminExams from "./pages/admin/Exams";
 import AdminAlerts from "./pages/admin/Alerts";
+import AdminAttendance from "./pages/admin/Attendance";
 import StudentDataManagement from "./pages/admin/StudentDataManagement";
 
 const queryClient = new QueryClient();
@@ -359,6 +360,14 @@ const AppContent = () => {
           element={
             <ProtectedRoute requiredRole="admin">
               <AdminExams />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/attendance"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminAttendance />
             </ProtectedRoute>
           }
         />

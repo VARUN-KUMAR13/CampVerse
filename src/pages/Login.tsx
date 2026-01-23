@@ -7,7 +7,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { validateCollegeId } from "@/lib/auth";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
-import { executeRecaptcha, isRecaptchaAvailable } from "@/lib/recaptcha";
 
 const Login = () => {
   const [userType, setUserType] = useState<"Student" | "Faculty">("Student");
@@ -37,19 +36,7 @@ const Login = () => {
     setError("");
 
     try {
-      // Execute reCAPTCHA to get token
-      let recaptchaToken = '';
-      if (isRecaptchaAvailable()) {
-        try {
-          recaptchaToken = await executeRecaptcha('LOGIN');
-          console.log('reCAPTCHA token generated for LOGIN action');
-        } catch (recaptchaError) {
-          console.warn('reCAPTCHA failed, proceeding without it:', recaptchaError);
-        }
-      }
-
-      // Pass recaptcha token to login (backend will verify)
-      await login(userId, password, recaptchaToken);
+      await login(userId, password);
       // Redirect to homepage - DynamicHomepage will show the appropriate dashboard
       navigate("/", { replace: true });
     } catch (error: any) {
