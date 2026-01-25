@@ -58,6 +58,7 @@ const eventRoutes = require("./routes/events");
 const clubRoutes = require("./routes/clubs");
 const examRoutes = require("./routes/exams");
 const paymentRoutes = require("./routes/payments");
+const chatbotRoutes = require("./routes/chatbot");
 
 // Import middleware
 const { corsHandler, rateLimiter, validateApiVersion } = require("./middleware/auth");
@@ -75,6 +76,7 @@ app.use("/api/events", eventRoutes);
 app.use("/api/clubs", clubRoutes);
 app.use("/api/exams", examRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/chatbot", chatbotRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

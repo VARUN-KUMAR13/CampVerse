@@ -96,7 +96,6 @@ const AppContent = () => {
 
   return (
     <BrowserRouter>
-      <AIChatbot />
       <Routes>
         {/* Dynamic Homepage - shows landing page or dashboard based on auth */}
         <Route path="/" element={<DynamicHomepage />} />
@@ -399,6 +398,8 @@ const AppContent = () => {
         {/* Catch-all route */}
         <Route path="*" element={<NotFound />} />
       </Routes>
+      {/* AI Chatbot - rendered outside routes but inside BrowserRouter */}
+      <AIChatbot />
     </BrowserRouter>
   );
 };
