@@ -21,6 +21,7 @@ import { ref, onValue, off, get } from "firebase/database";
 import {
   AttendanceRecord,
   AttendanceStatus,
+  AttendanceRole,
   DailyScheduleItem,
   SubjectAttendanceSummary,
   ATTENDANCE_THRESHOLDS,
@@ -31,6 +32,7 @@ import {
   getServerTime,
   isSlotOpen,
   subscribeToStudentAttendance,
+  resetDailyAttendance,
 } from "@/services/attendanceService";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -51,14 +53,39 @@ const StudentDashboard = () => {
     attended: 0,
   });
 
-  // Fetch student name from Firebase Realtime Database
+  // Track marked by role for color coding
+  const [attendanceMarkedBy, setAttendanceMarkedBy] = useState<Record<string, AttendanceRole>>({});
+
+  // Track if student is eligible for attendance (Section B, roll range validation)
+  const [isEligibleForAttendance, setIsEligibleForAttendance] = useState(false);
+  const [studentSection, setStudentSection] = useState<string | null>(null);
+
+  // Validate if roll number is in Section B range (22B81A0565 to 22B81A05C8)
+  const isValidSectionBRollNumber = (rollNo: string): boolean => {
+    // Extract the numeric part from roll number (e.g., "22B81A0565" -> "0565")
+    const match = rollNo.match(/22B81A05([0-9A-F]{2})$/i);
+    if (!match) return false;
+
+    const hexValue = match[1].toUpperCase();
+    const startHex = "65"; // 22B81A0565
+    const endHex = "C8"; // 22B81A05C8
+
+    // Convert hex to decimal for comparison
+    const value = parseInt(hexValue, 16);
+    const startValue = parseInt(startHex, 16); // 101
+    const endValue = parseInt(endHex, 16); // 200
+
+    return value >= startValue && value <= endValue;
+  };
+
+  // Fetch student name and validate section from Firebase Realtime Database
   useEffect(() => {
     if (!userData?.collegeId) return;
 
-    const fetchStudentName = async () => {
+    const fetchStudentData = async () => {
       try {
         const response = await fetch(
-          `https://campverse-1374-default-rtdb.firebaseio.com/.json`
+          `https://campverse-2004-default-rtdb.asia-southeast1.firebasedatabase.app/.json`
         );
 
         if (response.ok) {
@@ -68,10 +95,25 @@ const StudentDashboard = () => {
             for (const key in allData) {
               const student = allData[key];
               if (student && student["ROLL NO"] === userData.collegeId) {
+                // Get student name
                 const name = student["Name of the student"] || student["Name"] || student["name"] || null;
                 if (name) {
                   setStudentName(name);
                 }
+
+                // Get and validate section
+                const section = student["Section"] || student["SECTION"] || student["section"] || null;
+                setStudentSection(section);
+
+                // Validate if student is eligible for attendance
+                const isValidRollNumber = isValidSectionBRollNumber(userData.collegeId);
+
+                // Primary validation is roll number range (22B81A0565-22B81A05C8)
+                const eligible = isValidRollNumber;
+                setIsEligibleForAttendance(eligible);
+
+                console.log(`[Attendance Eligibility] Roll: ${userData.collegeId}, Section: ${section}, Valid Roll Range (22B81A0565-22B81A05C8): ${isValidRollNumber}, Eligible: ${eligible}`);
+
                 break;
               }
             }
@@ -82,17 +124,21 @@ const StudentDashboard = () => {
       }
     };
 
-    fetchStudentName();
+    fetchStudentData();
   }, [userData?.collegeId]);
 
-  // Sync server time
+  // Sync server time and check for daily reset
   useEffect(() => {
     const syncTime = async () => {
       const time = await getServerTime();
       setServerTime(time);
+
+      // Check if we need to reset attendance (after 12:00 PM)
+      await resetDailyAttendance();
     };
 
     syncTime();
+    // Check every minute for reset
     const interval = setInterval(syncTime, 60000);
     return () => clearInterval(interval);
   }, []);
@@ -147,43 +193,117 @@ const StudentDashboard = () => {
     setTodaySchedule(initialSchedule);
   }, [serverTime]);
 
-  // Real-time attendance subscription
+  // Real-time attendance subscription + localStorage check
   useEffect(() => {
     if (!userData?.collegeId) return;
 
-    const today = formatDate(serverTime);
-    const section = userData.section || "A";
-    const branch = userData.branch || "05";
-    const year = userData.year || "22";
+    // Only load attendance if student is eligible (Section B, valid roll range)
+    if (!isEligibleForAttendance) {
+      console.log(`[Attendance] Student ${userData.collegeId} is not eligible for attendance tracking`);
+      return;
+    }
 
-    // Subscribe to real-time attendance updates
-    const unsubscribe = subscribeToStudentAttendance(
-      userData.collegeId,
-      today,
-      year,
-      branch,
-      section,
-      (records) => {
-        // Update schedule with attendance status
-        setTodaySchedule((prev) =>
-          prev.map((item) => {
-            const record = records.find((r) => r.slotId === item.slotId);
-            if (record) {
-              return {
-                ...item,
-                status: record.status,
-                markedAt: record.markedAt,
-                markedBy: record.markedBy,
-              };
+    const today = formatDate(serverTime);
+    const section = "B"; // CSE Section-B (matches Firebase dataset)
+    const branch = "05";
+    const year = "22";
+    const studentId = userData.collegeId;
+
+    console.log(`[Attendance] Checking for student: ${studentId}, Section: B, Date: ${today}`);
+
+    // Function to check localStorage for attendance (fallback when Firebase fails)
+    const checkLocalStorage = () => {
+      let foundAny = false;
+      const markedByMap: Record<string, AttendanceRole> = {};
+
+      setTodaySchedule((prev) =>
+        prev.map((item) => {
+          // Try multiple key formats
+          const keys = [
+            `attendance_${studentId}_${today}_${item.slotId}`,
+            `attendance/records/${year}/${branch}/${section}/${today}/${studentId}_${today}_${item.slotId}`,
+          ];
+
+          for (const key of keys) {
+            const saved = localStorage.getItem(key);
+            if (saved) {
+              try {
+                const record: AttendanceRecord = JSON.parse(saved);
+                if (record.studentId === studentId && record.slotId === item.slotId) {
+                  console.log(`[Attendance] Found in localStorage: ${item.slotId} = ${record.status}, markedBy: ${record.markedByRole}`);
+                  foundAny = true;
+                  markedByMap[item.slotId] = record.markedByRole;
+                  return { ...item, status: record.status, markedBy: record.markedBy, markedByRole: record.markedByRole };
+                }
+              } catch (e) { /* ignore parse errors */ }
             }
-            return item;
-          })
-        );
+          }
+
+          // Also scan all localStorage for matching records
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.includes('attendance') && key.includes(studentId)) {
+              try {
+                const saved = localStorage.getItem(key);
+                if (saved) {
+                  const record: AttendanceRecord = JSON.parse(saved);
+                  if (record.studentId === studentId && record.slotId === item.slotId) {
+                    console.log(`[Attendance] Found matching record: ${record.status}, markedBy: ${record.markedByRole}`);
+                    foundAny = true;
+                    markedByMap[item.slotId] = record.markedByRole;
+                    return { ...item, status: record.status, markedBy: record.markedBy, markedByRole: record.markedByRole };
+                  }
+                }
+              } catch (e) { /* ignore */ }
+            }
+          }
+          return item;
+        })
+      );
+
+      // Update the markedBy state
+      if (Object.keys(markedByMap).length > 0) {
+        setAttendanceMarkedBy(prev => ({ ...prev, ...markedByMap }));
+      }
+
+      return foundAny;
+    };
+
+    // Check localStorage immediately
+    checkLocalStorage();
+
+    // Set up interval to poll localStorage every 2 seconds
+    const interval = setInterval(checkLocalStorage, 2000);
+
+    // Also try Firebase subscription
+    const unsubscribe = subscribeToStudentAttendance(
+      studentId, today, year, branch, section,
+      (records) => {
+        if (records.length > 0) {
+          console.log(`[Attendance] Firebase: ${records.length} records`);
+          const markedByMap: Record<string, AttendanceRole> = {};
+
+          setTodaySchedule((prev) =>
+            prev.map((item) => {
+              const record = records.find((r) => r.slotId === item.slotId);
+              if (record) {
+                markedByMap[item.slotId] = record.markedByRole;
+                return { ...item, status: record.status, markedBy: record.markedBy, markedByRole: record.markedByRole };
+              }
+              return item;
+            })
+          );
+
+          setAttendanceMarkedBy(prev => ({ ...prev, ...markedByMap }));
+        }
       }
     );
 
-    return () => unsubscribe();
-  }, [userData?.collegeId, userData?.section, userData?.branch, userData?.year, serverTime]);
+    return () => {
+      clearInterval(interval);
+      unsubscribe();
+    };
+  }, [userData?.collegeId, serverTime, isEligibleForAttendance]);
 
   // Load performance metrics
   useEffect(() => {
@@ -242,8 +362,47 @@ const StudentDashboard = () => {
       const time = await getServerTime();
       setServerTime(time);
 
-      // The subscription will automatically update the data
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const today = formatDate(time);
+      const studentId = userData?.collegeId || "";
+
+      console.log(`[Refresh] Checking localStorage for student: ${studentId}`);
+
+      // Actively check localStorage for attendance records
+      setTodaySchedule((prev) =>
+        prev.map((item) => {
+          const key = `attendance_${studentId}_${today}_${item.slotId}`;
+          const saved = localStorage.getItem(key);
+
+          if (saved) {
+            try {
+              const record = JSON.parse(saved);
+              console.log(`[Refresh] Found: ${item.slotId} = ${record.status}`);
+              return { ...item, status: record.status };
+            } catch (e) {
+              console.error("Error parsing record:", e);
+            }
+          }
+
+          // Also check with different key formats
+          for (let i = 0; i < localStorage.length; i++) {
+            const storageKey = localStorage.key(i);
+            if (storageKey && storageKey.includes('attendance') && storageKey.includes(studentId) && storageKey.includes(item.slotId)) {
+              try {
+                const data = localStorage.getItem(storageKey);
+                if (data) {
+                  const record = JSON.parse(data);
+                  console.log(`[Refresh] Found via scan: ${record.status}`);
+                  return { ...item, status: record.status };
+                }
+              } catch (e) { /* ignore */ }
+            }
+          }
+
+          return item;
+        })
+      );
+
+      await new Promise((resolve) => setTimeout(resolve, 300));
     } catch (error) {
       console.error("Error refreshing attendance:", error);
     } finally {
@@ -251,11 +410,17 @@ const StudentDashboard = () => {
     }
   };
 
-  const getStatusBadge = (status: AttendanceStatus) => {
+  const getStatusBadge = (status: AttendanceStatus, markedByRole?: AttendanceRole) => {
     switch (status) {
       case "PRESENT":
+        // Green for Faculty, Blue for Admin
+        const bgColor = markedByRole === 'FACULTY' ? 'bg-green-500/20' : 'bg-blue-500/20';
+        const textColor = markedByRole === 'FACULTY' ? 'text-green-400' : 'text-blue-400';
+        const borderColor = markedByRole === 'FACULTY' ? 'border-green-500/30' : 'border-blue-500/30';
+        const hoverBg = markedByRole === 'FACULTY' ? 'hover:bg-green-500/30' : 'hover:bg-blue-500/30';
+
         return (
-          <Badge className="bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30">
+          <Badge className={`${bgColor} ${textColor} ${borderColor} ${hoverBg}`}>
             <CheckCircle2 className="w-3 h-3 mr-1" />
             Present
           </Badge>
@@ -383,84 +548,76 @@ const StudentDashboard = () => {
           {/* Today's Schedule & Attendance */}
           <Card className="border-border/50 shadow-lg">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-xl">Today's Schedule & Attendance</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Real-time attendance updates • Last synced: {serverTime.toLocaleTimeString()}
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={refreshAttendance}
-                  disabled={isRefreshing}
-                  className="gap-2"
-                >
-                  <RefreshCw className={cn("w-4 h-4", isRefreshing && "animate-spin")} />
-                  Refresh
-                </Button>
+              <div>
+                <CardTitle className="text-xl">Today's Schedule & Attendance</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Real-time attendance updates • Last synced: {serverTime.toLocaleTimeString()}
+                </p>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {todaySchedule.map((item) => (
-                  <div
-                    key={item.slotId}
-                    className={cn(
-                      "flex items-center justify-between p-4 rounded-lg transition-all duration-300",
-                      "bg-muted/30 hover:bg-muted/50",
-                      item.status === "PRESENT" && "border-l-4 border-l-green-500 bg-green-500/5",
-                      item.status === "ABSENT" && "border-l-4 border-l-red-500 bg-red-500/5",
-                      item.status === "LATE" && "border-l-4 border-l-yellow-500 bg-yellow-500/5",
-                    )}
-                  >
-                    <div className="flex-1">
-                      <div className="font-medium text-foreground">
-                        {item.subjectName}
+                {todaySchedule.map((item) => {
+                  // Determine background color based on who marked attendance
+                  const markedByRole = attendanceMarkedBy[item.slotId] || (item as any).markedByRole;
+
+                  // DEBUG: Log to help identify color issue
+                  if (item.status === "PRESENT") {
+                    console.log(`[Color Debug] ${item.subjectName}: markedByRole = "${markedByRole}", status = ${item.status}`);
+                  }
+
+                  let bgClass = "bg-muted/30 hover:bg-muted/50";
+                  let borderClass = "";
+
+                  if (item.status === "PRESENT") {
+                    if (markedByRole === "FACULTY") {
+                      bgClass = "bg-green-500/20 hover:bg-green-500/25";
+                      borderClass = "border-l-4 border-l-green-500";
+                    } else if (markedByRole === "ADMIN" || markedByRole === "SUB_ADMIN") {
+                      // More prominent blue background for admin-marked attendance
+                      bgClass = "bg-blue-500/20 hover:bg-blue-500/25";
+                      borderClass = "border-l-4 border-l-blue-500";
+                    } else {
+                      // Default for present - treat as admin-marked (blue)
+                      bgClass = "bg-blue-500/20 hover:bg-blue-500/25";
+                      borderClass = "border-l-4 border-l-blue-500";
+                    }
+                  } else if (item.status === "ABSENT") {
+                    bgClass = "bg-red-500/20 hover:bg-red-500/25";
+                    borderClass = "border-l-4 border-l-red-500";
+                  } else if (item.status === "LATE") {
+                    bgClass = "bg-yellow-500/20 hover:bg-yellow-500/25";
+                    borderClass = "border-l-4 border-l-yellow-500";
+                  }
+
+                  return (
+                    <div
+                      key={item.slotId}
+                      className={cn(
+                        "flex items-center justify-between p-4 rounded-lg transition-all duration-300",
+                        bgClass,
+                        borderClass
+                      )}
+                    >
+                      <div className="flex-1">
+                        <div className="font-medium text-foreground">
+                          {item.subjectName}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {item.subjectCode}
+                        </div>
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        {item.subjectCode}
+                      <div className="text-center mx-4">
+                        <div className="text-sm text-muted-foreground">
+                          {item.time}
+                        </div>
                       </div>
+                      {getStatusBadge(item.status, markedByRole)}
                     </div>
-                    <div className="text-center mx-4">
-                      <div className="text-sm text-muted-foreground">
-                        {item.time}
-                      </div>
-                    </div>
-                    {getStatusBadge(item.status)}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
-              {/* Overall Attendance Summary */}
-              <div className="mt-6 p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium text-foreground">Overall Attendance Today</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {todaySchedule.filter(s => s.status === "PRESENT").length} of {todaySchedule.length} classes attended
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <span className={cn(
-                      "text-2xl font-bold",
-                      todaySchedule.filter(s => s.status === "PRESENT").length === todaySchedule.length
-                        ? "text-green-500"
-                        : "text-yellow-500"
-                    )}>
-                      {todaySchedule.filter(s => s.status !== "NOT_MARKED").length > 0
-                        ? Math.round(
-                          (todaySchedule.filter(s => s.status === "PRESENT").length /
-                            todaySchedule.filter(s => s.status !== "NOT_MARKED").length) *
-                          100
-                        )
-                        : 0}%
-                    </span>
-                    <p className="text-xs text-muted-foreground">marked classes</p>
-                  </div>
-                </div>
-              </div>
             </CardContent>
           </Card>
 

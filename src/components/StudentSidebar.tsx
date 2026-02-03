@@ -4,10 +4,8 @@ import {
   BookOpen,
   Clock,
   BarChart3,
-  Calendar,
   FileText,
   GraduationCap,
-  User,
   Menu,
   LogOut,
   Building2,
@@ -25,11 +23,6 @@ const StudentSidebar = () => {
   const { logout } = useAuth();
 
   const menuItems = [
-    {
-      icon: <User className="w-5 h-5" />,
-      label: "My Profile",
-      path: "/student/profile",
-    },
     {
       icon: <LayoutDashboard className="w-5 h-5" />,
       label: "Dashboard",
@@ -71,11 +64,6 @@ const StudentSidebar = () => {
       path: "/student/exams",
     },
     {
-      icon: <Calendar className="w-5 h-5" />,
-      label: "Attendance",
-      path: "/student/attendance",
-    },
-    {
       icon: <FileText className="w-5 h-5" />,
       label: "Assignments",
       path: "/student/assignments",
@@ -107,8 +95,12 @@ const StudentSidebar = () => {
 
   return (
     <div className="w-64 bg-sidebar border-r border-sidebar-border min-h-screen flex flex-col">
-      {/* Header */}
-      <div className="px-6 pt-6 pb-3 -mb-px border-b border-sidebar-border">
+      {/* Header - Click to Sign Out */}
+      <div
+        className="px-6 pt-6 pb-3 -mb-px border-b border-sidebar-border cursor-pointer hover:bg-sidebar-accent/50 transition-colors"
+        onClick={handleLogout}
+        title="Click to Sign Out"
+      >
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
             <GraduationCap className="w-5 h-5 text-primary-foreground" />

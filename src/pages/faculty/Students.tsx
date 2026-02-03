@@ -70,8 +70,8 @@ const FacultyStudents = () => {
   const { userData } = useAuth();
 
   // Selection state
-  const [selectedCourse, setSelectedCourse] = useState("Algorithms");
-  const [selectedSection, setSelectedSection] = useState("A");
+  const [selectedCourse, setSelectedCourse] = useState("Linux Programming");
+  const [selectedSection, setSelectedSection] = useState("B");
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
 
   // Time & Permission state
@@ -89,63 +89,63 @@ const FacultyStudents = () => {
   const [showLockWarning, setShowLockWarning] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
 
-  // Available courses
+  // Available courses - Based on your college curriculum
   const courses = [
-    { code: "CS101", name: "Algorithms", section: "A" },
-    { code: "CS102", name: "Data Structures", section: "A" },
-    { code: "CS103", name: "DBMS", section: "A" },
-    { code: "CS104", name: "Operating Systems", section: "B" },
+    { code: "22CS401", name: "Linux Programming", section: "B" },
+    { code: "22HS301", name: "Business Economics and Financial Analysis", section: "B" },
+    { code: "22HS501", name: "Professional Elective-III", section: "B" },
+    { code: "22HS601", name: "Professional Elective-IV", section: "B" },
   ];
 
-  // Today's slots
+  // Today's slots - Based on your college timetable
   const todaySlots: TimeSlot[] = [
     {
       id: "slot_1",
       slotNumber: 1,
       startTime: "09:00",
-      endTime: "10:00",
-      subjectCode: "CS101",
-      subjectName: "Algorithms",
+      endTime: "12:10",
+      subjectCode: "22CS401",
+      subjectName: "Linux Programming",
       facultyId: userData?.collegeId || "",
-      section: "A",
+      section: "B",
       branch: "05",
-      year: "23",
+      year: "22",
     },
     {
       id: "slot_2",
       slotNumber: 2,
-      startTime: "10:00",
-      endTime: "11:00",
-      subjectCode: "CS102",
-      subjectName: "Data Structures",
+      startTime: "12:10",
+      endTime: "13:10",
+      subjectCode: "22HS301",
+      subjectName: "Business Economics and Financial Analysis",
       facultyId: userData?.collegeId || "",
-      section: "A",
+      section: "B",
       branch: "05",
-      year: "23",
+      year: "22",
     },
     {
       id: "slot_3",
       slotNumber: 3,
-      startTime: "11:15",
-      endTime: "12:15",
-      subjectCode: "CS103",
-      subjectName: "DBMS",
+      startTime: "13:55",
+      endTime: "14:55",
+      subjectCode: "22HS501",
+      subjectName: "Professional Elective-III",
       facultyId: userData?.collegeId || "",
-      section: "A",
+      section: "B",
       branch: "05",
-      year: "23",
+      year: "22",
     },
     {
       id: "slot_4",
       slotNumber: 4,
-      startTime: "14:00",
-      endTime: "15:00",
-      subjectCode: "CS104",
-      subjectName: "Operating Systems",
+      startTime: "14:55",
+      endTime: "15:55",
+      subjectCode: "22HS601",
+      subjectName: "Professional Elective-IV",
       facultyId: userData?.collegeId || "",
       section: "B",
       branch: "05",
-      year: "23",
+      year: "22",
     },
   ];
 
@@ -257,21 +257,41 @@ const FacultyStudents = () => {
   const loadStudents = async () => {
     setIsLoading(true);
     try {
-      // Mock students data (in production, fetch from Firebase)
-      const mockStudents: StudentAttendanceState[] = [
-        { studentId: "23BB1A3201", name: "INAPANURI ABHIJITH", status: "PRESENT", lastUpdated: "4:51:55 PM", isModified: false },
-        { studentId: "23BB1A3202", name: "SANDRI AKSHAINI", status: "PRESENT", lastUpdated: "4:51:56 PM", isModified: false },
-        { studentId: "23BB1A3203", name: "MUSKU AKSHAY", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
-        { studentId: "23BB1A3204", name: "REVARTHI ANAND", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
-        { studentId: "23BB1A3205", name: "ARJUN", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
-        { studentId: "23BB1A3206", name: "KOMMU ASHWINI", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
-        { studentId: "23BB1A3207", name: "MALE BALA KRISHNA REDDY", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
-      ];
+      // Get the current slot to determine year and branch
+      const currentSlot = todaySlots.find(slot => slot.subjectName === selectedCourse);
+      const year = currentSlot?.year || "22";
+      const branch = currentSlot?.branch || "05";
 
-      setStudents(mockStudents);
+      // Fetch students from Firebase using the centralized service
+      const firebaseStudents = await getStudentsForSection(year, branch, selectedSection);
+
+      if (firebaseStudents.length > 0) {
+        // Transform to StudentAttendanceState format
+        const studentStates: StudentAttendanceState[] = firebaseStudents.map(student => ({
+          studentId: student.rollNumber,
+          name: student.name,
+          status: "NOT_MARKED" as AttendanceStatus,
+          lastUpdated: "Not marked",
+          isModified: false,
+        }));
+
+        setStudents(studentStates);
+        console.log(`Loaded ${studentStates.length} students for Section ${selectedSection}`);
+      } else {
+        // Fallback: Use hardcoded student data for Section B
+        console.log("Using fallback student data for Section B");
+        const fallbackStudents: StudentAttendanceState[] = [
+          { studentId: "22B81A05C3", name: "KATAKAM VARUN KUMAR", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05C1", name: "Student 1", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05C2", name: "Student 2", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+        ];
+        setStudents(fallbackStudents);
+        toast.info("Using demo student data. Configure Firebase for real data.");
+      }
     } catch (error) {
       console.error("Error loading students:", error);
-      toast.error("Failed to load students");
+      toast.error("Failed to load students from Firebase");
+      setStudents([]);
     } finally {
       setIsLoading(false);
     }
@@ -493,9 +513,7 @@ const FacultyStudents = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="A">Section A</SelectItem>
                       <SelectItem value="B">Section B</SelectItem>
-                      <SelectItem value="C">Section C</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

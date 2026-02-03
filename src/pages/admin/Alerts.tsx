@@ -21,7 +21,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import AdminSidebar from "@/components/AdminSidebar";
+import AdminLayout from "@/components/AdminLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { useToast } from "@/hooks/use-toast";
@@ -134,9 +134,8 @@ const AdminAlerts = () => {
     });
 
     return (
-        <div className="flex min-h-screen bg-background">
-            <AdminSidebar />
-            <div className="flex-1 p-6">
+        <AdminLayout>
+            <main className="p-6">
                 <div className="max-w-7xl mx-auto space-y-6">
                     {/* Header */}
                     <div className="flex items-center justify-between">
@@ -301,10 +300,10 @@ const AdminAlerts = () => {
                                 <Card
                                     key={notification.id}
                                     className={`hover:shadow-lg transition-shadow ${notification.urgency === "critical"
-                                            ? "border-l-4 border-l-red-500"
-                                            : notification.urgency === "important"
-                                                ? "border-l-4 border-l-amber-500"
-                                                : ""
+                                        ? "border-l-4 border-l-red-500"
+                                        : notification.urgency === "important"
+                                            ? "border-l-4 border-l-amber-500"
+                                            : ""
                                         }`}
                                 >
                                     <CardContent className="p-6">
@@ -382,8 +381,8 @@ const AdminAlerts = () => {
                         </div>
                     )}
                 </div>
-            </div>
-        </div>
+            </main>
+        </AdminLayout>
     );
 };
 

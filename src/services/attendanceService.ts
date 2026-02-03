@@ -232,6 +232,12 @@ export const lockSlot = async (
 // ==================== PERMISSION CHECKING ====================
 
 /**
+ * Development mode: Set to true to bypass slot time restrictions
+ * This allows faculty/admin to mark attendance at any time for testing
+ */
+const DEVELOPMENT_MODE_BYPASS_SLOT = true;
+
+/**
  * Check if user can mark attendance for a slot
  */
 export const checkMarkingPermission = async (
@@ -241,6 +247,17 @@ export const checkMarkingPermission = async (
     date: string,
     category: AttendanceCategory
 ): Promise<PermissionCheck> => {
+    // DEVELOPMENT MODE: Bypass slot timing restrictions
+    if (DEVELOPMENT_MODE_BYPASS_SLOT && (userRole === 'FACULTY' || userRole === 'ADMIN')) {
+        return {
+            canMark: true,
+            reason: 'Development mode: Slot restrictions bypassed',
+            isTimeValid: true,
+            isSlotOpen: true,
+            hasPermission: true,
+        };
+    }
+
     const serverTime = await getServerTime();
     const currentTime = formatTime(serverTime);
     const currentDate = formatDate(serverTime);
@@ -369,24 +386,43 @@ export const markAttendance = async (
         year,
     };
 
+    console.log('[markAttendance] Saving record:', {
+        studentId,
+        slotId,
+        status,
+        section,
+        branch,
+        year,
+        date,
+        recordId,
+    });
+
+    // ALWAYS save to localStorage as backup (for cross-tab sync)
+    const localStorageKey = `attendance_${studentId}_${date}_${slotId}`;
+    localStorage.setItem(localStorageKey, JSON.stringify(record));
+    console.log('[markAttendance] Saved to localStorage with key:', localStorageKey);
+
     if (!firebaseReady || !database) {
-        // Development mode - store in localStorage
-        const storageKey = `attendance_${recordId}`;
-        localStorage.setItem(storageKey, JSON.stringify(record));
-        console.log('Dev mode: Attendance marked', record);
+        // Development mode - only localStorage
+        console.log('[markAttendance] Dev mode: Using localStorage only');
         return record;
     }
 
     try {
-        const recordRef = ref(database, `${ATTENDANCE_PATHS.RECORDS}/${year}/${branch}/${section}/${date}/${recordId}`);
+        const path = `${ATTENDANCE_PATHS.RECORDS}/${year}/${branch}/${section}/${date}/${recordId}`;
+        console.log('[markAttendance] Saving to Firebase path:', path);
+
+        const recordRef = ref(database, path);
         await set(recordRef, record);
+
+        console.log('[markAttendance] Successfully saved to Firebase');
 
         // Also update student summary
         await updateStudentSummary(studentId, category, status, year, branch, section);
 
         return record;
     } catch (error) {
-        console.error('Error marking attendance:', error);
+        console.error('[markAttendance] Error saving to Firebase:', error);
         return null;
     }
 };
@@ -660,25 +696,32 @@ export const subscribeToStudentAttendance = (
     section: string,
     callback: (records: AttendanceRecord[]) => void
 ): (() => void) => {
+    const path = `${ATTENDANCE_PATHS.RECORDS}/${year}/${branch}/${section}/${date}`;
+
+    console.log('[subscribeToStudentAttendance] Subscribing to path:', path);
+    console.log('[subscribeToStudentAttendance] For student:', studentId);
+
     if (!firebaseReady || !database) {
-        console.log('Firebase not ready, using development mode');
+        console.log('[subscribeToStudentAttendance] Firebase not ready, returning empty');
         callback([]);
         return () => { };
     }
 
-    const recordsRef = ref(
-        database,
-        `${ATTENDANCE_PATHS.RECORDS}/${year}/${branch}/${section}/${date}`
-    );
+    const recordsRef = ref(database, path);
 
     const unsubscribe = onValue(recordsRef, (snapshot) => {
         if (!snapshot.exists()) {
+            console.log('[subscribeToStudentAttendance] No data at path:', path);
             callback([]);
             return;
         }
 
         const allRecords: AttendanceRecord[] = Object.values(snapshot.val());
+        console.log('[subscribeToStudentAttendance] Found', allRecords.length, 'total records');
+
         const studentRecords = allRecords.filter(record => record.studentId === studentId);
+        console.log('[subscribeToStudentAttendance] Found', studentRecords.length, 'records for student', studentId);
+
         callback(studentRecords);
     });
 
@@ -803,7 +846,8 @@ export const adminOverrideAttendance = async (
 };
 
 /**
- * Get all students for a section
+ * Get all students for a section from Firebase
+ * Tries multiple paths to accommodate different Firebase structures
  */
 export const getStudentsForSection = async (
     year: string,
@@ -811,46 +855,97 @@ export const getStudentsForSection = async (
     section: string
 ): Promise<AttendanceStudent[]> => {
     if (!firebaseReady || !database) {
-        // Return mock students for development
+        // Return mock students for development - include actual student
+        console.log('Firebase not ready, returning mock students for section', section);
         return [
-            { rollNumber: '22B81A05C1', name: 'Student 1', section, branch, year },
-            { rollNumber: '22B81A05C2', name: 'Student 2', section, branch, year },
-            { rollNumber: '22B81A05C3', name: 'Student 3', section, branch, year },
-            { rollNumber: '22B81A05C4', name: 'Student 4', section, branch, year },
-            { rollNumber: '22B81A05C5', name: 'Student 5', section, branch, year },
+            { rollNumber: '22B81A05C3', name: 'KATAKAM VARUN KUMAR', section, branch, year },
+            { rollNumber: `22B81A05${section}1`, name: 'Student 1', section, branch, year },
+            { rollNumber: `22B81A05${section}2`, name: 'Student 2', section, branch, year },
         ];
     }
 
     try {
-        // Fetch from Firebase Realtime Database
-        const studentsRef = ref(database);
-        const snapshot = await get(studentsRef);
-
-        if (!snapshot.exists()) return [];
-
-        const allData = snapshot.val();
         const students: AttendanceStudent[] = [];
 
-        for (const key in allData) {
-            const student = allData[key];
-            if (student && student['ROLL NO']) {
-                const rollNo = student['ROLL NO'];
-                // Filter by section if needed
-                if (rollNo.includes(section) || section === 'ALL') {
+        // Try path 1: students/section_{section}
+        const sectionPath = `students/section_${section}`;
+        const sectionRef = ref(database, sectionPath);
+        const sectionSnapshot = await get(sectionRef);
+
+        if (sectionSnapshot.exists()) {
+            const data = sectionSnapshot.val();
+            for (const key in data) {
+                const student = data[key];
+                students.push({
+                    rollNumber: student.rollNumber || student.collegeId || student['ROLL NO'] || key,
+                    name: student.name || student.studentName || student['Name of the student'] || 'Unknown',
+                    section,
+                    branch,
+                    year,
+                });
+            }
+            console.log(`Found ${students.length} students at path: ${sectionPath}`);
+            return students.sort((a, b) => a.rollNumber.localeCompare(b.rollNumber));
+        }
+
+        // Try path 2: students (filter by section in roll number)
+        const studentsRef = ref(database, 'students');
+        const studentsSnapshot = await get(studentsRef);
+
+        if (studentsSnapshot.exists()) {
+            const data = studentsSnapshot.val();
+            for (const key in data) {
+                const student = data[key];
+                const rollNo = student.rollNumber || student.collegeId || student['ROLL NO'] || key;
+                // Check if roll number contains the section letter at position 5 (0-indexed)
+                if (rollNo.length >= 6 && rollNo[5] === section) {
                     students.push({
                         rollNumber: rollNo,
-                        name: student['Name of the student'] || student['Name'] || rollNo,
+                        name: student.name || student.studentName || student['Name of the student'] || 'Unknown',
                         section,
                         branch,
                         year,
                     });
                 }
             }
+            if (students.length > 0) {
+                console.log(`Found ${students.length} students for section ${section} from students collection`);
+                return students.sort((a, b) => a.rollNumber.localeCompare(b.rollNumber));
+            }
         }
 
-        return students;
+        // Try path 3: Root path with ROLL NO format (your original structure)
+        const rootRef = ref(database);
+        const rootSnapshot = await get(rootRef);
+
+        if (rootSnapshot.exists()) {
+            const allData = rootSnapshot.val();
+            for (const key in allData) {
+                const student = allData[key];
+                if (student && (student['ROLL NO'] || student.rollNumber)) {
+                    const rollNo = student['ROLL NO'] || student.rollNumber;
+                    // Filter by section - check if section letter is in the roll number
+                    if (rollNo.includes(section) || (rollNo.length >= 6 && rollNo[5] === section)) {
+                        students.push({
+                            rollNumber: rollNo,
+                            name: student['Name of the student'] || student.name || student.Name || rollNo,
+                            section,
+                            branch,
+                            year,
+                        });
+                    }
+                }
+            }
+            if (students.length > 0) {
+                console.log(`Found ${students.length} students for section ${section} from root path`);
+                return students.sort((a, b) => a.rollNumber.localeCompare(b.rollNumber));
+            }
+        }
+
+        console.log(`No students found for section ${section} in Firebase`);
+        return [];
     } catch (error) {
-        console.error('Error fetching students:', error);
+        console.error('Error fetching students from Firebase:', error);
         return [];
     }
 };
@@ -960,6 +1055,75 @@ export const calculateFourWeekAttendance = async (
 };
 
 // ==================== INITIALIZATION ====================
+
+/**
+ * Check if attendance should be reset (after 12:00 PM)
+ */
+export const shouldResetAttendance = (currentDate: Date, lastResetDate: string | null): boolean => {
+    const currentDateStr = formatDate(currentDate);
+    const currentHour = currentDate.getHours();
+    const currentMinute = currentDate.getMinutes();
+    const currentTimeInMinutes = currentHour * 60 + currentMinute;
+    const resetTimeInMinutes = 12 * 60; // 12:00 PM = 720 minutes
+
+    // If it's a new day and we've passed 12:00 PM, reset
+    if (lastResetDate !== currentDateStr && currentTimeInMinutes >= resetTimeInMinutes) {
+        return true;
+    }
+
+    // If it's the same day but we haven't reset yet and it's past 12:00 PM
+    if (lastResetDate === null && currentTimeInMinutes >= resetTimeInMinutes) {
+        return true;
+    }
+
+    return false;
+};
+
+/**
+ * Get the last reset date from localStorage
+ */
+export const getLastResetDate = (): string | null => {
+    return localStorage.getItem('attendance_last_reset_date');
+};
+
+/**
+ * Set the last reset date in localStorage
+ */
+export const setLastResetDate = (date: string): void => {
+    localStorage.setItem('attendance_last_reset_date', date);
+};
+
+/**
+ * Reset all attendance to NOT_MARKED
+ * This should be called daily after 12:00 PM
+ */
+export const resetDailyAttendance = async (): Promise<void> => {
+    const serverTime = await getServerTime();
+    const today = formatDate(serverTime);
+    const lastResetDate = getLastResetDate();
+
+    if (shouldResetAttendance(serverTime, lastResetDate)) {
+        console.log('[resetDailyAttendance] Resetting attendance for today:', today);
+
+        // Clear all attendance-related items from localStorage
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.includes('attendance_') && key.includes(today)) {
+                keysToRemove.push(key);
+            }
+        }
+
+        keysToRemove.forEach(key => {
+            localStorage.removeItem(key);
+            console.log('[resetDailyAttendance] Removed:', key);
+        });
+
+        // Update the last reset date
+        setLastResetDate(today);
+        console.log('[resetDailyAttendance] Reset complete. Last reset date:', today);
+    }
+};
 
 /**
  * Initialize attendance structure in Firebase

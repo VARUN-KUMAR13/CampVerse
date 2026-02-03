@@ -12,12 +12,18 @@ import {
   Bell,
   FileText,
   Shield,
+  ChevronLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
-const AdminSidebar = () => {
+interface AdminSidebarProps {
+  onClose?: () => void;
+  isOpen?: boolean;
+}
+
+const AdminSidebar = ({ onClose, isOpen }: AdminSidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
@@ -93,30 +99,26 @@ const AdminSidebar = () => {
     return location.pathname === path;
   };
 
-  return (
-    <div className="w-64 bg-sidebar border-r border-sidebar-border min-h-screen flex flex-col">
-      {/* Header */}
-      <div className="px-6 pt-6 pb-3 -mb-px border-b border-sidebar-border">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <GraduationCap className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <span className="font-bold text-sidebar-foreground">
-            CampVerse Admin
-          </span>
-        </div>
-      </div>
+  const handleNavClick = () => {
+    // Close sidebar when navigation item is clicked (for mobile/overlay mode)
+    if (onClose) {
+      onClose();
+    }
+  };
 
-      {/* Menu Items */}
-      <nav className="p-4 space-y-2 flex-1">
+  return (
+    <div className="w-64 bg-sidebar border-r border-sidebar-border h-full flex flex-col">
+      {/* Menu Items - No header, just navigation */}
+      <nav className="p-4 pt-6 space-y-1 flex-1 overflow-y-auto">
         {menuItems.map((item) => (
           <Link
             key={item.path}
             to={item.path}
+            onClick={handleNavClick}
             className={cn(
-              "flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors",
+              "flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-all duration-200",
               isActiveRoute(item.path) &&
-              "bg-sidebar-primary text-sidebar-primary-foreground font-medium",
+              "bg-sidebar-primary text-sidebar-primary-foreground font-medium shadow-sm",
             )}
           >
             {item.icon}

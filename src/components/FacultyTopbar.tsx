@@ -41,7 +41,7 @@ const FacultyTopbar = () => {
   };
 
   return (
-    <header className="bg-background border-b border-border px-6 py-4">
+    <header className="sticky top-0 z-50 w-full bg-background border-b border-border px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Button variant="ghost" size="sm" className="md:hidden">

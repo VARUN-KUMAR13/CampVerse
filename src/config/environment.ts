@@ -13,22 +13,23 @@ interface Config {
   IS_DEVELOPMENT: boolean;
   IS_PRODUCTION: boolean;
   IS_STAGING: boolean;
-  
+
   // API Configuration
   API_BASE_URL: string;
   WS_URL: string;
-  
+
   // Firebase Configuration
   FIREBASE_CONFIG: {
     apiKey: string;
     authDomain: string;
+    databaseURL: string;
     projectId: string;
     storageBucket: string;
     messagingSenderId: string;
     appId: string;
     measurementId?: string;
   };
-  
+
   // Feature Flags
   FEATURES: {
     REAL_TIME_UPDATES: boolean;
@@ -39,7 +40,7 @@ interface Config {
     ERROR_REPORTING: boolean;
     OFFLINE_SUPPORT: boolean;
   };
-  
+
   // Limits and Constraints
   LIMITS: {
     MAX_FILE_SIZE: number; // in bytes
@@ -48,7 +49,7 @@ interface Config {
     REQUEST_TIMEOUT: number; // in milliseconds
     RETRY_ATTEMPTS: number;
   };
-  
+
   // UI Configuration
   UI: {
     DEFAULT_THEME: 'light' | 'dark' | 'system';
@@ -56,14 +57,14 @@ interface Config {
     AUTO_SAVE_INTERVAL: number; // in milliseconds
     TOAST_DURATION: number; // in milliseconds
   };
-  
+
   // Security Configuration
   SECURITY: {
     ENABLE_CSP: boolean;
     SECURE_COOKIES: boolean;
     HSTS_MAX_AGE: number;
   };
-  
+
   // Monitoring
   MONITORING: {
     SENTRY_DSN?: string;
@@ -99,6 +100,7 @@ const currentEnv: Environment = (getEnvVar('VITE_NODE_ENV', 'development') as En
 const firebaseConfig = {
   apiKey: getEnvVar('VITE_FIREBASE_API_KEY', 'AIzaSyBRY5horWW28vr3UhqVbG-uAVZahHTPVLU'),
   authDomain: getEnvVar('VITE_FIREBASE_AUTH_DOMAIN', 'campverse-1374.firebaseapp.com'),
+  databaseURL: getEnvVar('VITE_FIREBASE_DATABASE_URL', 'https://campverse-1374-default-rtdb.firebaseio.com'),
   projectId: getEnvVar('VITE_FIREBASE_PROJECT_ID', 'campverse-1374'),
   storageBucket: getEnvVar('VITE_FIREBASE_STORAGE_BUCKET', 'campverse-1374.firebasestorage.app'),
   messagingSenderId: getEnvVar('VITE_FIREBASE_MESSAGING_SENDER_ID', '123456789'),
@@ -115,11 +117,11 @@ export const config: Config = {
   IS_DEVELOPMENT: currentEnv === 'development',
   IS_PRODUCTION: currentEnv === 'production',
   IS_STAGING: currentEnv === 'staging',
-  
+
   // API Configuration
   API_BASE_URL: getEnvVar(
     'VITE_API_BASE_URL',
-    currentEnv === 'production' 
+    currentEnv === 'production'
       ? 'https://api.campverse.edu/api'
       : 'http://localhost:5000/api'
   ),
@@ -129,10 +131,10 @@ export const config: Config = {
       ? 'wss://api.campverse.edu'
       : 'ws://localhost:5000'
   ),
-  
+
   // Firebase Configuration
   FIREBASE_CONFIG: firebaseConfig,
-  
+
   // Feature Flags
   FEATURES: {
     REAL_TIME_UPDATES: getBooleanEnvVar('VITE_FEATURE_REAL_TIME', true),
@@ -143,7 +145,7 @@ export const config: Config = {
     ERROR_REPORTING: getBooleanEnvVar('VITE_FEATURE_ERROR_REPORTING', currentEnv !== 'development'),
     OFFLINE_SUPPORT: getBooleanEnvVar('VITE_FEATURE_OFFLINE', false),
   },
-  
+
   // Limits and Constraints
   LIMITS: {
     MAX_FILE_SIZE: getNumericEnvVar('VITE_MAX_FILE_SIZE', 10 * 1024 * 1024), // 10MB
@@ -152,7 +154,7 @@ export const config: Config = {
     REQUEST_TIMEOUT: getNumericEnvVar('VITE_REQUEST_TIMEOUT', 30 * 1000), // 30 seconds
     RETRY_ATTEMPTS: getNumericEnvVar('VITE_RETRY_ATTEMPTS', 3),
   },
-  
+
   // UI Configuration
   UI: {
     DEFAULT_THEME: (getEnvVar('VITE_DEFAULT_THEME', 'system') as 'light' | 'dark' | 'system'),
@@ -160,14 +162,14 @@ export const config: Config = {
     AUTO_SAVE_INTERVAL: getNumericEnvVar('VITE_AUTO_SAVE_INTERVAL', 30 * 1000), // 30 seconds
     TOAST_DURATION: getNumericEnvVar('VITE_TOAST_DURATION', 5000), // 5 seconds
   },
-  
+
   // Security Configuration
   SECURITY: {
     ENABLE_CSP: getBooleanEnvVar('VITE_ENABLE_CSP', currentEnv === 'production'),
     SECURE_COOKIES: getBooleanEnvVar('VITE_SECURE_COOKIES', currentEnv === 'production'),
     HSTS_MAX_AGE: getNumericEnvVar('VITE_HSTS_MAX_AGE', 31536000), // 1 year
   },
-  
+
   // Monitoring
   MONITORING: {
     SENTRY_DSN: getEnvVar('VITE_SENTRY_DSN') || undefined,
@@ -179,7 +181,7 @@ export const config: Config = {
 // Validation function to check required environment variables
 export const validateConfig = (): { valid: boolean; errors: string[] } => {
   const errors: string[] = [];
-  
+
   // Check required Firebase config in production
   if (config.IS_PRODUCTION) {
     if (!config.FIREBASE_CONFIG.apiKey || config.FIREBASE_CONFIG.apiKey === 'demo-api-key') {
@@ -189,21 +191,21 @@ export const validateConfig = (): { valid: boolean; errors: string[] } => {
       errors.push('VITE_FIREBASE_PROJECT_ID is required in production');
     }
   }
-  
+
   // Check API URL format
   try {
     new URL(config.API_BASE_URL);
   } catch {
     errors.push('VITE_API_BASE_URL must be a valid URL');
   }
-  
+
   // Check WS URL format
   try {
     new URL(config.WS_URL);
   } catch {
     errors.push('VITE_WS_URL must be a valid URL');
   }
-  
+
   return {
     valid: errors.length === 0,
     errors,

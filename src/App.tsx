@@ -41,7 +41,7 @@ import StudentDashboard from "./pages/student/Dashboard";
 import StudentCourses from "./pages/student/Courses";
 import StudentSchedule from "./pages/student/Schedule";
 import StudentResults from "./pages/student/Results";
-import StudentAttendance from "./pages/student/Attendance";
+// StudentAttendance removed - attendance is shown on Dashboard
 import StudentAssignments from "./pages/student/Assignments";
 import StudentExams from "./pages/student/Exams";
 import StudentPlacement from "./pages/student/Placement";
@@ -166,14 +166,7 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/student/attendance"
-          element={
-            <ProtectedRoute requiredRole="student">
-              <StudentAttendance />
-            </ProtectedRoute>
-          }
-        />
+        {/* Student Attendance route removed - attendance displayed on Dashboard */}
         <Route
           path="/student/assignments"
           element={

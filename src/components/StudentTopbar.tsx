@@ -40,7 +40,7 @@ const StudentTopbar = ({ studentId }: StudentTopbarProps) => {
     }
   };
   return (
-    <header className="bg-background border-b border-border px-6 py-4">
+    <header className="sticky top-0 z-50 w-full bg-background border-b border-border px-6 py-4">
       <div className="flex items-center justify-between">
         {/* Left side - Mobile menu and breadcrumb */}
         <div className="flex items-center space-x-4">

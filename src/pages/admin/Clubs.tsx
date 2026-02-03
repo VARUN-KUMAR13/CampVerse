@@ -20,7 +20,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import AdminSidebar from "@/components/AdminSidebar";
+import AdminLayout from "@/components/AdminLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClubs, Club } from "@/contexts/ClubContext";
 import { useToast } from "@/hooks/use-toast";
@@ -238,9 +238,8 @@ const AdminClubs = () => {
     });
 
     return (
-        <div className="flex min-h-screen bg-background">
-            <AdminSidebar />
-            <div className="flex-1 p-6">
+        <AdminLayout>
+            <main className="p-6">
                 <div className="max-w-7xl mx-auto space-y-6">
                     {/* Header */}
                     <div className="flex items-center justify-between">
@@ -673,8 +672,8 @@ const AdminClubs = () => {
                         </div>
                     )}
                 </div>
-            </div>
-        </div>
+            </main>
+        </AdminLayout>
     );
 };
 

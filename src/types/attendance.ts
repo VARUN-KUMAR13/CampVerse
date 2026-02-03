@@ -88,6 +88,7 @@ export interface DailyScheduleItem {
     canMark: boolean;
     markedAt?: number;
     markedBy?: string;
+    markedByRole?: AttendanceRole;
 }
 
 // Slot Lock State

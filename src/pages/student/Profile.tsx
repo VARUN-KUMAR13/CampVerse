@@ -56,7 +56,7 @@ const StudentProfile = () => {
     cgpa: "",
     bio: "",
     avatar: "",
-    skills: ["React", "TypeScript"],
+    skills: [],
     achievements: [],
   });
 
@@ -74,7 +74,7 @@ const StudentProfile = () => {
         // Fetch all student records from Firebase
         // Structure: /{index} -> { "Name of the student": "...", "ROLL NO": "..." }
         const response = await fetch(
-          `https://campverse-1374-default-rtdb.firebaseio.com/.json`
+          `https://campverse-2004-default-rtdb.asia-southeast1.firebasedatabase.app/.json`
         );
 
         if (response.ok) {
@@ -95,8 +95,8 @@ const StudentProfile = () => {
                   const nameParts = name.trim().split(' ');
                   setProfileData(prev => ({
                     ...prev,
-                    firstName: nameParts[0] || '',
-                    lastName: nameParts.slice(1).join(' ') || '',
+                    lastName: nameParts[0] || '',           // Surname (first word)
+                    firstName: nameParts.slice(1).join(' ') || '',  // Given name (remaining)
                   }));
                 }
                 break; // Found the student, exit loop
@@ -127,12 +127,13 @@ const StudentProfile = () => {
         // Fetch additional profile data from Backend
         if (userData?.uid) {
           const studentProfile = await api.get(`/users/${userData.uid}`);
+          console.log("📥 Fetched profile from MongoDB:", studentProfile);
 
           if (studentProfile) {
             setProfileData(prev => ({
               ...prev,
-              firstName: studentProfile.name?.split(' ')[0] || prev.firstName,
-              lastName: studentProfile.name?.split(' ').slice(1).join(' ') || prev.lastName,
+              lastName: studentProfile.name?.split(' ')[0] || prev.lastName,
+              firstName: studentProfile.name?.split(' ').slice(1).join(' ') || prev.firstName,
               phone: studentProfile.phone || prev.phone,
               address: studentProfile.address || prev.address,
               dateOfBirth: studentProfile.dateOfBirth || prev.dateOfBirth,
@@ -219,19 +220,21 @@ const StudentProfile = () => {
     try {
       if (userData?.uid) {
         await api.put(`/users/${userData.uid}`, {
-          name: `${profileData.firstName} ${profileData.lastName}`,
+          name: `${profileData.lastName} ${profileData.firstName}`, // Save in correct order
           phone: profileData.phone,
           address: profileData.address,
           dateOfBirth: profileData.dateOfBirth,
           bio: profileData.bio,
           cgpa: profileData.cgpa,
+          branch: profileData.branch,
           semester: profileData.semester,
+          avatar: profileData.avatar, // Save profile photo
           skills: profileData.skills,
           achievements: profileData.achievements,
-          // branch is usually immutable or set by admin, but sending it if needed or just skipping
         });
 
-        console.log("Profile saved to Backend");
+        console.log("✅ Profile saved to MongoDB successfully!");
+        alert("Profile saved successfully!");
       }
     } catch (e) {
       console.error("Error saving profile:", e);
@@ -391,10 +394,9 @@ const StudentProfile = () => {
                     <Input
                       id="firstName"
                       value={profileData.firstName}
-                      onChange={(e) =>
-                        handleInputChange("firstName", e.target.value)
-                      }
-                      disabled={!isEditing}
+                      disabled
+                      readOnly
+                      title="Locked by admin"
                     />
                   </div>
                   <div className="space-y-2">
@@ -402,10 +404,9 @@ const StudentProfile = () => {
                     <Input
                       id="lastName"
                       value={profileData.lastName}
-                      onChange={(e) =>
-                        handleInputChange("lastName", e.target.value)
-                      }
-                      disabled={!isEditing}
+                      disabled
+                      readOnly
+                      title="Locked by admin"
                     />
                   </div>
                 </div>
@@ -695,3 +696,5 @@ const StudentProfile = () => {
 };
 
 export default StudentProfile;
+
+

@@ -3,8 +3,10 @@ import { Badge } from "@/components/ui/badge";
 import FacultySidebar from "@/components/FacultySidebar";
 import FacultyTopbar from "@/components/FacultyTopbar";
 import { BookOpen, Users, FileText, Calendar, Clock } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const FacultyDashboard = () => {
+  const { userData } = useAuth();
   const stats = [
     {
       label: "Active Classes",
@@ -89,7 +91,7 @@ const FacultyDashboard = () => {
           {/* Welcome Section */}
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              Welcome, 👋
+              Welcome, <span className="text-primary">{userData?.collegeId || "Faculty"}</span> 👋
             </h1>
             <p className="text-muted-foreground">
               Here's your teaching overview for today!
