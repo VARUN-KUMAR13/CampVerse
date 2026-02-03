@@ -389,6 +389,71 @@ const StudentDashboard = () => {
     }
   };
 
+  // Automatic attendance marking after 4:00 PM (16:00)
+  // If any slot is NOT_MARKED after 4 PM, automatically mark as PRESENT
+  useEffect(() => {
+    if (!userData?.collegeId || !isEligibleForAttendance) return;
+
+    const checkAndAutoMark = async () => {
+      const currentHour = serverTime.getHours();
+      const currentMinutes = serverTime.getMinutes();
+
+      // Check if it's 4:00 PM (16:00) or later
+      if (currentHour >= 16) {
+        const notMarkedSlots = todaySchedule.filter(s => s.status === "NOT_MARKED");
+
+        if (notMarkedSlots.length > 0) {
+          console.log(`[AutoMark] Time is ${currentHour}:${currentMinutes}, auto-marking ${notMarkedSlots.length} slots`);
+
+          const today = formatDate(serverTime);
+
+          for (const item of notMarkedSlots) {
+            try {
+              const result = await studentSelfMark(
+                userData.collegeId,
+                item.slotId,
+                today,
+                item.subjectCode,
+                item.subjectName,
+                "B", // section
+                "05", // branch
+                "22" // year
+              );
+
+              if (result) {
+                console.log(`[AutoMark] Successfully marked ${item.subjectName} as PRESENT`);
+
+                // Update local state
+                setTodaySchedule((prev) =>
+                  prev.map((s) =>
+                    s.slotId === item.slotId
+                      ? { ...s, status: "PRESENT" as AttendanceStatus, markedByRole: "STUDENT" as AttendanceRole }
+                      : s
+                  )
+                );
+                setAttendanceMarkedBy((prev) => ({ ...prev, [item.slotId]: "STUDENT" }));
+              }
+            } catch (error) {
+              console.error(`[AutoMark] Error marking ${item.subjectName}:`, error);
+            }
+          }
+
+          if (notMarkedSlots.length > 0) {
+            toast.success(`Auto-marked ${notMarkedSlots.length} slot(s) as PRESENT`, {
+              description: "Attendance saved to Firebase (after 4:00 PM)",
+            });
+          }
+        }
+      }
+    };
+
+    // Check immediately and then every minute
+    checkAndAutoMark();
+    const interval = setInterval(checkAndAutoMark, 60000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, [userData?.collegeId, serverTime, isEligibleForAttendance, todaySchedule]);
+
   // Load performance metrics - now uses real-time data from today's schedule
   useEffect(() => {
     // Calculate metrics from today's schedule (real-time data)
