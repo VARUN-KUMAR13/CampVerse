@@ -271,6 +271,7 @@ export const checkMarkingPermission = async (
         EVENT: 'canMarkEvent',
         SPORTS: 'canMarkSports',
         CLUB: 'canMarkClub',
+        THEORY: 'canMarkAcademic', // THEORY uses academic permissions
     };
 
     const hasCategoryPermission = permissions[categoryPermissionMap[category]] as boolean;
@@ -1057,22 +1058,19 @@ export const calculateFourWeekAttendance = async (
 // ==================== INITIALIZATION ====================
 
 /**
- * Check if attendance should be reset (after 12:00 PM)
+ * Check if attendance should be reset (at DATE CHANGE - when date is different)
+ * Reset happens at midnight when the date changes
  */
 export const shouldResetAttendance = (currentDate: Date, lastResetDate: string | null): boolean => {
     const currentDateStr = formatDate(currentDate);
-    const currentHour = currentDate.getHours();
-    const currentMinute = currentDate.getMinutes();
-    const currentTimeInMinutes = currentHour * 60 + currentMinute;
-    const resetTimeInMinutes = 12 * 60; // 12:00 PM = 720 minutes
 
-    // If it's a new day and we've passed 12:00 PM, reset
-    if (lastResetDate !== currentDateStr && currentTimeInMinutes >= resetTimeInMinutes) {
+    // If it's a new day (date changed), reset attendance
+    if (lastResetDate !== currentDateStr) {
         return true;
     }
 
-    // If it's the same day but we haven't reset yet and it's past 12:00 PM
-    if (lastResetDate === null && currentTimeInMinutes >= resetTimeInMinutes) {
+    // If we haven't reset yet at all
+    if (lastResetDate === null) {
         return true;
     }
 
@@ -1095,7 +1093,7 @@ export const setLastResetDate = (date: string): void => {
 
 /**
  * Reset all attendance to NOT_MARKED
- * This should be called daily after 12:00 PM
+ * This is called when the date changes (at midnight)
  */
 export const resetDailyAttendance = async (): Promise<void> => {
     const serverTime = await getServerTime();
@@ -1344,4 +1342,100 @@ export const subscribeToPerformanceMetrics = (
     });
 
     return () => off(recordsRef);
+};
+
+// ==================== AUTO-MARK FUNCTIONS ====================
+
+/**
+ * Auto-mark all NOT_MARKED students as PRESENT after 4:00 PM
+ * This saves to Firebase database and updates for all students
+ */
+export const autoMarkAllAsPresent = async (
+    date: string,
+    year: string,
+    branch: string,
+    section: string,
+    slots: { slotId: string; subjectCode: string; subjectName: string }[]
+): Promise<{ success: boolean; markedCount: number }> => {
+    if (!database) {
+        console.error('[autoMarkAllAsPresent] Firebase database not available');
+        return { success: false, markedCount: 0 };
+    }
+
+    try {
+        console.log('[autoMarkAllAsPresent] Starting auto-mark for date:', date);
+
+        // Get all students from Section B (22B81A0565 to 22B81A05C8)
+        const students: string[] = [];
+
+        // Generate all valid roll numbers for Section B
+        // Range: 65 (hex) to C8 (hex) = 101 to 200 in decimal
+        for (let i = 0x65; i <= 0xC8; i++) {
+            const hexSuffix = i.toString(16).toUpperCase().padStart(2, '0');
+            const rollNumber = `22B81A05${hexSuffix}`;
+            students.push(rollNumber);
+        }
+
+        let markedCount = 0;
+
+        for (const slot of slots) {
+            const attendancePath = `attendance/${year}/${branch}/${section}/records/${date}`;
+            const recordsRef = ref(database, attendancePath);
+
+            // Get existing records
+            const snapshot = await get(recordsRef);
+            const existingRecords: Record<string, AttendanceRecord> = snapshot.exists()
+                ? snapshot.val()
+                : {};
+
+            // Find students NOT_MARKED for this slot
+            for (const studentId of students) {
+                const recordKey = `${studentId}_${slot.slotId}`;
+                const existingRecord = existingRecords[recordKey];
+
+                // Only mark if NOT_MARKED or doesn't exist
+                if (!existingRecord || existingRecord.status === 'NOT_MARKED') {
+                    const markedAt = Date.now();
+                    const newRecord: AttendanceRecord = {
+                        id: recordKey,
+                        studentId,
+                        date,
+                        slotId: slot.slotId,
+                        slotNumber: parseInt(slot.slotId.replace('slot_', '')) || 1,
+                        subjectCode: slot.subjectCode,
+                        subjectName: slot.subjectName,
+                        status: 'PRESENT',
+                        markedBy: 'SYSTEM',
+                        markedByRole: 'SYSTEM',
+                        markedAt,
+                        category: 'THEORY',
+                        isOverride: false,
+                        section: section,
+                        branch: branch,
+                        year: year,
+                    };
+
+                    // Save to Firebase
+                    const recordRef = ref(database, `${attendancePath}/${recordKey}`);
+                    await set(recordRef, newRecord);
+                    markedCount++;
+                }
+            }
+        }
+
+        console.log(`[autoMarkAllAsPresent] Successfully marked ${markedCount} records as PRESENT`);
+        return { success: true, markedCount };
+
+    } catch (error) {
+        console.error('[autoMarkAllAsPresent] Error:', error);
+        return { success: false, markedCount: 0 };
+    }
+};
+
+/**
+ * Check if it's time to auto-mark (4:00 PM or later)
+ */
+export const shouldAutoMarkAsPresent = (currentTime: Date): boolean => {
+    const hour = currentTime.getHours();
+    return hour >= 16; // 4:00 PM or later
 };

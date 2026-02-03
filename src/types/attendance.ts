@@ -1,13 +1,13 @@
 // Attendance System Types
 
 // Attendance Categories
-export type AttendanceCategory = 'ACADEMIC' | 'EVENT' | 'SPORTS' | 'CLUB';
+export type AttendanceCategory = 'ACADEMIC' | 'EVENT' | 'SPORTS' | 'CLUB' | 'THEORY';
 
 // Attendance Status
 export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED' | 'NOT_MARKED';
 
 // User Roles for Attendance Permissions
-export type AttendanceRole = 'ADMIN' | 'FACULTY' | 'STUDENT' | 'SUB_ADMIN' | 'COORDINATOR';
+export type AttendanceRole = 'ADMIN' | 'FACULTY' | 'STUDENT' | 'SUB_ADMIN' | 'COORDINATOR' | 'SYSTEM';
 
 // Slot Status
 export type SlotStatus = 'OPEN' | 'LOCKED' | 'OVERRIDE';
@@ -270,6 +270,15 @@ export const ROLE_PERMISSIONS: Record<AttendanceRole, {
         canMarkClub: false,
         canOverride: false,
         canViewAll: false,
+        isTimeBound: false,
+    },
+    SYSTEM: {
+        canMarkAcademic: true,
+        canMarkEvent: true,
+        canMarkSports: true,
+        canMarkClub: true,
+        canOverride: true,
+        canViewAll: true,
         isTimeBound: false,
     },
 };
