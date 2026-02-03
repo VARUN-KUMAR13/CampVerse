@@ -51,6 +51,7 @@ const StudentProfile = () => {
     address: "",
     dateOfBirth: "",
     branch: "Computer Science and Engineering",
+    section: "B",
     semester: "VI",
     rollNumber: userData?.collegeId || "",
     cgpa: "",
@@ -126,26 +127,40 @@ const StudentProfile = () => {
 
         // Fetch additional profile data from Backend
         if (userData?.uid) {
-          const studentProfile = await api.get(`/users/${userData.uid}`);
-          console.log("📥 Fetched profile from MongoDB:", studentProfile);
+          console.log("📥 Fetching profile for UID:", userData.uid);
 
-          if (studentProfile) {
-            setProfileData(prev => ({
-              ...prev,
-              lastName: studentProfile.name?.split(' ')[0] || prev.lastName,
-              firstName: studentProfile.name?.split(' ').slice(1).join(' ') || prev.firstName,
-              phone: studentProfile.phone || prev.phone,
-              address: studentProfile.address || prev.address,
-              dateOfBirth: studentProfile.dateOfBirth || prev.dateOfBirth,
-              bio: studentProfile.bio || prev.bio,
-              avatar: studentProfile.avatar || prev.avatar,
-              branch: studentProfile.branchInfo || studentProfile.branch || prev.branch, // branchInfo is virtual, fallback to code
-              semester: studentProfile.semester || prev.semester,
-              cgpa: studentProfile.cgpa || prev.cgpa,
-              skills: studentProfile.skills || [],
-              achievements: studentProfile.achievements || [],
-            }));
+          try {
+            const studentProfile = await api.get(`/users/${userData.uid}`);
+            console.log("📥 Fetched profile from MongoDB:", studentProfile);
+
+            if (studentProfile) {
+              setProfileData(prev => ({
+                ...prev,
+                lastName: studentProfile.name?.split(' ')[0] || prev.lastName,
+                firstName: studentProfile.name?.split(' ').slice(1).join(' ') || prev.firstName,
+                phone: studentProfile.phone || prev.phone,
+                address: studentProfile.address || prev.address,
+                dateOfBirth: studentProfile.dateOfBirth || prev.dateOfBirth,
+                bio: studentProfile.bio || prev.bio,
+                avatar: studentProfile.avatar || prev.avatar,
+                branch: studentProfile.branchInfo || studentProfile.branch || prev.branch,
+                section: studentProfile.section || prev.section,
+                semester: studentProfile.semester || prev.semester,
+                cgpa: studentProfile.cgpa || prev.cgpa,
+                skills: studentProfile.skills || [],
+                achievements: studentProfile.achievements || [],
+              }));
+            }
+          } catch (apiError: any) {
+            // If user not found in MongoDB, that's okay - they can still edit and create profile
+            if (apiError.message?.includes('404') || apiError.message?.includes('Not found')) {
+              console.log("ℹ️ User profile not found in MongoDB yet - will be created on first save");
+            } else {
+              console.error("API Error:", apiError);
+            }
           }
+        } else {
+          console.log("ℹ️ No UID available - using default profile data");
         }
       } catch (error) {
         console.error("Error fetching profile:", error);
@@ -219,7 +234,7 @@ const StudentProfile = () => {
   const handleSave = async () => {
     try {
       if (userData?.uid) {
-        await api.put(`/users/${userData.uid}`, {
+        const dataToSave = {
           name: `${profileData.lastName} ${profileData.firstName}`, // Save in correct order
           phone: profileData.phone,
           address: profileData.address,
@@ -227,17 +242,27 @@ const StudentProfile = () => {
           bio: profileData.bio,
           cgpa: profileData.cgpa,
           branch: profileData.branch,
+          section: profileData.section,
           semester: profileData.semester,
-          avatar: profileData.avatar, // Save profile photo
+          avatar: profileData.avatar,
           skills: profileData.skills,
           achievements: profileData.achievements,
-        });
+        };
 
-        console.log("✅ Profile saved to MongoDB successfully!");
+        console.log("📤 Saving profile data:", dataToSave);
+        console.log("📤 User UID:", userData.uid);
+
+        const response = await api.put(`/users/${userData.uid}`, dataToSave);
+
+        console.log("✅ Profile saved to MongoDB:", response);
         alert("Profile saved successfully!");
+      } else {
+        console.error("❌ No user UID available");
+        alert("Error: User not logged in properly. Please log out and log back in.");
       }
-    } catch (e) {
-      console.error("Error saving profile:", e);
+    } catch (e: any) {
+      console.error("❌ Error saving profile:", e);
+      alert(`Failed to save profile: ${e.message || 'Unknown error'}`);
     }
     setIsEditing(false);
   };
@@ -501,7 +526,7 @@ const StudentProfile = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="rollNumber">Roll Number</Label>
                     <Input
@@ -537,6 +562,29 @@ const StudentProfile = () => {
                         <SelectItem value="Electronics & Communication">
                           ECE
                         </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="section">Section</Label>
+                    <Select
+                      value={profileData.section}
+                      onValueChange={(value) =>
+                        handleInputChange("section", value)
+                      }
+                      disabled={!isEditing}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="A">Section A</SelectItem>
+                        <SelectItem value="B">Section B</SelectItem>
+                        <SelectItem value="C">Section C</SelectItem>
+                        <SelectItem value="D">Section D</SelectItem>
+                        <SelectItem value="E">Section E</SelectItem>
+                        <SelectItem value="F">Section F</SelectItem>
+                        <SelectItem value="G">Section G</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

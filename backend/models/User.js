@@ -60,7 +60,7 @@ const userSchema = new mongoose.Schema(
         validator: function (v) {
           if (this.role === "admin") return true;
           if (this.role === "faculty") return v === "Z";
-          return /^[A-F]$/.test(v); // Students: A-F, Faculty: Z
+          return /^[A-G]$/.test(v); // Students: A-G, Faculty: Z
         },
         message: "Invalid section",
       },
@@ -73,9 +73,24 @@ const userSchema = new mongoose.Schema(
       validate: {
         validator: function (v) {
           if (this.role === "admin") return true;
-          return /^[0-9]{2}$/.test(v);
+          // Accept either 2-digit codes or branch names
+          const validCodes = /^[0-9]{2}$/.test(v);
+          const validNames = [
+            "CSE", "ECE", "EEE", "MECH", "CIVIL", "IT", "CSBS",
+            "Computer Science & Engineering",
+            "Computer Science and Engineering",
+            "Computer Science & Business Systems",
+            "Electronics & Communication",
+            "Electronics and Communication",
+            "Electrical & Electronics",
+            "Electrical and Electronics Engineering",
+            "Mechanical Engineering",
+            "Civil Engineering",
+            "Information Technology"
+          ].includes(v);
+          return validCodes || validNames;
         },
-        message: "Branch must be 2 digits",
+        message: "Invalid branch",
       },
     },
     rollNumber: {

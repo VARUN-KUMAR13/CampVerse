@@ -70,6 +70,7 @@ import AdminExams from "./pages/admin/Exams";
 import AdminAlerts from "./pages/admin/Alerts";
 import AdminAttendance from "./pages/admin/Attendance";
 import StudentDataManagement from "./pages/admin/StudentDataManagement";
+import AdminResults from "./pages/admin/Results";
 
 const queryClient = new QueryClient();
 
@@ -360,6 +361,14 @@ const AppContent = () => {
           element={
             <ProtectedRoute requiredRole="admin">
               <AdminAttendance />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/results"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminResults />
             </ProtectedRoute>
           }
         />

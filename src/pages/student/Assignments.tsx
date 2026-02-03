@@ -1,356 +1,398 @@
-import { useState, useRef, type ChangeEvent } from "react";
+import { useState, useEffect, useRef, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import StudentSidebar from "@/components/StudentSidebar";
 import StudentTopbar from "@/components/StudentTopbar";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import { Calendar, Eye, Upload, AlertCircle } from "lucide-react";
-
-type AssignmentStatusVariant =
-  | "default"
-  | "secondary"
-  | "destructive"
-  | "outline";
+import { toast } from "sonner";
+import {
+  Calendar,
+  Eye,
+  Upload,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  FileText,
+  Loader2,
+  Download,
+} from "lucide-react";
+import {
+  getStudentAssignments,
+  submitAssignment,
+  getStudentSubmission,
+  fileToBase64,
+  openPdfInNewTab,
+  formatDate,
+  formatFileSize,
+  isOverdue,
+} from "@/services/assignmentService";
 
 type Assignment = {
+  _id: string;
   title: string;
-  course: string;
-  dueDate: string;
-  status: string;
-  statusColor: AssignmentStatusVariant;
   description: string;
-  uploadedFiles: File[];
-};
-
-const initialAssignments: Assignment[] = [
-  {
-    title: "Data Analysis Project",
-    course: "Python for EDA",
-    dueDate: "Due: 2025-03-15",
-    status: "Overdue",
-    statusColor: "destructive",
-    description:
-      "Analyze the quarterly retail dataset and submit an insights report supported by visualizations.",
-    uploadedFiles: [],
-  },
-  {
-    title: "Process Scheduling Implementation",
-    course: "Operating Systems",
-    dueDate: "Due: 2025-03-20",
-    status: "Overdue",
-    statusColor: "destructive",
-    description:
-      "Implement FCFS, SJF, and Round Robin CPU scheduling algorithms and document comparative results.",
-    uploadedFiles: [],
-  },
-  {
-    title: "Algorithm Analysis Report",
-    course: "Design & Analysis of Algorithms",
-    dueDate: "Due: 2025-03-25",
-    status: "Pending",
-    statusColor: "secondary",
-    description:
-      "Evaluate divide-and-conquer strategies for the provided problem set and compile an analytical report.",
-    uploadedFiles: [],
-  },
-];
-
-const formatFileSize = (size: number) => {
-  if (!size) {
-    return "0 B";
-  }
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  const exponent = Math.min(
-    units.length - 1,
-    Math.floor(Math.log(size) / Math.log(1024)),
-  );
-  const value = size / Math.pow(1024, exponent);
-  return `${value.toFixed(2)} ${units[exponent]}`;
-};
-
-const buildFileKey = (file: File) =>
-  `${file.name}-${file.size}-${file.lastModified}`;
-
-const escapeHtml = (value: string) =>
-  value
-    .replaceAll(/&/g, "&amp;")
-    .replaceAll(/</g, "&lt;")
-    .replaceAll(/>/g, "&gt;")
-    .replaceAll(/"/g, "&quot;")
-    .replaceAll(/'/g, "&#039;");
-
-const buildDetailsWindowContent = (
-  assignmentTitle: string,
-  files: { name: string; size: string; type: string; url: string }[],
-) => {
-  const listItems = files
-    .map(
-      (file, index) => `
-        <li class="file-item">
-          <div class="file-meta">
-            <span class="file-index">${index + 1}.</span>
-            <div class="file-info">
-              <span class="file-name">${escapeHtml(file.name)}</span>
-              <span class="file-type">${escapeHtml(file.type)}</span>
-            </div>
-          </div>
-          <div class="file-actions">
-            <span class="file-size">${escapeHtml(file.size)}</span>
-            <a class="file-link" href="${file.url}" target="_blank" rel="noopener noreferrer">Open</a>
-            <a class="file-link" href="${file.url}" download>Download</a>
-          </div>
-        </li>
-      `,
-    )
-    .join("");
-
-  const revokeScript = `const blobUrls = ${JSON.stringify(
-    files.map((file) => file.url),
-  )}; window.addEventListener('unload', () => { blobUrls.forEach((url) => URL.revokeObjectURL(url)); });`;
-
-  return `<!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>${escapeHtml(assignmentTitle)} – Uploaded Files</title>
-      <style>
-        :root { color-scheme: light dark; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-        body { margin: 0; padding: 32px; background: #0f172a; color: #e2e8f0; }
-        main { max-width: 960px; margin: 0 auto; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(16px); border-radius: 16px; padding: 32px; box-shadow: 0 20px 60px rgba(15, 23, 42, 0.35); }
-        h1 { font-size: 28px; margin-bottom: 24px; }
-        p { margin-bottom: 16px; color: #94a3b8; }
-        ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 16px; }
-        .file-item { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; padding: 16px; border-radius: 12px; border: 1px solid rgba(148, 163, 184, 0.3); background: rgba(30, 41, 59, 0.7); }
-        .file-meta { display: flex; align-items: center; gap: 12px; min-width: 220px; }
-        .file-index { font-weight: 600; color: #38bdf8; }
-        .file-info { display: flex; flex-direction: column; gap: 4px; }
-        .file-name { font-weight: 600; word-break: break-word; }
-        .file-type { font-size: 14px; color: #94a3b8; }
-        .file-actions { display: flex; align-items: center; gap: 16px; }
-        .file-size { font-size: 14px; color: #94a3b8; }
-        .file-link { font-size: 14px; font-weight: 600; color: #38bdf8; text-decoration: none; padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.4); transition: background 0.2s, color 0.2s; }
-        .file-link:hover { background: rgba(56, 189, 248, 0.1); color: #38bdf8; }
-        @media (max-width: 600px) { .file-actions { flex-direction: column; align-items: flex-start; } }
-      </style>
-    </head>
-    <body>
-      <main>
-        <h1>Uploaded files for ${escapeHtml(assignmentTitle)}</h1>
-        <p>Click the links below to open or download each file in a separate tab.</p>
-        <ul>${listItems}</ul>
-      </main>
-      <script>${revokeScript}</script>
-    </body>
-  </html>`;
+  course: string;
+  courseCode: string;
+  dueDate: string;
+  maxMarks: number;
+  status: "Active" | "Completed" | "Draft";
+  hasSubmitted: boolean;
+  submittedAt: string | null;
+  grade: number | null;
+  feedback: string;
 };
 
 const StudentAssignments = () => {
   const { userData } = useAuth();
-  const [assignments, setAssignments] =
-    useState<Assignment[]>(initialAssignments);
-  const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const { toast } = useToast();
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState<string | null>(null);
+  const [viewingSubmission, setViewingSubmission] = useState<string | null>(null);
+  const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
-  const handleSubmitClick = (assignmentIndex: number) => {
-    fileInputRefs.current[assignmentIndex]?.click();
+  // Get student name - fallback to collegeId if name not available
+  const studentName = userData?.name || userData?.collegeId || "Student";
+
+  // Determine section from roll number
+  // CSE 4th Year (2022 batch): 22B81A05XX where XX is in hex
+  // Sections: A=01-64, B=65-C8, C=C9-12C (if 3 chars), etc.
+  // Each section ~100 students in decimal (64 in hex)
+  const getSectionFromRollNumber = (rollNo: string): string => {
+    // Extract the last 2-3 characters (hex part after 22B81A05)
+    const upperRoll = rollNo.toUpperCase();
+
+    // Try to match 22B81A05XX or 22B81A05XXX pattern
+    let match = upperRoll.match(/22B81A05([0-9A-F]+)$/);
+    if (!match) {
+      // Try without the branch code for other formats
+      match = upperRoll.match(/(\d{2})[A-Z].*?([0-9A-F]{2,3})$/);
+      if (match) {
+        const numPart = parseInt(match[2], 16);
+        // Simple section calculation
+        if (numPart >= 0x01 && numPart <= 0x64) return "A";
+        if (numPart >= 0x65 && numPart <= 0xC8) return "B";
+        return "B"; // Default
+      }
+      return "B"; // Default to B
+    }
+
+    const hexPart = match[1];
+    const numPart = parseInt(hexPart, 16); // Parse as hex
+
+    // Section ranges based on roll number pattern:
+    // 22B81A0501-22B81A0564 = CSE-A (hex 01-64 = decimal 1-100)
+    // 22B81A0565-22B81A05C8 = CSE-B (hex 65-C8 = decimal 101-200)
+    // and so on...
+    if (numPart >= 0x01 && numPart <= 0x64) return "A";   // 1-100
+    if (numPart >= 0x65 && numPart <= 0xC8) return "B";   // 101-200
+    if (numPart >= 0xC9 && numPart <= 0x12C) return "C";  // 201-300
+    if (numPart >= 0x12D && numPart <= 0x190) return "D"; // 301-400
+    if (numPart >= 0x191 && numPart <= 0x1F4) return "E"; // 401-500
+    if (numPart >= 0x1F5 && numPart <= 0x258) return "F"; // 501-600
+    if (numPart >= 0x259 && numPart <= 0x2BC) return "G"; // 601-700
+
+    return "B"; // Default fallback
   };
 
-  const handleFileSelection = (
-    assignmentIndex: number,
-    event: ChangeEvent<HTMLInputElement>,
-  ) => {
-    const selectedFiles = event.target.files
-      ? Array.from(event.target.files)
-      : [];
+  // Fetch assignments for the student based on their section
+  const fetchAssignments = async () => {
+    try {
+      setLoading(true);
+      const studentId = userData?.collegeId || "";
+      if (!studentId) {
+        toast.error("Student ID not found");
+        return;
+      }
 
-    if (!selectedFiles.length) {
+      // Determine section from roll number
+      const section = getSectionFromRollNumber(studentId);
+      console.log(`[Assignments] Student ${studentId} belongs to Section ${section}`);
+
+      const data = await getStudentAssignments(section, studentId);
+      setAssignments(data);
+    } catch (error) {
+      console.error("Error fetching assignments:", error);
+      toast.error("Failed to load assignments");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (userData?.collegeId) {
+      fetchAssignments();
+    }
+  }, [userData?.collegeId]);
+
+  // Handle file selection and upload
+  const handleFileSelection = async (
+    assignmentId: string,
+    event: ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type (PDF only)
+    if (file.type !== "application/pdf") {
+      toast.error("Only PDF files are allowed");
       event.target.value = "";
       return;
     }
 
-    setAssignments((prevAssignments) => {
-      const updatedAssignments = [...prevAssignments];
-      const existingFiles = updatedAssignments[assignmentIndex].uploadedFiles;
-      const mergedFiles = new Map<string, File>();
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File size must be less than 10MB");
+      event.target.value = "";
+      return;
+    }
 
-      [...existingFiles, ...selectedFiles].forEach((file) => {
-        mergedFiles.set(buildFileKey(file), file);
+    try {
+      setUploading(assignmentId);
+
+      // Convert file to base64
+      const base64Data = await fileToBase64(file);
+
+      console.log("[Assignment] Submitting:", {
+        assignmentId,
+        studentId: userData?.collegeId,
+        studentName,
+        fileName: file.name,
+        fileSize: file.size,
       });
 
-      updatedAssignments[assignmentIndex] = {
-        ...updatedAssignments[assignmentIndex],
-        uploadedFiles: Array.from(mergedFiles.values()),
-      };
+      // Submit to backend
+      await submitAssignment(assignmentId, {
+        studentId: userData?.collegeId || "",
+        studentName: studentName,
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+        fileData: base64Data,
+      });
 
-      return updatedAssignments;
-    });
+      toast.success("Assignment submitted successfully!", {
+        description: `File: ${file.name}`,
+      });
 
-    toast({
-      title: "Files selected",
-      description: `${selectedFiles.length} file${selectedFiles.length === 1 ? "" : "s"} ready for upload.`,
-    });
-
-    event.target.value = "";
+      // Refresh assignments to update status
+      fetchAssignments();
+    } catch (error) {
+      console.error("Error submitting assignment:", error);
+      toast.error("Failed to submit assignment");
+    } finally {
+      setUploading(null);
+      event.target.value = "";
+    }
   };
 
-  const handleViewDetails = (assignmentIndex: number) => {
-    const assignment = assignments[assignmentIndex];
+  // View own submission
+  const handleViewSubmission = async (assignmentId: string, title: string) => {
+    try {
+      setViewingSubmission(assignmentId);
+      const studentId = userData?.collegeId || "";
+      const submission = await getStudentSubmission(assignmentId, studentId);
 
-    if (!assignment.uploadedFiles.length) {
-      toast({
-        title: "No files uploaded",
-        description: "Upload files before viewing details.",
-        variant: "destructive",
-      });
-      return;
+      if (submission && submission.fileData) {
+        openPdfInNewTab(submission.fileData, submission.fileName);
+      } else {
+        toast.error("No submission found");
+      }
+    } catch (error) {
+      console.error("Error viewing submission:", error);
+      toast.error("Failed to view submission");
+    } finally {
+      setViewingSubmission(null);
     }
+  };
 
-    const detailsWindow = window.open("", "_blank", "noopener,noreferrer");
-
-    if (!detailsWindow) {
-      toast({
-        title: "Popup blocked",
-        description: "Allow popups to view uploaded files.",
-        variant: "destructive",
-      });
-      return;
+  // Get status badge component
+  const getStatusBadge = (assignment: Assignment) => {
+    if (assignment.hasSubmitted) {
+      if (assignment.grade !== null) {
+        return (
+          <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+            <CheckCircle2 className="w-3 h-3 mr-1" />
+            Graded: {assignment.grade}/{assignment.maxMarks}
+          </Badge>
+        );
+      }
+      return (
+        <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+          <CheckCircle2 className="w-3 h-3 mr-1" />
+          Submitted
+        </Badge>
+      );
     }
-
-    const fileEntries = assignment.uploadedFiles.map((file) => ({
-      name: file.name,
-      type: file.type || "Unknown type",
-      size: formatFileSize(file.size),
-      url: URL.createObjectURL(file),
-    }));
-
-    const htmlContent = buildDetailsWindowContent(
-      assignment.title,
-      fileEntries,
+    if (isOverdue(assignment.dueDate)) {
+      return (
+        <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
+          <AlertCircle className="w-3 h-3 mr-1" />
+          Overdue
+        </Badge>
+      );
+    }
+    return (
+      <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+        <Clock className="w-3 h-3 mr-1" />
+        Pending
+      </Badge>
     );
-
-    detailsWindow.document.open();
-    detailsWindow.document.write(htmlContent);
-    detailsWindow.document.close();
   };
 
   return (
     <div className="flex min-h-screen bg-background">
       <StudentSidebar />
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col overflow-hidden">
         <StudentTopbar studentId={userData?.collegeId || ""} />
 
-        <main className="flex-1 p-6 space-y-6">
+        <main className="flex-1 p-6 space-y-6 overflow-y-auto">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-foreground">
-              My Assignments
-            </h1>
+            <h1 className="text-2xl font-bold text-foreground">My Assignments</h1>
+            <p className="text-muted-foreground mt-1">
+              Submit your assignments and track your progress
+            </p>
           </div>
 
-          <div className="space-y-4">
-            {assignments.map((assignment, index) => (
-              <Card
-                key={`${assignment.title}-${assignment.course}`}
-                className="hover:shadow-md transition-shadow"
-              >
-                <CardContent className="p-6">
-                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-foreground mb-2">
-                        {assignment.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        {assignment.course}
-                      </p>
-                      <div className="text-sm text-muted-foreground mb-4">
-                        {assignment.description}
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : assignments.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">
+                  No Assignments Yet
+                </h3>
+                <p className="text-muted-foreground">
+                  You don't have any assignments assigned to you yet.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {assignments.map((assignment) => (
+                <Card
+                  key={assignment._id}
+                  className="hover:shadow-md transition-shadow border-border/50"
+                >
+                  <CardContent className="p-6">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                      {/* Assignment Info */}
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between mb-2">
+                          <h3 className="text-lg font-semibold text-foreground">
+                            {assignment.title}
+                          </h3>
+                          {getStatusBadge(assignment)}
+                        </div>
+
+                        <p className="text-sm text-primary mb-3">
+                          {assignment.course}
+                          {assignment.courseCode && ` (${assignment.courseCode})`}
+                        </p>
+
+                        <p className="text-sm text-muted-foreground mb-4">
+                          {assignment.description || "No description provided."}
+                        </p>
+
+                        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-4 h-4" />
+                            <span>Due: {formatDate(assignment.dueDate)}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <FileText className="w-4 h-4" />
+                            <span>Max Marks: {assignment.maxMarks}</span>
+                          </div>
+                          {assignment.hasSubmitted && assignment.submittedAt && (
+                            <div className="flex items-center gap-1 text-green-500">
+                              <CheckCircle2 className="w-4 h-4" />
+                              <span>Submitted: {formatDate(assignment.submittedAt)}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Feedback */}
+                        {assignment.feedback && (
+                          <div className="mt-4 p-3 bg-muted/30 rounded-lg">
+                            <p className="text-sm font-medium text-foreground mb-1">
+                              Faculty Feedback:
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {assignment.feedback}
+                            </p>
+                          </div>
+                        )}
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="w-4 h-4" />
-                          <span>{assignment.dueDate}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Upload className="w-4 h-4" />
-                          <span>
-                            {assignment.uploadedFiles.length > 0
-                              ? `${assignment.uploadedFiles.length} file${assignment.uploadedFiles.length === 1 ? "" : "s"} selected`
-                              : "No files uploaded yet"}
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <AlertCircle className="w-4 h-4" />
-                          <Badge
-                            variant={assignment.statusColor}
-                            className="text-xs"
+                      {/* Actions */}
+                      <div className="flex flex-col items-stretch space-y-2 md:w-48">
+                        {/* Hidden file input */}
+                        <input
+                          ref={(el) => (fileInputRefs.current[assignment._id] = el)}
+                          type="file"
+                          accept=".pdf"
+                          className="hidden"
+                          onChange={(e) => handleFileSelection(assignment._id, e)}
+                        />
+
+                        {/* Submit/Resubmit Button */}
+                        <Button
+                          size="sm"
+                          onClick={() => fileInputRefs.current[assignment._id]?.click()}
+                          disabled={uploading === assignment._id}
+                          className={
+                            assignment.hasSubmitted
+                              ? "bg-blue-600 hover:bg-blue-700"
+                              : "bg-primary hover:bg-primary/90"
+                          }
+                        >
+                          {uploading === assignment._id ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-4 h-4 mr-2" />
+                              {assignment.hasSubmitted ? "Resubmit" : "Submit PDF"}
+                            </>
+                          )}
+                        </Button>
+
+                        {/* View Submission Button (if submitted) */}
+                        {assignment.hasSubmitted && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              handleViewSubmission(assignment._id, assignment.title)
+                            }
+                            disabled={viewingSubmission === assignment._id}
                           >
-                            {assignment.status}
-                          </Badge>
-                        </div>
+                            {viewingSubmission === assignment._id ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Loading...
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="w-4 h-4 mr-2" />
+                                View My Submission
+                              </>
+                            )}
+                          </Button>
+                        )}
                       </div>
-
-                      {assignment.uploadedFiles.length > 0 && (
-                        <div className="mt-4">
-                          <p className="text-sm font-medium text-foreground mb-2">
-                            Files ready for submission
-                          </p>
-                          <ul className="space-y-2">
-                            {assignment.uploadedFiles.map((file) => (
-                              <li
-                                key={buildFileKey(file)}
-                                className="flex items-center justify-between rounded-md border border-border bg-muted/60 px-3 py-2 text-sm"
-                              >
-                                <span className="truncate pr-4">
-                                  {file.name}
-                                </span>
-                                <span className="text-muted-foreground">
-                                  {formatFileSize(file.size)}
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
                     </div>
-
-                    <div className="flex flex-col items-stretch space-y-2 md:w-48">
-                      <input
-                        ref={(element) => {
-                          fileInputRefs.current[index] = element;
-                        }}
-                        type="file"
-                        className="hidden"
-                        multiple
-                        onChange={(event) => handleFileSelection(index, event)}
-                      />
-                      <Button
-                        size="sm"
-                        onClick={() => handleSubmitClick(index)}
-                        className="justify-center bg-red-600 text-white hover:bg-red-700"
-                      >
-                        <Upload className="w-4 h-4 mr-2" />
-                        Submit
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="justify-center"
-                        onClick={() => handleViewDetails(index)}
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        View Details
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </main>
       </div>
     </div>

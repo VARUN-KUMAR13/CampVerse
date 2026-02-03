@@ -70,6 +70,11 @@ const AdminSidebar = ({ onClose, isOpen }: AdminSidebarProps) => {
       path: "/admin/exam",
     },
     {
+      icon: <BarChart3 className="w-5 h-5" />,
+      label: "Results",
+      path: "/admin/results",
+    },
+    {
       icon: <Bell className="w-5 h-5" />,
       label: "Alerts",
       path: "/admin/alerts",
