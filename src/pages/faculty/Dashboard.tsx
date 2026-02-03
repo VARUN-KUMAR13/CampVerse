@@ -84,10 +84,10 @@ const FacultyDashboard = () => {
     <div className="flex min-h-screen bg-background">
       <FacultySidebar />
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col overflow-hidden">
         <FacultyTopbar />
 
-        <main className="flex-1 p-6 space-y-6">
+        <main className="flex-1 p-6 space-y-6 overflow-y-auto">
           {/* Welcome Section */}
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">

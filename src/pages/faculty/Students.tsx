@@ -442,10 +442,10 @@ const FacultyStudents = () => {
     <div className="flex min-h-screen bg-background">
       <FacultySidebar />
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col overflow-hidden">
         <FacultyTopbar />
 
-        <main className="flex-1 p-6 space-y-6">
+        <main className="flex-1 p-6 space-y-6 overflow-y-auto">
           {/* Time & Permission Alert */}
           {permission && !permission.canMark && (
             <Alert variant="destructive" className="border-red-500/50 bg-red-500/10">

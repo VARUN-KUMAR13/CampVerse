@@ -10,10 +10,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import NotificationBell from "@/components/NotificationBell";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut, Menu, Search, Settings, User } from "lucide-react";
+import { LogOut, Menu, Settings, User } from "lucide-react";
 
 const FacultyTopbar = () => {
   const { userData, logout } = useAuth();
@@ -47,10 +46,6 @@ const FacultyTopbar = () => {
           <Button variant="ghost" size="sm" className="md:hidden">
             <Menu className="w-5 h-5" />
           </Button>
-          <div className="relative hidden md:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input placeholder="Search..." className="pl-10 w-64" />
-          </div>
         </div>
 
         <div className="flex items-center space-x-4">

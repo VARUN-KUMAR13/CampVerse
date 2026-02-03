@@ -95,16 +95,16 @@ const StudentSidebar = () => {
 
   return (
     <div className="w-64 bg-sidebar border-r border-sidebar-border min-h-screen flex flex-col">
-      {/* Header - Click to Sign Out */}
-      <div
-        className="px-6 pt-6 pb-3 -mb-px border-b border-sidebar-border cursor-pointer hover:bg-sidebar-accent/50 transition-colors"
-        onClick={handleLogout}
-        title="Click to Sign Out"
-      >
+      {/* Header - aligned with topbar (px-6 py-4) */}
+      <div className="px-6 py-4 border-b border-sidebar-border">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+          <button
+            onClick={handleLogout}
+            className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center hover:bg-primary/80 transition-colors cursor-pointer"
+            title="Logout"
+          >
             <GraduationCap className="w-5 h-5 text-primary-foreground" />
-          </div>
+          </button>
           <span className="font-bold text-sidebar-foreground">CampVerse</span>
         </div>
       </div>

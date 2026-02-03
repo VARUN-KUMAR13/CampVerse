@@ -1155,3 +1155,193 @@ export const initializeAttendanceStructure = async (): Promise<boolean> => {
         return false;
     }
 };
+
+// ==================== DEMO MODE: STUDENT SELF-MARKING ====================
+
+/**
+ * Student self-marking for demo purposes
+ * This allows students to mark themselves as PRESENT when attendance is NOT_MARKED
+ * Used to demonstrate the attendance system during project presentations
+ */
+export const studentSelfMark = async (
+    studentId: string,
+    slotId: string,
+    date: string,
+    subjectCode: string,
+    subjectName: string,
+    section: string,
+    branch: string,
+    year: string
+): Promise<AttendanceRecord | null> => {
+    console.log('[studentSelfMark] Student marking self attendance:', {
+        studentId,
+        slotId,
+        date,
+        subjectCode,
+        section,
+    });
+
+    // Create the attendance record
+    const record = await markAttendance(
+        studentId,
+        slotId,
+        date,
+        'PRESENT',
+        'ACADEMIC',
+        studentId, // markedBy = self
+        'STUDENT', // markedByRole
+        subjectCode,
+        subjectName,
+        section,
+        branch,
+        year,
+        false, // isOverride
+        'Self-marked for demo'
+    );
+
+    if (record) {
+        console.log('[studentSelfMark] Successfully marked attendance for demo');
+    } else {
+        console.error('[studentSelfMark] Failed to mark attendance');
+    }
+
+    return record;
+};
+
+/**
+ * Get real-time performance metrics for a student
+ * Calculates attendance percentage based on today's schedule
+ */
+export const getStudentPerformanceMetrics = async (
+    studentId: string,
+    date: string,
+    year: string,
+    branch: string,
+    section: string
+): Promise<{
+    totalClasses: number;
+    attended: number;
+    absent: number;
+    notMarked: number;
+    percentage: number;
+}> => {
+    if (!firebaseReady || !database) {
+        return {
+            totalClasses: 0,
+            attended: 0,
+            absent: 0,
+            notMarked: 0,
+            percentage: 0,
+        };
+    }
+
+    try {
+        const recordsRef = ref(
+            database,
+            `${ATTENDANCE_PATHS.RECORDS}/${year}/${branch}/${section}/${date}`
+        );
+        const snapshot = await get(recordsRef);
+
+        if (!snapshot.exists()) {
+            return {
+                totalClasses: 4, // Default 4 slots
+                attended: 0,
+                absent: 0,
+                notMarked: 4,
+                percentage: 0,
+            };
+        }
+
+        const allRecords: AttendanceRecord[] = Object.values(snapshot.val());
+        const studentRecords = allRecords.filter(r => r.studentId === studentId);
+
+        const attended = studentRecords.filter(r => r.status === 'PRESENT').length;
+        const absent = studentRecords.filter(r => r.status === 'ABSENT').length;
+        const totalMarked = studentRecords.length;
+        const totalClasses = 4; // 4 slots per day
+        const notMarked = totalClasses - totalMarked;
+
+        return {
+            totalClasses,
+            attended,
+            absent,
+            notMarked,
+            percentage: totalMarked > 0 ? Math.round((attended / totalMarked) * 100) : 0,
+        };
+    } catch (error) {
+        console.error('Error getting performance metrics:', error);
+        return {
+            totalClasses: 0,
+            attended: 0,
+            absent: 0,
+            notMarked: 0,
+            percentage: 0,
+        };
+    }
+};
+
+/**
+ * Subscribe to real-time performance metrics
+ */
+export const subscribeToPerformanceMetrics = (
+    studentId: string,
+    date: string,
+    year: string,
+    branch: string,
+    section: string,
+    callback: (metrics: {
+        totalClasses: number;
+        attended: number;
+        absent: number;
+        notMarked: number;
+        percentage: number;
+    }) => void
+): (() => void) => {
+    if (!firebaseReady || !database) {
+        callback({
+            totalClasses: 4,
+            attended: 0,
+            absent: 0,
+            notMarked: 4,
+            percentage: 0,
+        });
+        return () => { };
+    }
+
+    const recordsRef = ref(
+        database,
+        `${ATTENDANCE_PATHS.RECORDS}/${year}/${branch}/${section}/${date}`
+    );
+
+    const unsubscribe = onValue(recordsRef, (snapshot) => {
+        if (!snapshot.exists()) {
+            callback({
+                totalClasses: 4,
+                attended: 0,
+                absent: 0,
+                notMarked: 4,
+                percentage: 0,
+            });
+            return;
+        }
+
+        const allRecords: AttendanceRecord[] = Object.values(snapshot.val());
+        const studentRecords = allRecords.filter(r => r.studentId === studentId);
+
+        const attended = studentRecords.filter(r => r.status === 'PRESENT').length;
+        const absent = studentRecords.filter(r => r.status === 'ABSENT').length;
+        const totalMarked = studentRecords.length;
+        const totalClasses = 4;
+        const notMarked = totalClasses - totalMarked;
+
+        callback({
+            totalClasses,
+            attended,
+            absent,
+            notMarked,
+            percentage: totalMarked > 0 ? Math.round((attended / totalMarked) * 100) : 0,
+        });
+    });
+
+    return () => off(recordsRef);
+};

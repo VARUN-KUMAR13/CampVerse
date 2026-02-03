@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import FacultySidebar from "@/components/FacultySidebar";
+import FacultyTopbar from "@/components/FacultyTopbar";
 import { User, Bell, Shield, Save } from "lucide-react";
 
 const FacultySettings = () => {
@@ -21,26 +22,7 @@ const FacultySettings = () => {
       <FacultySidebar />
 
       <div className="flex-1 flex flex-col">
-        {/* Top Bar */}
-        <header className="bg-background border-b border-border px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-foreground">Settings</h1>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <div className="font-medium text-foreground">DSK001</div>
-                <div className="text-sm text-muted-foreground">
-                  Faculty ID: DSK001
-                </div>
-              </div>
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-medium">
-                DS
-              </div>
-            </div>
-          </div>
-        </header>
+        <FacultyTopbar />
 
         <main className="flex-1 p-6">
           <div className="max-w-4xl space-y-6">

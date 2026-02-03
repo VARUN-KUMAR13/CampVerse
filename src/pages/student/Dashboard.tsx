@@ -33,7 +33,10 @@ import {
   isSlotOpen,
   subscribeToStudentAttendance,
   resetDailyAttendance,
+  studentSelfMark,
+  subscribeToPerformanceMetrics,
 } from "@/services/attendanceService";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -59,6 +62,18 @@ const StudentDashboard = () => {
   // Track if student is eligible for attendance (Section B, roll range validation)
   const [isEligibleForAttendance, setIsEligibleForAttendance] = useState(false);
   const [studentSection, setStudentSection] = useState<string | null>(null);
+
+  // Real-time performance metrics
+  const [realTimeMetrics, setRealTimeMetrics] = useState({
+    totalClasses: 4,
+    attended: 0,
+    absent: 0,
+    notMarked: 4,
+    percentage: 0,
+  });
+
+  // Self-marking loading state
+  const [selfMarkingSlot, setSelfMarkingSlot] = useState<string | null>(null);
 
   // Validate if roll number is in Section B range (22B81A0565 to 22B81A05C8)
   const isValidSectionBRollNumber = (rollNo: string): boolean => {
@@ -305,6 +320,75 @@ const StudentDashboard = () => {
     };
   }, [userData?.collegeId, serverTime, isEligibleForAttendance]);
 
+  // Subscribe to real-time performance metrics
+  useEffect(() => {
+    if (!userData?.collegeId || !isEligibleForAttendance) return;
+
+    const today = formatDate(serverTime);
+    const section = "B";
+    const branch = "05";
+    const year = "22";
+    const studentId = userData.collegeId;
+
+    const unsubscribe = subscribeToPerformanceMetrics(
+      studentId,
+      today,
+      year,
+      branch,
+      section,
+      (metrics) => {
+        console.log("[Performance] Real-time metrics updated:", metrics);
+        setRealTimeMetrics(metrics);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [userData?.collegeId, serverTime, isEligibleForAttendance]);
+
+  // Handle self-marking for demo mode
+  const handleSelfMark = async (item: DailyScheduleItem) => {
+    if (!userData?.collegeId || item.status !== "NOT_MARKED") return;
+
+    setSelfMarkingSlot(item.slotId);
+
+    try {
+      const today = formatDate(serverTime);
+      const result = await studentSelfMark(
+        userData.collegeId,
+        item.slotId,
+        today,
+        item.subjectCode,
+        item.subjectName,
+        "B", // section
+        "05", // branch
+        "22" // year
+      );
+
+      if (result) {
+        toast.success(`Marked PRESENT for ${item.subjectName}`, {
+          description: "Attendance saved to Firebase for demo",
+        });
+
+        // Update local state immediately
+        setTodaySchedule((prev) =>
+          prev.map((s) =>
+            s.slotId === item.slotId
+              ? { ...s, status: "PRESENT" as AttendanceStatus, markedByRole: "STUDENT" as AttendanceRole }
+              : s
+          )
+        );
+        setAttendanceMarkedBy((prev) => ({ ...prev, [item.slotId]: "STUDENT" }));
+      } else {
+        toast.error("Failed to mark attendance");
+      }
+    } catch (error) {
+      console.error("Self-mark error:", error);
+      toast.error("Error marking attendance");
+    } finally {
+      setSelfMarkingSlot(null);
+    }
+  };
+
   // Load performance metrics
   useEffect(() => {
     // In a real app, this would fetch from Firebase
@@ -531,10 +615,10 @@ const StudentDashboard = () => {
     <div className="flex min-h-screen bg-background">
       <StudentSidebar />
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col overflow-hidden">
         <StudentTopbar studentId={userData?.collegeId || ""} />
 
-        <main className="flex-1 p-6 space-y-6">
+        <main className="flex-1 p-6 space-y-6 overflow-y-auto">
           {/* Welcome Section */}
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
@@ -577,6 +661,10 @@ const StudentDashboard = () => {
                       // More prominent blue background for admin-marked attendance
                       bgClass = "bg-blue-500/20 hover:bg-blue-500/25";
                       borderClass = "border-l-4 border-l-blue-500";
+                    } else if (markedByRole === "STUDENT") {
+                      // Purple for student self-marked (demo mode)
+                      bgClass = "bg-purple-500/20 hover:bg-purple-500/25";
+                      borderClass = "border-l-4 border-l-purple-500";
                     } else {
                       // Default for present - treat as admin-marked (blue)
                       bgClass = "bg-blue-500/20 hover:bg-blue-500/25";
@@ -593,11 +681,15 @@ const StudentDashboard = () => {
                   return (
                     <div
                       key={item.slotId}
+                      onClick={() => item.status === "NOT_MARKED" && handleSelfMark(item)}
                       className={cn(
                         "flex items-center justify-between p-4 rounded-lg transition-all duration-300",
                         bgClass,
-                        borderClass
+                        borderClass,
+                        item.status === "NOT_MARKED" && "cursor-pointer hover:ring-2 hover:ring-primary/50",
+                        selfMarkingSlot === item.slotId && "opacity-50 pointer-events-none"
                       )}
+                      title={item.status === "NOT_MARKED" ? "Click to mark PRESENT (Demo Mode)" : undefined}
                     >
                       <div className="flex-1">
                         <div className="font-medium text-foreground">
@@ -612,12 +704,61 @@ const StudentDashboard = () => {
                           {item.time}
                         </div>
                       </div>
-                      {getStatusBadge(item.status, markedByRole)}
+                      <div className="flex items-center gap-2">
+                        {selfMarkingSlot === item.slotId && (
+                          <RefreshCw className="w-4 h-4 animate-spin text-primary" />
+                        )}
+                        {getStatusBadge(item.status, markedByRole)}
+                      </div>
                     </div>
                   );
                 })}
               </div>
 
+            </CardContent>
+          </Card>
+
+          {/* Today's Attendance Summary - Real-time Metrics */}
+          <Card className="border-border/50 shadow-lg bg-gradient-to-r from-primary/5 to-primary/10">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-primary" />
+                Today's Attendance Summary
+                <Badge variant="outline" className="ml-auto text-xs">
+                  Live
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-4 gap-4">
+                <div className="text-center p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                  <div className="text-2xl font-bold text-green-500">{realTimeMetrics.attended}</div>
+                  <div className="text-xs text-muted-foreground">Present</div>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                  <div className="text-2xl font-bold text-red-500">{realTimeMetrics.absent}</div>
+                  <div className="text-xs text-muted-foreground">Absent</div>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-gray-500/10 border border-gray-500/20">
+                  <div className="text-2xl font-bold text-gray-500">{realTimeMetrics.notMarked}</div>
+                  <div className="text-xs text-muted-foreground">Not Marked</div>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-primary/10 border border-primary/20">
+                  <div className={cn(
+                    "text-2xl font-bold",
+                    realTimeMetrics.percentage >= 75 ? "text-green-500" :
+                      realTimeMetrics.percentage >= 50 ? "text-yellow-500" : "text-red-500"
+                  )}>
+                    {realTimeMetrics.percentage}%
+                  </div>
+                  <div className="text-xs text-muted-foreground">Attendance</div>
+                </div>
+              </div>
+              {realTimeMetrics.notMarked > 0 && (
+                <p className="text-xs text-muted-foreground mt-3 text-center">
+                  💡 Tip: Click on "Not Marked" slots above to mark yourself present for demo
+                </p>
+              )}
             </CardContent>
           </Card>
 
