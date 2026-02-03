@@ -389,55 +389,39 @@ const StudentDashboard = () => {
     }
   };
 
-  // Load performance metrics
+  // Load performance metrics - now uses real-time data from today's schedule
   useEffect(() => {
-    // In a real app, this would fetch from Firebase
-    const mockMetrics: SubjectAttendanceSummary[] = [
-      {
-        subjectCode: "22CS401",
-        subjectName: "Linux Programming Attendance",
-        totalClasses: 30,
-        attended: 24,
-        percentage: 78,
-        status: "SATISFACTORY",
-      },
-      {
-        subjectCode: "22HS301",
-        subjectName: "Business Economics and Financial Analysis Attendance",
-        totalClasses: 28,
-        attended: 21,
-        percentage: 75,
-        status: "SATISFACTORY",
-      },
-      {
-        subjectCode: "22HS501",
-        subjectName: "Proffesional Elective - lll",
-        totalClasses: 25,
-        attended: 20,
-        percentage: 80,
-        status: "SATISFACTORY",
-      },
-      {
-        subjectCode: "22HS601",
-        subjectName: "Proffesional Elective - lV",
-        totalClasses: 22,
-        attended: 15,
-        percentage: 70,
-        status: "WARNING",
-      },
-    ];
+    // Calculate metrics from today's schedule (real-time data)
+    const presentCount = todaySchedule.filter(s => s.status === "PRESENT").length;
+    const absentCount = todaySchedule.filter(s => s.status === "ABSENT").length;
+    const totalMarked = presentCount + absentCount;
+    const totalClasses = todaySchedule.length;
 
-    setPerformanceMetrics(mockMetrics);
+    // Build per-subject metrics from today's schedule
+    const subjectMetrics: SubjectAttendanceSummary[] = todaySchedule.map(item => {
+      const isPresent = item.status === "PRESENT";
+      const isAbsent = item.status === "ABSENT";
+      const percentage = isPresent ? 100 : (isAbsent ? 0 : 0);
 
-    // Calculate overall
-    const total = mockMetrics.reduce((sum, m) => sum + m.totalClasses, 0);
-    const attended = mockMetrics.reduce((sum, m) => sum + m.attended, 0);
-    setOverallAttendance({
-      totalClasses: total,
-      attended,
-      percentage: total > 0 ? Math.round((attended / total) * 100) : 0,
+      return {
+        subjectCode: item.subjectCode,
+        subjectName: item.subjectName,
+        totalClasses: 1,
+        attended: isPresent ? 1 : 0,
+        percentage,
+        status: isPresent ? "SATISFACTORY" as const : (isAbsent ? "CRITICAL" as const : "WARNING" as const),
+      };
     });
-  }, []);
+
+    setPerformanceMetrics(subjectMetrics);
+
+    // Calculate overall attendance
+    setOverallAttendance({
+      totalClasses: totalClasses,
+      attended: presentCount,
+      percentage: totalMarked > 0 ? Math.round((presentCount / totalMarked) * 100) : 0,
+    });
+  }, [todaySchedule]);
 
   const refreshAttendance = async () => {
     setIsRefreshing(true);
@@ -497,16 +481,36 @@ const StudentDashboard = () => {
   const getStatusBadge = (status: AttendanceStatus, markedByRole?: AttendanceRole) => {
     switch (status) {
       case "PRESENT":
-        // Green for Faculty, Blue for Admin
-        const bgColor = markedByRole === 'FACULTY' ? 'bg-green-500/20' : 'bg-blue-500/20';
-        const textColor = markedByRole === 'FACULTY' ? 'text-green-400' : 'text-blue-400';
-        const borderColor = markedByRole === 'FACULTY' ? 'border-green-500/30' : 'border-blue-500/30';
-        const hoverBg = markedByRole === 'FACULTY' ? 'hover:bg-green-500/30' : 'hover:bg-blue-500/30';
+        // Color coding: Green=Faculty, Blue=Admin, Purple=Student (Demo)
+        let bgColor = 'bg-blue-500/20';
+        let textColor = 'text-blue-400';
+        let borderColor = 'border-blue-500/30';
+        let hoverBg = 'hover:bg-blue-500/30';
+        let label = 'Present';
+
+        if (markedByRole === 'FACULTY') {
+          bgColor = 'bg-green-500/20';
+          textColor = 'text-green-400';
+          borderColor = 'border-green-500/30';
+          hoverBg = 'hover:bg-green-500/30';
+        } else if (markedByRole === 'STUDENT') {
+          // Purple for student self-marked (Demo Mode)
+          bgColor = 'bg-purple-500/20';
+          textColor = 'text-purple-400';
+          borderColor = 'border-purple-500/30';
+          hoverBg = 'hover:bg-purple-500/30';
+          label = 'Present (Demo)';
+        } else if (markedByRole === 'ADMIN' || markedByRole === 'SUB_ADMIN') {
+          bgColor = 'bg-blue-500/20';
+          textColor = 'text-blue-400';
+          borderColor = 'border-blue-500/30';
+          hoverBg = 'hover:bg-blue-500/30';
+        }
 
         return (
           <Badge className={`${bgColor} ${textColor} ${borderColor} ${hoverBg}`}>
             <CheckCircle2 className="w-3 h-3 mr-1" />
-            Present
+            {label}
           </Badge>
         );
       case "ABSENT":
