@@ -494,12 +494,12 @@ const StudentDashboard = () => {
           borderColor = 'border-green-500/30';
           hoverBg = 'hover:bg-green-500/30';
         } else if (markedByRole === 'STUDENT') {
-          // Purple for student self-marked (Demo Mode)
-          bgColor = 'bg-purple-500/20';
-          textColor = 'text-purple-400';
-          borderColor = 'border-purple-500/30';
-          hoverBg = 'hover:bg-purple-500/30';
-          label = 'Present (Demo)';
+          // Green for student self-marked (Demo Mode) - same as faculty
+          bgColor = 'bg-green-500/20';
+          textColor = 'text-green-400';
+          borderColor = 'border-green-500/30';
+          hoverBg = 'hover:bg-green-500/30';
+          label = 'Present';
         } else if (markedByRole === 'ADMIN' || markedByRole === 'SUB_ADMIN') {
           bgColor = 'bg-blue-500/20';
           textColor = 'text-blue-400';
@@ -666,9 +666,9 @@ const StudentDashboard = () => {
                       bgClass = "bg-blue-500/20 hover:bg-blue-500/25";
                       borderClass = "border-l-4 border-l-blue-500";
                     } else if (markedByRole === "STUDENT") {
-                      // Purple for student self-marked (demo mode)
-                      bgClass = "bg-purple-500/20 hover:bg-purple-500/25";
-                      borderClass = "border-l-4 border-l-purple-500";
+                      // Green for student self-marked (demo mode) - same as faculty
+                      bgClass = "bg-green-500/20 hover:bg-green-500/25";
+                      borderClass = "border-l-4 border-l-green-500";
                     } else {
                       // Default for present - treat as admin-marked (blue)
                       bgClass = "bg-blue-500/20 hover:bg-blue-500/25";
