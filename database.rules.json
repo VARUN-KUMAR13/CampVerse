@@ -1,0 +1,60 @@
+{
+    "rules": {
+        ".read": false,
+        ".write": false,
+        "attendance": {
+            "records": {
+                ".read": true,
+                ".write": "auth != null"
+            },
+            "slots": {
+                ".read": true,
+                ".write": "auth != null"
+            },
+            "slotLocks": {
+                ".read": true,
+                ".write": "auth != null"
+            },
+            "subjects": {
+                ".read": true,
+                ".write": "auth != null"
+            },
+            "config": {
+                ".read": true,
+                ".write": "auth != null"
+            },
+            "studentSummary": {
+                ".read": true,
+                ".write": "auth != null"
+            }
+        },
+        "students": {
+            ".read": true,
+            ".write": "auth != null"
+        },
+        "notifications": {
+            ".read": "auth != null",
+            ".write": "auth != null"
+        },
+        "schedules": {
+            ".read": "auth != null",
+            ".write": "auth != null"
+        },
+        "users": {
+            ".read": "auth != null",
+            ".write": "auth != null"
+        },
+        "clubs": {
+            ".read": "auth != null",
+            ".write": "auth != null"
+        },
+        "exams": {
+            ".read": "auth != null",
+            ".write": "auth != null"
+        },
+        "jobs": {
+            ".read": "auth != null",
+            ".write": "auth != null"
+        }
+    }
+}

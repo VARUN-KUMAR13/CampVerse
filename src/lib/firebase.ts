@@ -42,9 +42,13 @@ try {
     storage = getStorage(app);
     firestore = getFirestore(app);
 
-    // Initialize Analytics if supported and in browser environment
-    if (typeof window !== 'undefined' && config.FIREBASE_CONFIG.measurementId) {
-      analytics = getAnalytics(app);
+    // Initialize Analytics only if feature is enabled and in browser environment
+    if (typeof window !== 'undefined' && config.FIREBASE_CONFIG.measurementId && config.FEATURES?.ANALYTICS) {
+      try {
+        analytics = getAnalytics(app);
+      } catch (analyticsError) {
+        console.log("Analytics disabled or unavailable");
+      }
     }
 
     firebaseReady = true;

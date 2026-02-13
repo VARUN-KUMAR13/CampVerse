@@ -1,8 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -13,87 +12,74 @@ import {
 import StudentSidebar from "@/components/StudentSidebar";
 import StudentTopbar from "@/components/StudentTopbar";
 import { useAuth } from "@/contexts/AuthContext";
-import { User, Clock, FileText } from "lucide-react";
+import { User, Clock, FileText, BookOpen, Loader2, Download } from "lucide-react";
+
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
+interface CourseResource {
+  _id?: string;
+  name: string;
+  type: string;
+  fileData?: string;
+  fileName?: string;
+  fileSize?: number;
+}
+
+interface SyllabusTopic {
+  topic: string;
+  duration: string;
+}
+
+interface Course {
+  _id: string;
+  courseCode: string;
+  courseName: string;
+  credits: number;
+  maxStudents: number;
+  description: string;
+  objectives: string[];
+  syllabus: SyllabusTopic[];
+  resources: CourseResource[];
+  facultyId: string;
+  facultyName: string;
+  status: string;
+  color: string;
+  createdAt: string;
+}
 
 const StudentCourses = () => {
   const { userData } = useAuth();
-  const [selectedCourse, setSelectedCourse] = useState<any>(null);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
 
-  const courses = [
-    {
-      id: "CS001",
-      name: "Python for EDA",
-      instructor: "Dr. D. Sujan Kumar",
-      credits: 4,
-      hours: 60,
-      progress: 75,
-      color: "bg-blue-500",
-    },
-    {
-      id: "CS002",
-      name: "Operating Systems",
-      instructor: "G.Deepika",
-      credits: 4,
-      hours: 60,
-      progress: 65,
-      color: "bg-green-500",
-    },
-    {
-      id: "CS003",
-      name: "Design & Analysis of Algorithms",
-      instructor: "Dr. M. Raghava",
-      credits: 4,
-      hours: 60,
-      progress: 80,
-      color: "bg-orange-500",
-    },
-    {
-      id: "CS004",
-      name: "Software Engineering",
-      instructor: "Dr. P. Madhavi",
-      credits: 4,
-      hours: 60,
-      progress: 70,
-      color: "bg-purple-500",
-    },
-    {
-      id: "CS005",
-      name: "Computational Statistics",
-      instructor: "I.B.N.Hima Bindu",
-      credits: 4,
-      hours: 60,
-      progress: 60,
-      color: "bg-purple-600",
-    },
-  ];
+  // Fetch all active courses
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`${API_BASE}/courses`);
+        if (res.ok) {
+          const data = await res.json();
+          setCourses(data.filter((c: Course) => c.status === "Active"));
+        }
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCourses();
+  }, []);
 
-  const courseDetails = {
-    CS002: {
-      title: "CS2002 - Operating Systems",
-      description:
-        "This course covers fundamental concepts of operating systems including process management, memory management, file systems, and concurrency. Students will gain hands-on experience with system programming and OS internals.",
-      objectives: [
-        "Understand OS architecture",
-        "Learn process scheduling",
-        "Master memory management",
-        "Study file systems",
-        "Implement system calls",
-      ],
-      syllabus: [
-        { topic: "OS Overview", duration: "2 weeks" },
-        { topic: "Process Management", duration: "3 weeks" },
-        { topic: "Memory Management", duration: "3 weeks" },
-        { topic: "File Systems", duration: "2 weeks" },
-        { topic: "Concurrency", duration: "2 weeks" },
-        { topic: "System Programming", duration: "2 weeks" },
-      ],
-      resources: [
-        { name: "OS Textbook", type: "PDF", icon: "📄" },
-        { name: "Lab Manual", type: "PDF", icon: "📄" },
-        { name: "System Calls Guide", type: "PDF", icon: "📄" },
-        { name: "Practice Problems", type: "DOC", icon: "📄" },
-      ],
-    },
+  // Download a resource
+  const handleDownload = (resource: CourseResource) => {
+    if (resource.fileData) {
+      const link = document.createElement("a");
+      link.href = resource.fileData;
+      link.download = resource.fileName || resource.name;
+      link.click();
+    }
   };
 
   return (
@@ -109,163 +95,181 @@ const StudentCourses = () => {
             <h1 className="text-2xl font-bold text-foreground">My Courses</h1>
           </div>
 
-          {/* Courses Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {courses.map((course) => (
-              <Card
-                key={course.id}
-                className="hover:shadow-lg transition-shadow"
-              >
-                <CardHeader className="pb-4">
-                  <div
-                    className={`w-full h-20 ${course.color} rounded-lg flex items-center justify-center text-white font-bold text-lg mb-4`}
-                  >
-                    {course.id}
-                  </div>
-                  <CardTitle className="text-lg">{course.name}</CardTitle>
-                  <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-                    <User className="w-4 h-4" />
-                    <span>{course.instructor}</span>
-                  </div>
-                </CardHeader>
+          {/* Loading */}
+          {loading ? (
+            <div className="flex items-center justify-center py-24">
+              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : courses.length === 0 ? (
+            <div className="text-center py-24">
+              <BookOpen className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
+              <p className="text-lg font-medium text-muted-foreground">
+                No courses available yet
+              </p>
+              <p className="text-sm text-muted-foreground/60 mt-1">
+                Courses will appear here once your faculty adds them.
+              </p>
+            </div>
+          ) : (
+            /* Courses Grid */
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {courses.map((course) => (
+                <Card key={course._id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader className="pb-4">
+                    <div
+                      className={`w-full h-20 ${course.color || "bg-blue-500"} rounded-lg flex items-center justify-center text-white font-bold text-lg mb-4`}
+                    >
+                      {course.courseCode}
+                    </div>
+                    <CardTitle className="text-lg">{course.courseName}</CardTitle>
+                    <div className="flex items-center space-x-1 text-sm text-muted-foreground">
+                      <User className="w-4 h-4" />
+                      <span>{course.facultyName}</span>
+                    </div>
+                  </CardHeader>
 
-                <CardContent className="space-y-4">
-                  {/* Course Stats */}
-                  <div className="grid grid-cols-2 gap-4 text-center">
-                    <div>
-                      <div className="text-2xl font-bold text-foreground">
-                        {course.credits}
+                  <CardContent className="space-y-4">
+                    {/* Course Stats */}
+                    <div className="grid grid-cols-2 gap-4 text-center">
+                      <div>
+                        <div className="text-2xl font-bold text-foreground">
+                          {course.credits}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Credits</div>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        Credits
+                      <div>
+                        <div className="text-2xl font-bold text-foreground">
+                          {course.maxStudents}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Students</div>
                       </div>
                     </div>
-                    <div>
-                      <div className="text-2xl font-bold text-foreground">
-                        {course.hours}
-                      </div>
-                      <div className="text-xs text-muted-foreground">Hours</div>
-                    </div>
-                  </div>
 
-                  {/* Progress */}
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span>Course Progress</span>
-                      <span className="font-medium">{course.progress}%</span>
-                    </div>
-                    <Progress value={course.progress} className="h-2" />
-                  </div>
+                    {/* Details Button */}
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => setSelectedCourse(course)}
+                        >
+                          <FileText className="w-4 h-4 mr-2" />
+                          Details
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>
+                            {course.courseCode} - {course.courseName}
+                          </DialogTitle>
+                        </DialogHeader>
 
-                  {/* Details Button */}
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => setSelectedCourse(course)}
-                      >
-                        <FileText className="w-4 h-4 mr-2" />
-                        Details
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>
-                          {courseDetails["CS002"]?.title}
-                        </DialogTitle>
-                      </DialogHeader>
+                        <div className="space-y-6">
+                          {/* Course Description */}
+                          {course.description && (
+                            <div>
+                              <h4 className="font-semibold text-foreground mb-2">
+                                Course Description
+                              </h4>
+                              <p className="text-muted-foreground">{course.description}</p>
+                            </div>
+                          )}
 
-                      <div className="space-y-6">
-                        {/* Course Description */}
-                        <div>
-                          <h4 className="font-semibold text-foreground mb-2">
-                            Course Description
-                          </h4>
-                          <p className="text-muted-foreground">
-                            {courseDetails["CS002"]?.description}
-                          </p>
-                        </div>
+                          {/* Course Objectives */}
+                          {course.objectives && course.objectives.length > 0 && (
+                            <div>
+                              <h4 className="font-semibold text-foreground mb-2">
+                                Course Objectives
+                              </h4>
+                              <ul className="space-y-1">
+                                {course.objectives.map((objective, index) => (
+                                  <li
+                                    key={index}
+                                    className="text-muted-foreground flex items-start"
+                                  >
+                                    <span className="mr-2">•</span>
+                                    {objective}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
 
-                        {/* Course Objectives */}
-                        <div>
-                          <h4 className="font-semibold text-foreground mb-2">
-                            Course Objectives
-                          </h4>
-                          <ul className="space-y-1">
-                            {courseDetails["CS002"]?.objectives.map(
-                              (objective, index) => (
-                                <li
-                                  key={index}
-                                  className="text-muted-foreground flex items-start"
-                                >
-                                  <span className="mr-2">•</span>
-                                  {objective}
-                                </li>
-                              ),
-                            )}
-                          </ul>
-                        </div>
-
-                        {/* Course Syllabus */}
-                        <div>
-                          <h4 className="font-semibold text-foreground mb-2">
-                            Course Syllabus
-                          </h4>
-                          <div className="space-y-2">
-                            {courseDetails["CS002"]?.syllabus.map(
-                              (item, index) => (
-                                <div
-                                  key={index}
-                                  className="flex justify-between items-center p-2 bg-muted/30 rounded"
-                                >
-                                  <span className="text-foreground">
-                                    {item.topic}
-                                  </span>
-                                  <span className="text-sm text-muted-foreground">
-                                    {item.duration}
-                                  </span>
-                                </div>
-                              ),
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Course Resources */}
-                        <div>
-                          <h4 className="font-semibold text-foreground mb-2">
-                            Course Resources
-                          </h4>
-                          <div className="grid grid-cols-2 gap-3">
-                            {courseDetails["CS002"]?.resources.map(
-                              (resource, index) => (
-                                <div
-                                  key={index}
-                                  className="flex items-center space-x-2 p-3 bg-primary/10 rounded-lg"
-                                >
-                                  <span className="text-2xl">
-                                    {resource.icon}
-                                  </span>
-                                  <div>
-                                    <div className="font-medium text-primary">
-                                      {resource.name}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">
-                                      {resource.type}
-                                    </div>
+                          {/* Course Syllabus */}
+                          {course.syllabus && course.syllabus.length > 0 && (
+                            <div>
+                              <h4 className="font-semibold text-foreground mb-2">
+                                Course Syllabus
+                              </h4>
+                              <div className="space-y-2">
+                                {course.syllabus.map((item, index) => (
+                                  <div
+                                    key={index}
+                                    className="flex justify-between items-center p-2 bg-muted/30 rounded"
+                                  >
+                                    <span className="text-foreground">{item.topic}</span>
+                                    {item.duration && (
+                                      <span className="text-sm text-muted-foreground">
+                                        {item.duration}
+                                      </span>
+                                    )}
                                   </div>
-                                </div>
-                              ),
-                            )}
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Course Resources */}
+                          {course.resources && course.resources.length > 0 && (
+                            <div>
+                              <h4 className="font-semibold text-foreground mb-2">
+                                Course Resources
+                              </h4>
+                              <div className="grid grid-cols-2 gap-3">
+                                {course.resources.map((resource, index) => (
+                                  <div
+                                    key={index}
+                                    className="flex items-center space-x-2 p-3 bg-primary/10 rounded-lg cursor-pointer hover:bg-primary/20 transition-colors"
+                                    onClick={() => handleDownload(resource)}
+                                  >
+                                    <FileText className="w-5 h-5 text-primary" />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-medium text-primary text-sm truncate">
+                                        {resource.name}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">
+                                        {resource.type}
+                                      </div>
+                                    </div>
+                                    <Download className="w-4 h-4 text-primary/60" />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Meta */}
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground pt-2 border-t">
+                            <span className="flex items-center gap-1">
+                              <User className="w-3 h-3" />
+                              {course.facultyName}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {course.credits} credits
+                            </span>
+                            <Badge variant="default" className="text-xs">
+                              {course.status}
+                            </Badge>
                           </div>
                         </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                      </DialogContent>
+                    </Dialog>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </main>
       </div>
     </div>

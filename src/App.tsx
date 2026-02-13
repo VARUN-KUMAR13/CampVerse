@@ -39,11 +39,11 @@ import NotFound from "./pages/NotFound";
 // Student Dashboard Pages
 import StudentDashboard from "./pages/student/Dashboard";
 import StudentCourses from "./pages/student/Courses";
-import StudentSchedule from "./pages/student/Schedule";
+
 import StudentResults from "./pages/student/Results";
 // StudentAttendance removed - attendance is shown on Dashboard
 import StudentAssignments from "./pages/student/Assignments";
-import StudentExams from "./pages/student/Exams";
+
 import StudentPlacement from "./pages/student/Placement";
 import StudentEvents from "./pages/student/Events";
 import StudentClubs from "./pages/student/Clubs";
@@ -66,7 +66,7 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import AdminPlacement from "./pages/admin/Placement";
 import AdminEvents from "./pages/admin/Events";
 import AdminClubs from "./pages/admin/Clubs";
-import AdminExams from "./pages/admin/Exams";
+import AdminScheduler from "./pages/admin/Scheduler";
 import AdminAlerts from "./pages/admin/Alerts";
 import AdminAttendance from "./pages/admin/Attendance";
 import StudentDataManagement from "./pages/admin/StudentDataManagement";
@@ -152,14 +152,6 @@ const AppContent = () => {
           }
         />
         <Route
-          path="/student/schedule"
-          element={
-            <ProtectedRoute requiredRole="student">
-              <StudentSchedule />
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/student/results"
           element={
             <ProtectedRoute requiredRole="student">
@@ -173,14 +165,6 @@ const AppContent = () => {
           element={
             <ProtectedRoute requiredRole="student">
               <StudentAssignments />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/student/exams"
-          element={
-            <ProtectedRoute requiredRole="student">
-              <StudentExams />
             </ProtectedRoute>
           }
         />
@@ -349,10 +333,10 @@ const AppContent = () => {
           }
         />
         <Route
-          path="/admin/exam"
+          path="/admin/scheduler"
           element={
             <ProtectedRoute requiredRole="admin">
-              <AdminExams />
+              <AdminScheduler />
             </ProtectedRoute>
           }
         />

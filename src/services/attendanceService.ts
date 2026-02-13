@@ -6,6 +6,7 @@ import {
     set,
     push,
     update,
+    remove,
     onValue,
     off,
     serverTimestamp,
@@ -40,21 +41,12 @@ import {
 
 /**
  * Get current server time with offset
+ * Falls back to local time if Firebase is unavailable
  */
 export const getServerTime = async (): Promise<Date> => {
-    if (!firebaseReady || !database) {
-        return new Date();
-    }
-
-    try {
-        const offsetRef = ref(database, '.info/serverTimeOffset');
-        const snapshot = await get(offsetRef);
-        const offset = snapshot.val() || 0;
-        return new Date(Date.now() + offset);
-    } catch (error) {
-        console.error('Error getting server time:', error);
-        return new Date();
-    }
+    // Always return local time - Firebase serverTimeOffset can cause issues
+    // The local time is accurate enough for attendance tracking
+    return new Date();
 };
 
 /**
@@ -848,7 +840,10 @@ export const adminOverrideAttendance = async (
 
 /**
  * Get all students for a section from Firebase
- * Tries multiple paths to accommodate different Firebase structures
+ * Students are stored at root level with numeric keys ("0", "1", "2"...)
+ * Each student has: "ROLL NO", "Name of the student", "Sno"
+ * Roll number format: 22B81A05XX where XX is 65-C8 (hex)
+ * All students in this range belong to Section B
  */
 export const getStudentsForSection = async (
     year: string,
@@ -860,15 +855,73 @@ export const getStudentsForSection = async (
         console.log('Firebase not ready, returning mock students for section', section);
         return [
             { rollNumber: '22B81A05C3', name: 'KATAKAM VARUN KUMAR', section, branch, year },
-            { rollNumber: `22B81A05${section}1`, name: 'Student 1', section, branch, year },
-            { rollNumber: `22B81A05${section}2`, name: 'Student 2', section, branch, year },
+            { rollNumber: `22B81A05C1`, name: 'Student 1', section, branch, year },
+            { rollNumber: `22B81A05C2`, name: 'Student 2', section, branch, year },
         ];
     }
 
     try {
         const students: AttendanceStudent[] = [];
 
-        // Try path 1: students/section_{section}
+        // Primary path: Root level with numeric keys (0, 1, 2...)
+        // This is the actual structure used in your Firebase
+        const rootRef = ref(database);
+        const rootSnapshot = await get(rootRef);
+
+        if (rootSnapshot.exists()) {
+            const allData = rootSnapshot.val();
+
+            // Iterate through all root-level entries
+            for (const key in allData) {
+                const student = allData[key];
+
+                // Skip non-student entries (like 'attendance', 'records', 'slotLocks', etc.)
+                if (!student || typeof student !== 'object') continue;
+                if (key === 'attendance' || key === 'records' || key === 'slotLocks' ||
+                    key === 'studentSummary' || key === 'notifications' || key === 'users' ||
+                    key === 'schedules' || key === 'clubs' || key === 'exams') continue;
+
+                // Check if this is a student record (has ROLL NO field)
+                const rollNo = student['ROLL NO'] || student.rollNumber || student.collegeId;
+                if (!rollNo) continue;
+
+                // For Section B: Include all students with roll numbers 22B81A0565 to 22B81A05C8
+                // These roll numbers have pattern: 22B81A05 + (65-C8)
+                if (section === 'B') {
+                    // Check if roll number matches the pattern for Section B students
+                    if (rollNo.startsWith('22B81A05') || rollNo.startsWith(`${year}B81A${branch}`)) {
+                        students.push({
+                            rollNumber: rollNo,
+                            name: student['Name of the student'] || student.name || student.studentName || 'Unknown',
+                            section,
+                            branch,
+                            year,
+                        });
+                    }
+                } else {
+                    // For other sections, try to match section letter in roll number
+                    // This handles cases where roll numbers might contain section letter
+                    const lastTwoChars = rollNo.slice(-2);
+                    const firstCharOfLastTwo = lastTwoChars[0];
+                    if (firstCharOfLastTwo === section) {
+                        students.push({
+                            rollNumber: rollNo,
+                            name: student['Name of the student'] || student.name || student.studentName || 'Unknown',
+                            section,
+                            branch,
+                            year,
+                        });
+                    }
+                }
+            }
+
+            if (students.length > 0) {
+                console.log(`Found ${students.length} students for section ${section} from root path`);
+                return students.sort((a, b) => a.rollNumber.localeCompare(b.rollNumber));
+            }
+        }
+
+        // Fallback: Try students/section_{section} path
         const sectionPath = `students/section_${section}`;
         const sectionRef = ref(database, sectionPath);
         const sectionSnapshot = await get(sectionRef);
@@ -887,60 +940,6 @@ export const getStudentsForSection = async (
             }
             console.log(`Found ${students.length} students at path: ${sectionPath}`);
             return students.sort((a, b) => a.rollNumber.localeCompare(b.rollNumber));
-        }
-
-        // Try path 2: students (filter by section in roll number)
-        const studentsRef = ref(database, 'students');
-        const studentsSnapshot = await get(studentsRef);
-
-        if (studentsSnapshot.exists()) {
-            const data = studentsSnapshot.val();
-            for (const key in data) {
-                const student = data[key];
-                const rollNo = student.rollNumber || student.collegeId || student['ROLL NO'] || key;
-                // Check if roll number contains the section letter at position 5 (0-indexed)
-                if (rollNo.length >= 6 && rollNo[5] === section) {
-                    students.push({
-                        rollNumber: rollNo,
-                        name: student.name || student.studentName || student['Name of the student'] || 'Unknown',
-                        section,
-                        branch,
-                        year,
-                    });
-                }
-            }
-            if (students.length > 0) {
-                console.log(`Found ${students.length} students for section ${section} from students collection`);
-                return students.sort((a, b) => a.rollNumber.localeCompare(b.rollNumber));
-            }
-        }
-
-        // Try path 3: Root path with ROLL NO format (your original structure)
-        const rootRef = ref(database);
-        const rootSnapshot = await get(rootRef);
-
-        if (rootSnapshot.exists()) {
-            const allData = rootSnapshot.val();
-            for (const key in allData) {
-                const student = allData[key];
-                if (student && (student['ROLL NO'] || student.rollNumber)) {
-                    const rollNo = student['ROLL NO'] || student.rollNumber;
-                    // Filter by section - check if section letter is in the roll number
-                    if (rollNo.includes(section) || (rollNo.length >= 6 && rollNo[5] === section)) {
-                        students.push({
-                            rollNumber: rollNo,
-                            name: student['Name of the student'] || student.name || student.Name || rollNo,
-                            section,
-                            branch,
-                            year,
-                        });
-                    }
-                }
-            }
-            if (students.length > 0) {
-                console.log(`Found ${students.length} students for section ${section} from root path`);
-                return students.sort((a, b) => a.rollNumber.localeCompare(b.rollNumber));
-            }
         }
 
         console.log(`No students found for section ${section} in Firebase`);
@@ -1055,6 +1054,115 @@ export const calculateFourWeekAttendance = async (
     }
 };
 
+/**
+ * Get historical attendance per subject for ALL dates
+ * Returns per-subject metrics for performance tracking
+ */
+export const getHistoricalSubjectAttendance = async (
+    studentId: string,
+    year: string,
+    branch: string,
+    section: string,
+    subjects: { subjectCode: string; subjectName: string }[]
+): Promise<SubjectAttendanceSummary[]> => {
+    if (!database) {
+        console.log('[getHistoricalSubjectAttendance] Firebase not ready');
+        return subjects.map(s => ({
+            subjectCode: s.subjectCode,
+            subjectName: s.subjectName,
+            totalClasses: 0,
+            attended: 0,
+            percentage: 0,
+            status: 'WARNING' as const,
+        }));
+    }
+
+    try {
+        // Get all attendance records for this section
+        const recordsPath = `${ATTENDANCE_PATHS.RECORDS}/${year}/${branch}/${section}`;
+        const recordsRef = ref(database, recordsPath);
+        const snapshot = await get(recordsRef);
+
+        if (!snapshot.exists()) {
+            console.log('[getHistoricalSubjectAttendance] No records found');
+            return subjects.map(s => ({
+                subjectCode: s.subjectCode,
+                subjectName: s.subjectName,
+                totalClasses: 0,
+                attended: 0,
+                percentage: 0,
+                status: 'WARNING' as const,
+            }));
+        }
+
+        // Parse all records across all dates
+        const dateRecords = snapshot.val();
+        const subjectStats: Record<string, { total: number; attended: number }> = {};
+
+        // Initialize stats for each subject
+        subjects.forEach(s => {
+            subjectStats[s.subjectCode] = { total: 0, attended: 0 };
+        });
+
+        // Iterate over all dates
+        for (const dateKey in dateRecords) {
+            const dayRecords = dateRecords[dateKey];
+
+            // Iterate over all records for this date
+            for (const recordKey in dayRecords) {
+                const record = dayRecords[recordKey];
+
+                // Only count records for this student
+                if (record.studentId === studentId) {
+                    const subjectCode = record.subjectCode;
+
+                    if (subjectStats[subjectCode]) {
+                        subjectStats[subjectCode].total++;
+                        if (record.status === 'PRESENT' || record.status === 'LATE') {
+                            subjectStats[subjectCode].attended++;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Build summary for each subject
+        const result: SubjectAttendanceSummary[] = subjects.map(s => {
+            const stats = subjectStats[s.subjectCode] || { total: 0, attended: 0 };
+            const percentage = stats.total > 0
+                ? Math.round((stats.attended / stats.total) * 100)
+                : 0;
+
+            let status: 'SATISFACTORY' | 'WARNING' | 'CRITICAL' = 'WARNING';
+            if (percentage >= 75) status = 'SATISFACTORY';
+            else if (percentage < 65) status = 'CRITICAL';
+
+            return {
+                subjectCode: s.subjectCode,
+                subjectName: s.subjectName,
+                totalClasses: stats.total,
+                attended: stats.attended,
+                percentage,
+                status,
+            };
+        });
+
+        console.log('[getHistoricalSubjectAttendance] Results:', result);
+        return result;
+
+    } catch (error) {
+        console.error('[getHistoricalSubjectAttendance] Error:', error);
+        return subjects.map(s => ({
+            subjectCode: s.subjectCode,
+            subjectName: s.subjectName,
+            totalClasses: 0,
+            attended: 0,
+            percentage: 0,
+            status: 'WARNING' as const,
+        }));
+    }
+};
+
 // ==================== INITIALIZATION ====================
 
 /**
@@ -1107,20 +1215,73 @@ export const resetDailyAttendance = async (): Promise<void> => {
         const keysToRemove: string[] = [];
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key && key.includes('attendance_') && key.includes(today)) {
+            if (key && key.includes('attendance')) {
                 keysToRemove.push(key);
             }
         }
 
         keysToRemove.forEach(key => {
             localStorage.removeItem(key);
-            console.log('[resetDailyAttendance] Removed:', key);
+            console.log('[resetDailyAttendance] Removed localStorage:', key);
         });
+
+        // Also clear today's Firebase data for Section B
+        if (database) {
+            try {
+                const attendancePath = `${ATTENDANCE_PATHS.RECORDS}/22/05/B/${today}`;
+                const recordsRef = ref(database, attendancePath);
+                await remove(recordsRef);
+                console.log('[resetDailyAttendance] Cleared Firebase attendance for:', today);
+            } catch (error) {
+                console.error('[resetDailyAttendance] Error clearing Firebase:', error);
+            }
+        }
 
         // Update the last reset date
         setLastResetDate(today);
         console.log('[resetDailyAttendance] Reset complete. Last reset date:', today);
     }
+};
+
+/**
+ * Force reset today's attendance - clears all data regardless of date check
+ * Use this to manually clear attendance and start fresh
+ */
+export const forceResetTodayAttendance = async (): Promise<void> => {
+    const serverTime = await getServerTime();
+    const today = formatDate(serverTime);
+
+    console.log('[forceResetTodayAttendance] Force resetting attendance for:', today);
+
+    // Clear ALL attendance-related items from localStorage
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.includes('attendance')) {
+            keysToRemove.push(key);
+        }
+    }
+
+    keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+        console.log('[forceResetTodayAttendance] Removed localStorage:', key);
+    });
+
+    // Clear Firebase data for today
+    if (database) {
+        try {
+            const attendancePath = `${ATTENDANCE_PATHS.RECORDS}/22/05/B/${today}`;
+            const recordsRef = ref(database, attendancePath);
+            await remove(recordsRef);
+            console.log('[forceResetTodayAttendance] Cleared Firebase attendance for:', today);
+        } catch (error) {
+            console.error('[forceResetTodayAttendance] Error clearing Firebase:', error);
+        }
+    }
+
+    // Clear the last reset date so normal reset will run again
+    localStorage.removeItem('attendance_last_reset_date');
+    console.log('[forceResetTodayAttendance] Reset complete. All attendance cleared.');
 };
 
 /**
@@ -1379,7 +1540,7 @@ export const autoMarkAllAsPresent = async (
         let markedCount = 0;
 
         for (const slot of slots) {
-            const attendancePath = `attendance/${year}/${branch}/${section}/records/${date}`;
+            const attendancePath = `${ATTENDANCE_PATHS.RECORDS}/${year}/${branch}/${section}/${date}`;
             const recordsRef = ref(database, attendancePath);
 
             // Get existing records
@@ -1438,4 +1599,76 @@ export const autoMarkAllAsPresent = async (
 export const shouldAutoMarkAsPresent = (currentTime: Date): boolean => {
     const hour = currentTime.getHours();
     return hour >= 16; // 4:00 PM or later
+};
+
+/**
+ * Get attendance data for calendar coloring
+ * Returns a map of dates to attendance status: 'full' | 'partial' | 'absent' | 'holiday'
+ */
+export type CalendarDayStatus = 'full' | 'partial' | 'absent' | 'holiday' | 'none';
+
+export const getCalendarAttendanceData = async (
+    studentId: string,
+    year: string,
+    branch: string,
+    section: string,
+    startDate: Date,
+    endDate: Date
+): Promise<Record<string, CalendarDayStatus>> => {
+    const result: Record<string, CalendarDayStatus> = {};
+
+    if (!database) {
+        return result;
+    }
+
+    try {
+        const recordsPath = `${ATTENDANCE_PATHS.RECORDS}/${year}/${branch}/${section}`;
+        const recordsRef = ref(database, recordsPath);
+        const snapshot = await get(recordsRef);
+
+        if (!snapshot.exists()) {
+            return result;
+        }
+
+        const dateRecords = snapshot.val();
+        const CLASSES_PER_DAY = 4;
+
+        // Iterate through each date in the records
+        for (const dateKey of Object.keys(dateRecords)) {
+            const records = dateRecords[dateKey];
+            if (!records) continue;
+
+            // Filter records for this student
+            const studentRecords = (Object.values(records) as AttendanceRecord[])
+                .filter((r) => r.studentId === studentId);
+
+            if (studentRecords.length === 0) {
+                // No records for this date means not marked yet
+                result[dateKey] = 'none';
+                continue;
+            }
+
+            const presentCount = studentRecords.filter(r => r.status === 'PRESENT').length;
+            const absentCount = studentRecords.filter(r => r.status === 'ABSENT').length;
+
+            if (presentCount === CLASSES_PER_DAY) {
+                // All classes present
+                result[dateKey] = 'full';
+            } else if (presentCount > 0) {
+                // Partially present
+                result[dateKey] = 'partial';
+            } else if (absentCount === CLASSES_PER_DAY) {
+                // All classes absent
+                result[dateKey] = 'absent';
+            } else {
+                // Mixed or not fully marked
+                result[dateKey] = 'none';
+            }
+        }
+
+        return result;
+    } catch (error) {
+        console.error('[getCalendarAttendanceData] Error:', error);
+        return result;
+    }
 };

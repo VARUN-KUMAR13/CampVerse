@@ -16,7 +16,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
-import { database, isDevelopment, firebaseReady } from "@/lib/firebase";
+import { database, isDevelopment, firebaseReady, auth } from "@/lib/firebase";
 import { ref, onValue, off, get } from "firebase/database";
 import {
   AttendanceRecord,
@@ -33,14 +33,18 @@ import {
   isSlotOpen,
   subscribeToStudentAttendance,
   resetDailyAttendance,
-  studentSelfMark,
   subscribeToPerformanceMetrics,
   autoMarkAllAsPresent,
   shouldAutoMarkAsPresent,
+  getHistoricalSubjectAttendance,
+  getCalendarAttendanceData,
+  CalendarDayStatus,
 } from "@/services/attendanceService";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import EventShowcase from "@/components/EventShowcase";
+import "@/styles/EventShowcase.css";
 
 const StudentDashboard = () => {
   const { userData } = useAuth();
@@ -74,8 +78,8 @@ const StudentDashboard = () => {
     percentage: 0,
   });
 
-  // Self-marking loading state
-  const [selfMarkingSlot, setSelfMarkingSlot] = useState<string | null>(null);
+  // Calendar attendance data for coloring
+  const [calendarAttendance, setCalendarAttendance] = useState<Record<string, CalendarDayStatus>>({});
 
   // Validate if roll number is in Section B range (22B81A0565 to 22B81A05C8)
   const isValidSectionBRollNumber = (rollNo: string): boolean => {
@@ -100,44 +104,210 @@ const StudentDashboard = () => {
     if (!userData?.collegeId) return;
 
     const fetchStudentData = async () => {
+      const rollNumber = userData.collegeId;
+      console.log(`[StudentData] Fetching data for roll number: ${rollNumber}`);
+
+      // Development mode fallback - hardcoded student names
+      const DEV_STUDENT_NAMES: Record<string, string> = {
+        '22B81A05C3': 'KATAKAM VARUN KUMAR',
+        '22B81A05C4': 'KATAKAM VARUN KUMAR',
+        // Add more students as needed
+      };
+
+      // Check if we have a hardcoded name for this roll number (for development)
+      if (DEV_STUDENT_NAMES[rollNumber]) {
+        console.log(`[StudentData] Using dev fallback name: ${DEV_STUDENT_NAMES[rollNumber]}`);
+        setStudentName(DEV_STUDENT_NAMES[rollNumber]);
+        const isValidRollNumber = isValidSectionBRollNumber(rollNumber);
+        setIsEligibleForAttendance(isValidRollNumber);
+        setStudentSection('C'); // Default section for development
+        return; // Exit early, skip Firebase calls in dev mode
+      }
+
       try {
-        const response = await fetch(
-          `https://campverse-2004-default-rtdb.asia-southeast1.firebasedatabase.app/.json`
-        );
+        // Strategy 1: Use Firebase SDK if available
+        if (firebaseReady && database) {
+          console.log("[StudentData] Using Firebase SDK...");
 
-        if (response.ok) {
-          const allData = await response.json();
-
-          if (allData) {
-            for (const key in allData) {
-              const student = allData[key];
-              if (student && student["ROLL NO"] === userData.collegeId) {
-                // Get student name
-                const name = student["Name of the student"] || student["Name"] || student["name"] || null;
-                if (name) {
-                  setStudentName(name);
-                }
-
-                // Get and validate section
-                const section = student["Section"] || student["SECTION"] || student["section"] || null;
+          // Try direct path: students/{rollNumber}
+          try {
+            const studentRef = ref(database, `students/${rollNumber}`);
+            const snapshot = await get(studentRef);
+            if (snapshot.exists()) {
+              const data = snapshot.val();
+              const name = data.name || data.Name || data["Name of the student"] || data.studentName;
+              if (name) {
+                console.log(`[StudentData] Found name at students/${rollNumber}: ${name}`);
+                setStudentName(name);
+                const section = data.section || data.Section || data.SECTION || null;
                 setStudentSection(section);
+                const isValidRollNumber = isValidSectionBRollNumber(rollNumber);
+                setIsEligibleForAttendance(isValidRollNumber);
+                return;
+              }
+            }
+          } catch (e) {
+            console.log("[StudentData] students/{rollNumber} path failed, trying alternatives...");
+          }
 
-                // Validate if student is eligible for attendance
-                const isValidRollNumber = isValidSectionBRollNumber(userData.collegeId);
+          // Try users path
+          try {
+            const usersRef = ref(database, `users/${rollNumber}`);
+            const snapshot = await get(usersRef);
+            if (snapshot.exists()) {
+              const data = snapshot.val();
+              const name = data.name || data.Name || data["Name of the student"] || data.studentName;
+              if (name) {
+                console.log(`[StudentData] Found name at users/${rollNumber}: ${name}`);
+                setStudentName(name);
+                const section = data.section || data.Section || data.SECTION || null;
+                setStudentSection(section);
+                const isValidRollNumber = isValidSectionBRollNumber(rollNumber);
+                setIsEligibleForAttendance(isValidRollNumber);
+                return;
+              }
+            }
+          } catch (e) {
+            console.log("[StudentData] users/{rollNumber} path failed, trying root search...");
+          }
 
-                // Primary validation is roll number range (22B81A0565-22B81A05C8)
-                const eligible = isValidRollNumber;
-                setIsEligibleForAttendance(eligible);
+          // Try root-level search (students stored with numeric keys)
+          try {
+            const rootRef = ref(database);
+            const snapshot = await get(rootRef);
+            if (snapshot.exists()) {
+              const allData = snapshot.val();
+              for (const key in allData) {
+                // Skip system paths
+                if (['attendance', 'notifications', 'schedules', 'clubs', 'exams', 'jobs', 'users', 'students'].includes(key)) continue;
 
-                console.log(`[Attendance Eligibility] Roll: ${userData.collegeId}, Section: ${section}, Valid Roll Range (22B81A0565-22B81A05C8): ${isValidRollNumber}, Eligible: ${eligible}`);
+                const student = allData[key];
+                if (student && typeof student === 'object') {
+                  const studentRoll = student["ROLL NO"] || student.rollNumber || student.collegeId || student["Roll No"];
+                  if (studentRoll === rollNumber) {
+                    const name = student["Name of the student"] || student.Name || student.name || student.studentName;
+                    if (name) {
+                      console.log(`[StudentData] Found name at root/${key}: ${name}`);
+                      setStudentName(name);
+                      const section = student.Section || student.SECTION || student.section || null;
+                      setStudentSection(section);
+                      const isValidRollNumber = isValidSectionBRollNumber(rollNumber);
+                      setIsEligibleForAttendance(isValidRollNumber);
+                      return;
+                    }
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.log("[StudentData] Root search via SDK failed:", e);
+          }
+        }
 
-                break;
+        // Strategy 2: Fallback to REST API fetch with auth token
+        console.log("[StudentData] Falling back to REST API...");
+        const databaseUrl = import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://campverse-2004-default-rtdb.asia-southeast1.firebasedatabase.app";
+
+        // Get auth token for authenticated requests
+        let authToken = "";
+        if (auth?.currentUser) {
+          try {
+            authToken = await auth.currentUser.getIdToken();
+            console.log("[StudentData] Got auth token for REST requests");
+          } catch (e) {
+            console.log("[StudentData] Could not get auth token:", e);
+          }
+        }
+
+        // Build auth query parameter
+        const authQuery = authToken ? `?auth=${authToken}` : "";
+
+        // Try specific student paths first
+        const paths = [
+          `${databaseUrl}/students/${rollNumber}.json${authQuery}`,
+          `${databaseUrl}/users/${rollNumber}.json${authQuery}`,
+        ];
+
+        for (const path of paths) {
+          try {
+            const response = await fetch(path);
+            if (response.ok) {
+              const data = await response.json();
+              if (data) {
+                const name = data.name || data.Name || data["Name of the student"] || data.studentName;
+                if (name) {
+                  console.log(`[StudentData] Found name via REST at ${path}: ${name}`);
+                  setStudentName(name);
+                  const section = data.section || data.Section || data.SECTION || null;
+                  setStudentSection(section);
+                  const isValidRollNumber = isValidSectionBRollNumber(rollNumber);
+                  setIsEligibleForAttendance(isValidRollNumber);
+                  return;
+                }
+              }
+            }
+          } catch (e) {
+            // Continue to next path
+          }
+        }
+
+        // Try root-level search via REST with auth
+        const rootResponse = await fetch(`${databaseUrl}/.json${authQuery}`);
+        if (rootResponse.ok) {
+          const allData = await rootResponse.json();
+          if (allData) {
+            // First, check if rollNumber is used as direct key
+            if (allData[rollNumber] && typeof allData[rollNumber] === 'object') {
+              const student = allData[rollNumber];
+              const name = student["Name of the student"] || student.Name || student.name || student.studentName;
+              if (name) {
+                console.log(`[StudentData] Found name via direct key ${rollNumber}: ${name}`);
+                setStudentName(name);
+                const section = student.Section || student.SECTION || student.section || null;
+                setStudentSection(section);
+                const isValidRollNumber = isValidSectionBRollNumber(rollNumber);
+                setIsEligibleForAttendance(isValidRollNumber);
+                return;
+              }
+            }
+
+            // Search through all keys for ROLL NO field match
+            for (const key in allData) {
+              // Skip system paths
+              if (['attendance', 'notifications', 'schedules', 'clubs', 'exams', 'jobs', 'users', 'students'].includes(key)) continue;
+
+              const student = allData[key];
+              if (student && typeof student === 'object') {
+                const studentRoll = student["ROLL NO"] || student.rollNumber || student.collegeId || student["Roll No"];
+                if (studentRoll === rollNumber) {
+                  const name = student["Name of the student"] || student.Name || student.name || student.studentName;
+                  if (name) {
+                    console.log(`[StudentData] Found name via REST root search: ${name}`);
+                    setStudentName(name);
+                    const section = student.Section || student.SECTION || student.section || null;
+                    setStudentSection(section);
+                    const isValidRollNumber = isValidSectionBRollNumber(rollNumber);
+                    setIsEligibleForAttendance(isValidRollNumber);
+                    return;
+                  }
+                }
               }
             }
           }
+        } else {
+          console.log(`[StudentData] REST API returned ${rootResponse.status}: ${rootResponse.statusText}`);
         }
+
+        // If no name found, log and set eligibility based on roll number
+        console.log(`[StudentData] No student name found for ${rollNumber}`);
+        const isValidRollNumber = isValidSectionBRollNumber(rollNumber);
+        setIsEligibleForAttendance(isValidRollNumber);
+
       } catch (error) {
-        console.error("Error fetching from Firebase:", error);
+        console.error("[StudentData] Error fetching student data:", error);
+        // Still set eligibility on error
+        const isValidRollNumber = isValidSectionBRollNumber(rollNumber);
+        setIsEligibleForAttendance(isValidRollNumber);
       }
     };
 
@@ -160,11 +330,96 @@ const StudentDashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Initialize today's schedule with default data
+  // Initialize today's schedule - load from admin-configured schedules or use defaults
   useEffect(() => {
     const currentTime = formatTime(serverTime);
 
-    const initialSchedule: DailyScheduleItem[] = [
+    // Get current day of week - if Sunday, show Monday's schedule
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    let today = days[serverTime.getDay()];
+
+    // If it's Sunday, show Monday's schedule as preview
+    if (today === "Sunday") {
+      today = "Monday";
+      console.log("[Schedule] Today is Sunday, showing Monday's schedule as preview");
+    }
+
+    // Try to load schedule from localStorage (set by admin scheduler)
+    let scheduleData: { subjectCode: string; subjectName: string; startTime: string; endTime: string }[] | null = null;
+
+    try {
+      const scheduleConfig = localStorage.getItem("campverse_schedule_config");
+      console.log("[Schedule] Checking localStorage for schedule config...");
+
+      if (scheduleConfig) {
+        const config = JSON.parse(scheduleConfig);
+        console.log("[Schedule] Found config:", Object.keys(config));
+
+        // Try to match student's section (e.g., 22_05_B for CSE-B 2022 batch)
+        // Try multiple key formats to find a match
+        const possibleKeys = [
+          studentSection ? `22_05_${studentSection}` : null,
+          "22_05_B", // Default CSE-B 2022
+          Object.keys(config)[0] // First available schedule
+        ].filter(Boolean);
+
+        let sectionSchedule = null;
+        let matchedKey = null;
+
+        for (const key of possibleKeys) {
+          if (key && config[key]) {
+            sectionSchedule = config[key];
+            matchedKey = key;
+            break;
+          }
+        }
+
+        if (sectionSchedule) {
+          console.log("[Schedule] Matched section key:", matchedKey);
+          const todayScheduleData = sectionSchedule.find((d: any) => d.day === today);
+
+          if (todayScheduleData?.slots && todayScheduleData.slots.length > 0) {
+            scheduleData = todayScheduleData.slots.map((slot: any) => ({
+              subjectCode: slot.subjectCode || "",
+              subjectName: slot.subjectName || "No Subject",
+              startTime: slot.startTime || "09:00",
+              endTime: slot.endTime || "10:00",
+            }));
+            console.log("[Schedule] ✓ Loaded admin-configured schedule for", today, "with", scheduleData.length, "slots");
+          } else {
+            console.log("[Schedule] No slots found for", today, "in section schedule");
+          }
+        } else {
+          console.log("[Schedule] No matching section schedule found. Available keys:", Object.keys(config));
+        }
+      } else {
+        console.log("[Schedule] No schedule config in localStorage");
+      }
+    } catch (error) {
+      console.log("[Schedule] Error loading schedule config:", error);
+    }
+
+    // Format time for display (e.g., "09:00" -> "9:00 AM")
+    const formatTimeDisplay = (time: string) => {
+      const [hours, minutes] = time.split(':');
+      const hour = parseInt(hours);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+      return `${displayHour}:${minutes} ${ampm}`;
+    };
+
+    // Build schedule from loaded data or use defaults
+    const initialSchedule: DailyScheduleItem[] = scheduleData ? scheduleData.map((slot, idx) => ({
+      slotId: `slot_${idx + 1}`,
+      slotNumber: idx + 1,
+      time: `${formatTimeDisplay(slot.startTime)} - ${formatTimeDisplay(slot.endTime)}`,
+      subjectCode: slot.subjectCode,
+      subjectName: slot.subjectName,
+      status: "NOT_MARKED" as const,
+      isSlotOpen: isSlotOpen(currentTime, slot.endTime.replace(':', ':'), 15),
+      canMark: false,
+    })) : [
+      // Default schedule if no admin-configured schedule exists
       {
         slotId: "slot_1",
         slotNumber: 1,
@@ -207,8 +462,11 @@ const StudentDashboard = () => {
       },
     ];
 
+    console.log("[Schedule] Final schedule has", initialSchedule.length, "slots:",
+      initialSchedule.map(s => s.subjectName).join(", "));
+
     setTodaySchedule(initialSchedule);
-  }, [serverTime]);
+  }, [serverTime, studentSection]);
 
   // Real-time attendance subscription + localStorage check
   useEffect(() => {
@@ -347,50 +605,6 @@ const StudentDashboard = () => {
     return () => unsubscribe();
   }, [userData?.collegeId, serverTime, isEligibleForAttendance]);
 
-  // Handle self-marking for demo mode
-  const handleSelfMark = async (item: DailyScheduleItem) => {
-    if (!userData?.collegeId || item.status !== "NOT_MARKED") return;
-
-    setSelfMarkingSlot(item.slotId);
-
-    try {
-      const today = formatDate(serverTime);
-      const result = await studentSelfMark(
-        userData.collegeId,
-        item.slotId,
-        today,
-        item.subjectCode,
-        item.subjectName,
-        "B", // section
-        "05", // branch
-        "22" // year
-      );
-
-      if (result) {
-        toast.success(`Marked PRESENT for ${item.subjectName}`, {
-          description: "Attendance saved to Firebase for demo",
-        });
-
-        // Update local state immediately
-        setTodaySchedule((prev) =>
-          prev.map((s) =>
-            s.slotId === item.slotId
-              ? { ...s, status: "PRESENT" as AttendanceStatus, markedByRole: "STUDENT" as AttendanceRole }
-              : s
-          )
-        );
-        setAttendanceMarkedBy((prev) => ({ ...prev, [item.slotId]: "STUDENT" }));
-      } else {
-        toast.error("Failed to mark attendance");
-      }
-    } catch (error) {
-      console.error("Self-mark error:", error);
-      toast.error("Error marking attendance");
-    } finally {
-      setSelfMarkingSlot(null);
-    }
-  };
-
   // Automatic attendance marking after 4:00 PM (16:00)
   // If faculty/admin hasn't marked attendance, auto-mark ALL students as PRESENT
   useEffect(() => {
@@ -451,39 +665,79 @@ const StudentDashboard = () => {
     return () => clearInterval(interval);
   }, [serverTime, isEligibleForAttendance, todaySchedule]);
 
-  // Load performance metrics - now uses real-time data from today's schedule
+  // Load performance metrics - fetches historical attendance across ALL dates
   useEffect(() => {
-    // Calculate metrics from today's schedule (real-time data)
-    const presentCount = todaySchedule.filter(s => s.status === "PRESENT").length;
-    const absentCount = todaySchedule.filter(s => s.status === "ABSENT").length;
-    const totalMarked = presentCount + absentCount;
-    const totalClasses = todaySchedule.length;
+    if (!userData?.collegeId || !isEligibleForAttendance) return;
 
-    // Build per-subject metrics from today's schedule
-    const subjectMetrics: SubjectAttendanceSummary[] = todaySchedule.map(item => {
-      const isPresent = item.status === "PRESENT";
-      const isAbsent = item.status === "ABSENT";
-      const percentage = isPresent ? 100 : (isAbsent ? 0 : 0);
+    const loadHistoricalMetrics = async () => {
+      const subjects = [
+        { subjectCode: "22CS401", subjectName: "Linux programming" },
+        { subjectCode: "22HS301", subjectName: "Business Economics and Financial Analysis" },
+        { subjectCode: "22HS501", subjectName: "Professional Elective-lll" },
+        { subjectCode: "22HS601", subjectName: "Professional Elective-lV" },
+      ];
 
-      return {
-        subjectCode: item.subjectCode,
-        subjectName: item.subjectName,
-        totalClasses: 1,
-        attended: isPresent ? 1 : 0,
-        percentage,
-        status: isPresent ? "SATISFACTORY" as const : (isAbsent ? "CRITICAL" as const : "WARNING" as const),
-      };
-    });
+      try {
+        const metrics = await getHistoricalSubjectAttendance(
+          userData.collegeId,
+          "22", // year
+          "05", // branch (CSE)
+          "B",  // section
+          subjects
+        );
 
-    setPerformanceMetrics(subjectMetrics);
+        setPerformanceMetrics(metrics);
 
-    // Calculate overall attendance
-    setOverallAttendance({
-      totalClasses: totalClasses,
-      attended: presentCount,
-      percentage: totalMarked > 0 ? Math.round((presentCount / totalMarked) * 100) : 0,
-    });
-  }, [todaySchedule]);
+        // Calculate overall attendance
+        const totalClasses = metrics.reduce((sum, m) => sum + m.totalClasses, 0);
+        const totalAttended = metrics.reduce((sum, m) => sum + m.attended, 0);
+        const overallPercentage = totalClasses > 0
+          ? Math.round((totalAttended / totalClasses) * 100)
+          : 0;
+
+        setOverallAttendance({
+          totalClasses,
+          attended: totalAttended,
+          percentage: overallPercentage,
+        });
+
+        console.log('[PerformanceMetrics] Loaded historical:', { totalClasses, totalAttended, overallPercentage });
+      } catch (error) {
+        console.error('[PerformanceMetrics] Error loading historical data:', error);
+      }
+    };
+
+    loadHistoricalMetrics();
+  }, [userData?.collegeId, isEligibleForAttendance, todaySchedule]);
+
+  // Load calendar attendance data for coloring
+  useEffect(() => {
+    if (!userData?.collegeId || !isEligibleForAttendance) return;
+
+    const loadCalendarData = async () => {
+      try {
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+        const data = await getCalendarAttendanceData(
+          userData.collegeId,
+          "22", // year
+          "05", // branch
+          "B",  // section
+          startOfMonth,
+          endOfMonth
+        );
+
+        setCalendarAttendance(data);
+        console.log('[Calendar] Loaded attendance data:', data);
+      } catch (error) {
+        console.error('[Calendar] Error loading attendance data:', error);
+      }
+    };
+
+    loadCalendarData();
+  }, [userData?.collegeId, isEligibleForAttendance, todaySchedule]);
 
   const refreshAttendance = async () => {
     setIsRefreshing(true);
@@ -695,14 +949,14 @@ const StudentDashboard = () => {
             </p>
           </div>
 
+          {/* Netflix-style Event Showcase */}
+          <EventShowcase />
+
           {/* Today's Schedule & Attendance */}
           <Card className="border-border/50 shadow-lg">
             <CardHeader>
               <div>
                 <CardTitle className="text-xl">Today's Schedule & Attendance</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Real-time attendance updates • Last synced: {serverTime.toLocaleTimeString()}
-                </p>
               </div>
             </CardHeader>
             <CardContent>
@@ -747,15 +1001,11 @@ const StudentDashboard = () => {
                   return (
                     <div
                       key={item.slotId}
-                      onClick={() => item.status === "NOT_MARKED" && handleSelfMark(item)}
                       className={cn(
                         "flex items-center justify-between p-4 rounded-lg transition-all duration-300",
                         bgClass,
-                        borderClass,
-                        item.status === "NOT_MARKED" && "cursor-pointer hover:ring-2 hover:ring-primary/50",
-                        selfMarkingSlot === item.slotId && "opacity-50 pointer-events-none"
+                        borderClass
                       )}
-                      title={item.status === "NOT_MARKED" ? "Click to mark PRESENT (Demo Mode)" : undefined}
                     >
                       <div className="flex-1">
                         <div className="font-medium text-foreground">
@@ -771,9 +1021,6 @@ const StudentDashboard = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {selfMarkingSlot === item.slotId && (
-                          <RefreshCw className="w-4 h-4 animate-spin text-primary" />
-                        )}
                         {getStatusBadge(item.status, markedByRole)}
                       </div>
                     </div>
@@ -790,41 +1037,58 @@ const StudentDashboard = () => {
               <CardTitle className="text-lg flex items-center gap-2">
                 <BarChart3 className="w-5 h-5 text-primary" />
                 Today's Attendance Summary
-                <Badge variant="outline" className="ml-auto text-xs">
-                  Live
-                </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-4 gap-4">
-                <div className="text-center p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                  <div className="text-2xl font-bold text-green-500">{realTimeMetrics.attended}</div>
-                  <div className="text-xs text-muted-foreground">Present</div>
-                </div>
-                <div className="text-center p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                  <div className="text-2xl font-bold text-red-500">{realTimeMetrics.absent}</div>
-                  <div className="text-xs text-muted-foreground">Absent</div>
-                </div>
-                <div className="text-center p-3 rounded-lg bg-gray-500/10 border border-gray-500/20">
-                  <div className="text-2xl font-bold text-gray-500">{realTimeMetrics.notMarked}</div>
-                  <div className="text-xs text-muted-foreground">Not Marked</div>
-                </div>
-                <div className="text-center p-3 rounded-lg bg-primary/10 border border-primary/20">
-                  <div className={cn(
-                    "text-2xl font-bold",
-                    realTimeMetrics.percentage >= 75 ? "text-green-500" :
-                      realTimeMetrics.percentage >= 50 ? "text-yellow-500" : "text-red-500"
-                  )}>
-                    {realTimeMetrics.percentage}%
+              {/* Calculate totals from historical + today's data */}
+              {(() => {
+                // Get historical totals from performance metrics
+                const historicalPresent = performanceMetrics.reduce((sum, m) => sum + m.attended, 0);
+                const historicalTotal = performanceMetrics.reduce((sum, m) => sum + m.totalClasses, 0);
+                const historicalAbsent = historicalTotal - historicalPresent;
+
+                // Today's not marked count
+                const todayNotMarked = todaySchedule.filter(s => s.status === "NOT_MARKED").length;
+                const todayPresent = todaySchedule.filter(s => s.status === "PRESENT").length;
+                const todayAbsent = todaySchedule.filter(s => s.status === "ABSENT").length;
+
+                // Combined totals (historical + today's marked)
+                const totalClasses = historicalTotal + todaySchedule.length;
+                const totalPresent = historicalPresent + todayPresent;
+                const totalAbsent = historicalAbsent + todayAbsent;
+                const percentage = totalClasses > 0 ? Math.round((totalPresent / totalClasses) * 100) : 0;
+
+                return (
+                  <div className="grid grid-cols-5 gap-4">
+                    <div className="text-center p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                      <div className="text-2xl font-bold text-blue-500">{totalClasses}</div>
+                      <div className="text-xs text-muted-foreground">Total Classes</div>
+                    </div>
+                    <div className="text-center p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                      <div className="text-2xl font-bold text-green-500">{totalPresent}</div>
+                      <div className="text-xs text-muted-foreground">Present</div>
+                    </div>
+                    <div className="text-center p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                      <div className="text-2xl font-bold text-red-500">{totalAbsent}</div>
+                      <div className="text-xs text-muted-foreground">Absent</div>
+                    </div>
+                    <div className="text-center p-3 rounded-lg bg-gray-500/10 border border-gray-500/20">
+                      <div className="text-2xl font-bold text-gray-500">{todayNotMarked}</div>
+                      <div className="text-xs text-muted-foreground">Not Marked</div>
+                    </div>
+                    <div className="text-center p-3 rounded-lg bg-primary/10 border border-primary/20">
+                      <div className={cn(
+                        "text-2xl font-bold",
+                        percentage >= 76 ? "text-green-500" :
+                          percentage >= 65 ? "text-orange-500" : "text-red-500"
+                      )}>
+                        {percentage}%
+                      </div>
+                      <div className="text-xs text-muted-foreground">Attendance</div>
+                    </div>
                   </div>
-                  <div className="text-xs text-muted-foreground">Attendance</div>
-                </div>
-              </div>
-              {realTimeMetrics.notMarked > 0 && (
-                <p className="text-xs text-muted-foreground mt-3 text-center">
-                  💡 Tip: Click on "Not Marked" slots above to mark yourself present for demo
-                </p>
-              )}
+                );
+              })()}
             </CardContent>
           </Card>
 
@@ -904,18 +1168,72 @@ const StudentDashboard = () => {
             {/* Calendar & Events */}
             <div className="space-y-6">
               <Card className="border-border/50 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-lg">
-                    {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    className="rounded-md"
-                  />
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-4">
+                    {/* Calendar on left */}
+                    <div className="flex-shrink-0">
+                      <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={setDate}
+                        className="rounded-md"
+                        modifiers={{
+                          fullAttendance: (day) => {
+                            const dateStr = formatDate(day);
+                            return calendarAttendance[dateStr] === 'full';
+                          },
+                          partialAttendance: (day) => {
+                            const dateStr = formatDate(day);
+                            return calendarAttendance[dateStr] === 'partial';
+                          },
+                          absentFull: (day) => {
+                            const dateStr = formatDate(day);
+                            return calendarAttendance[dateStr] === 'absent';
+                          },
+                          sunday: (day) => day.getDay() === 0,
+                        }}
+                        modifiersStyles={{
+                          fullAttendance: {
+                            backgroundColor: 'rgb(34, 197, 94)',
+                            color: 'white',
+                            borderRadius: '50%',
+                          },
+                          partialAttendance: {
+                            backgroundColor: 'rgb(249, 115, 22)',
+                            color: 'white',
+                            borderRadius: '50%',
+                          },
+                          absentFull: {
+                            backgroundColor: 'rgb(239, 68, 68)',
+                            color: 'white',
+                            borderRadius: '50%',
+                          },
+                          sunday: {
+                            color: 'rgb(156, 163, 175)',
+                          },
+                        }}
+                        disabled={(day) => day.getDay() === 0}
+                      />
+                    </div>
+
+                    {/* Attendance Legend on right */}
+                    <div className="flex-1 flex items-center justify-center border-l border-border/50 pl-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-4 h-4 rounded-full bg-green-500"></div>
+                          <span className="text-sm text-foreground">Present</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-4 h-4 rounded-full bg-orange-500"></div>
+                          <span className="text-sm text-foreground">Partially Present</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-4 h-4 rounded-full bg-red-500"></div>
+                          <span className="text-sm text-foreground">Absent</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 

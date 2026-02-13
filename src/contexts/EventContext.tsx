@@ -26,6 +26,8 @@ export interface Event {
     contactEmail?: string;
     contactPhone?: string;
     websiteLink?: string;
+    posterImage?: string;
+    registrationLink?: string;
     attachments?: { filename: string; url: string }[];
     postedBy?: { name: string; collegeId: string };
     isRegistrationOpen?: boolean;

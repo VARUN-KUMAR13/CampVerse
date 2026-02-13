@@ -1,20 +1,11 @@
-import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import FacultySidebar from "@/components/FacultySidebar";
 import FacultyTopbar from "@/components/FacultyTopbar";
-import { User, Bell, Shield, Save } from "lucide-react";
+import { Bell, Shield, Save } from "lucide-react";
 
 const FacultySettings = () => {
   return (
@@ -26,89 +17,6 @@ const FacultySettings = () => {
 
         <main className="flex-1 p-6">
           <div className="max-w-4xl space-y-6">
-            {/* Profile Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <User className="w-5 h-5" />
-                  <span>Profile Information</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input id="firstName" defaultValue="Dr. Shailaja" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input id="lastName" defaultValue="Koppu" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      defaultValue="shailaja@campverse.edu"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <Input id="phone" defaultValue="+91 9876543210" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="department">Department</Label>
-                    <Select defaultValue="cse">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cse">
-                          Computer Science & Engineering
-                        </SelectItem>
-                        <SelectItem value="ece">
-                          Electronics & Communication
-                        </SelectItem>
-                        <SelectItem value="mech">
-                          Mechanical Engineering
-                        </SelectItem>
-                        <SelectItem value="civil">Civil Engineering</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="designation">Designation</Label>
-                    <Select defaultValue="professor">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="professor">Professor</SelectItem>
-                        <SelectItem value="associate">
-                          Associate Professor
-                        </SelectItem>
-                        <SelectItem value="assistant">
-                          Assistant Professor
-                        </SelectItem>
-                        <SelectItem value="lecturer">Lecturer</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    placeholder="Enter your professional bio..."
-                    defaultValue="Dr. Shailaja Koppu is a Professor in the Department of Computer Science & Engineering with over 15 years of teaching experience."
-                  />
-                </div>
-              </CardContent>
-            </Card>
 
             {/* Notification Settings */}
             <Card>

@@ -207,21 +207,54 @@ const StudentEvents = () => {
                         key={event._id}
                         className="overflow-hidden border-2 border-primary/20 hover:shadow-xl transition-all"
                       >
-                        <div className="h-48 bg-gradient-to-r from-primary/20 to-purple-500/20 flex items-center justify-center">
-                          <Calendar className="w-16 h-16 text-primary/60" />
-                        </div>
-                        <CardHeader>
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <h3 className="text-xl font-bold text-foreground">
-                                {event.title}
-                              </h3>
-                              <Badge className="mt-2">{event.category}</Badge>
+                        <div className="h-48 relative overflow-hidden">
+                          {event.posterImage ? (
+                            <>
+                              <img
+                                src={event.posterImage}
+                                alt={event.title}
+                                className="w-full h-full object-cover"
+                              />
+                              <div
+                                className="absolute inset-0"
+                                style={{
+                                  background:
+                                    'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 50%, transparent 100%)',
+                                }}
+                              />
+                              <div className="absolute bottom-4 left-4 z-10">
+                                <h3 className="text-xl font-bold text-white drop-shadow-lg">
+                                  {event.title}
+                                </h3>
+                                <Badge className="mt-1 bg-white/20 text-white border-white/30 backdrop-blur-sm">
+                                  {event.category}
+                                </Badge>
+                              </div>
+                              <div className="absolute top-3 right-3 z-10">
+                                <Star className="w-5 h-5 text-yellow-400 fill-current drop-shadow-lg" />
+                              </div>
+                            </>
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-r from-primary/20 to-purple-500/20 flex items-center justify-center">
+                              <Calendar className="w-16 h-16 text-primary/60" />
                             </div>
-                            <Star className="w-5 h-5 text-yellow-500 fill-current" />
-                          </div>
-                        </CardHeader>
-                        <CardContent>
+                          )}
+                        </div>
+                        {/* Only show header text section when no poster (poster already shows title) */}
+                        {!event.posterImage && (
+                          <CardHeader>
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h3 className="text-xl font-bold text-foreground">
+                                  {event.title}
+                                </h3>
+                                <Badge className="mt-2">{event.category}</Badge>
+                              </div>
+                              <Star className="w-5 h-5 text-yellow-500 fill-current" />
+                            </div>
+                          </CardHeader>
+                        )}
+                        <CardContent className={event.posterImage ? "pt-4" : ""}>
                           <p className="text-muted-foreground text-sm mb-4">
                             {event.description}
                           </p>
@@ -277,15 +310,42 @@ const StudentEvents = () => {
                   filteredEvents.map((event) => (
                     <Card
                       key={event._id}
-                      className="hover:shadow-lg transition-shadow"
+                      className="hover:shadow-lg transition-shadow overflow-hidden"
                     >
+                      {/* Poster image banner (if available) */}
+                      {event.posterImage && (
+                        <div className="h-40 relative overflow-hidden">
+                          <img
+                            src={event.posterImage}
+                            alt={event.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <div
+                            className="absolute inset-0"
+                            style={{
+                              background:
+                                'linear-gradient(to top, hsl(var(--card)) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)',
+                            }}
+                          />
+                          {event.featured && (
+                            <div className="absolute top-3 right-3">
+                              <Badge className="bg-yellow-500/90 backdrop-blur-sm">
+                                <Star className="w-3 h-3 mr-1 fill-current" />
+                                Featured
+                              </Badge>
+                            </div>
+                          )}
+                        </div>
+                      )}
                       <CardHeader>
                         <div className="flex items-start justify-between">
                           <div className="space-y-2">
                             <div className="flex items-center gap-3">
-                              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                                <Calendar className="w-6 h-6 text-primary" />
-                              </div>
+                              {!event.posterImage && (
+                                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                                  <Calendar className="w-6 h-6 text-primary" />
+                                </div>
+                              )}
                               <div>
                                 <h3 className="text-xl font-semibold text-foreground">
                                   {event.title}
@@ -298,7 +358,7 @@ const StudentEvents = () => {
                             <div className="flex flex-wrap gap-2">
                               <Badge variant="outline">{event.category}</Badge>
                               {getStatusBadge(event)}
-                              {event.featured && (
+                              {event.featured && !event.posterImage && (
                                 <Badge className="bg-yellow-500">
                                   <Star className="w-3 h-3 mr-1" />
                                   Featured

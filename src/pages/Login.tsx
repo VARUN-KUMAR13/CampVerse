@@ -120,7 +120,7 @@ const Login = () => {
                 CampVerse
               </h1>
               <p className="text-lg text-muted-foreground">
-                "Simplifying campus life, one feature at a time."
+                Simplifying campus life, one feature at a time.
               </p>
             </div>
           </div>

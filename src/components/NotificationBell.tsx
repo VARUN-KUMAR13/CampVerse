@@ -13,25 +13,21 @@ const NotificationBell = () => {
   const { notifications, unreadCount, loading, markAsRead, markAllAsRead } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
 
-  const getUrgencyColor = (urgency: string) => {
-    switch (urgency) {
-      case "critical":
-        return "text-red-500 bg-red-50 border-red-200 dark:bg-red-950";
-      case "important":
-        return "text-amber-500 bg-amber-50 border-amber-200 dark:bg-amber-950";
+  // Category colors: General=Violet, Academic=Orange, Placement=Blue, Event=Green, Emergency=Red
+  const getCategoryColor = (category: string) => {
+    switch (category?.toLowerCase()) {
+      case "general":
+        return "bg-violet-500";
+      case "academic":
+        return "bg-orange-500";
+      case "placement":
+        return "bg-blue-500";
+      case "event":
+        return "bg-green-500";
+      case "emergency":
+        return "bg-red-500";
       default:
-        return "text-blue-500 bg-blue-50 border-blue-200 dark:bg-blue-950";
-    }
-  };
-
-  const getUrgencyIcon = (urgency: string) => {
-    switch (urgency) {
-      case "critical":
-        return <AlertTriangle className="w-4 h-4 text-red-500" />;
-      case "important":
-        return <AlertTriangle className="w-4 h-4 text-amber-500" />;
-      default:
-        return <CheckCircle className="w-4 h-4 text-blue-500" />;
+        return "bg-gray-500";
     }
   };
 
@@ -90,9 +86,11 @@ const NotificationBell = () => {
             <Bell className="w-5 h-5 text-primary" />
             Notifications
           </h3>
-          <p className="text-sm text-muted-foreground">
-            {unreadCount > 0 ? `${unreadCount} new notifications` : "All caught up!"}
-          </p>
+          {unreadCount > 0 && (
+            <p className="text-sm text-muted-foreground">
+              {unreadCount} new notifications
+            </p>
+          )}
         </div>
 
         <div className="max-h-96 overflow-y-auto">
@@ -104,9 +102,6 @@ const NotificationBell = () => {
           ) : notifications.length === 0 ? (
             <div className="p-8 text-center">
               <Bell className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">
-                All caught up!
-              </h3>
               <p className="text-muted-foreground">
                 No new notifications to show.
               </p>
@@ -121,16 +116,10 @@ const NotificationBell = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      {getUrgencyIcon(notification.urgency)}
+                      <div className={`w-3 h-3 rounded-full flex-shrink-0 ${getCategoryColor((notification as any).category)}`}></div>
                       <h4 className="font-medium text-sm line-clamp-1">
                         {notification.title || "Notification"}
                       </h4>
-                      <Badge
-                        variant="outline"
-                        className={`text-xs ${getUrgencyColor(notification.urgency)}`}
-                      >
-                        {notification.urgency}
-                      </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
                       {notification.message}

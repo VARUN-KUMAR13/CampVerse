@@ -70,10 +70,35 @@ router.post("/login", async (req, res) => {
       // Determine role based on section (Z = faculty, others = student)
       const role = section === "Z" ? "faculty" : "student";
 
+      // Try to get the name from Firebase Realtime Database
+      let userName = upperCollegeId; // Default to college ID if name not found
+      try {
+        const db = admin.database();
+        const snapshot = await db.ref('/').once('value');
+        const data = snapshot.val();
+
+        if (data) {
+          // Search for student with matching roll number
+          for (const key in data) {
+            const record = data[key];
+            if (record && typeof record === 'object') {
+              const recordRollNo = record['ROLL NO'] || record.rollNumber || record.collegeId;
+              if (recordRollNo && recordRollNo.toUpperCase() === upperCollegeId) {
+                userName = record['Name of the student'] || record.name || record.studentName || upperCollegeId;
+                console.log(`Found student name in Firebase: ${userName}`);
+                break;
+              }
+            }
+          }
+        }
+      } catch (firebaseError) {
+        console.warn('Could not fetch name from Firebase:', firebaseError.message);
+      }
+
       // Create new user
       user = new User({
         uid: `${upperCollegeId}-uid`,
-        name: `User ${upperCollegeId}`,
+        name: userName,
         collegeId: upperCollegeId,
         email: `${upperCollegeId}@cvr.ac.in`,
         role,
@@ -84,7 +109,7 @@ router.post("/login", async (req, res) => {
       });
 
       await user.save();
-      console.log(`Auto-created new ${role} user: ${upperCollegeId}`);
+      console.log(`Auto-created new ${role} user: ${upperCollegeId} (Name: ${userName})`);
     }
 
     if (!user.isActive) {
@@ -95,6 +120,40 @@ router.post("/login", async (req, res) => {
     // In production, you should hash passwords
     if (password !== user.collegeId && password !== collegeId) {
       return res.status(401).json({ message: "Invalid college ID or password" });
+    }
+
+    // If user's name is just their college ID or a placeholder, try to fetch real name from Firebase
+    const upperCollegeId = collegeId.toUpperCase();
+    const isPlaceholderName = user.name === upperCollegeId ||
+      user.name === `User ${upperCollegeId}` ||
+      user.name === collegeId ||
+      !user.name;
+
+    if (isPlaceholderName) {
+      try {
+        const db = admin.database();
+        const snapshot = await db.ref('/').once('value');
+        const data = snapshot.val();
+
+        if (data) {
+          for (const key in data) {
+            const record = data[key];
+            if (record && typeof record === 'object') {
+              const recordRollNo = record['ROLL NO'] || record.rollNumber || record.collegeId;
+              if (recordRollNo && recordRollNo.toUpperCase() === upperCollegeId) {
+                const realName = record['Name of the student'] || record.name || record.studentName;
+                if (realName && realName !== upperCollegeId) {
+                  user.name = realName;
+                  console.log(`Updated user name from Firebase: ${realName}`);
+                }
+                break;
+              }
+            }
+          }
+        }
+      } catch (firebaseError) {
+        console.warn('Could not fetch name from Firebase for update:', firebaseError.message);
+      }
     }
 
     // Update last login

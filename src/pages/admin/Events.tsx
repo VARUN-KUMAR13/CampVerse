@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,9 @@ import {
     DollarSign,
     Trophy,
     CalendarDays,
+    Image,
+    Link,
+    X,
 } from "lucide-react";
 
 const AdminEvents = () => {
@@ -51,6 +54,7 @@ const AdminEvents = () => {
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("all");
+    const imageInputRef = useRef<HTMLInputElement>(null);
 
     const [newEvent, setNewEvent] = useState({
         event_id: "",
@@ -71,13 +75,20 @@ const AdminEvents = () => {
         contactEmail: "",
         contactPhone: "",
         featured: false,
+        posterImage: "",
+        registrationLink: "",
     });
 
-    // Generate unique Event ID
-    const generateEventId = () => {
-        const title = newEvent.title.replace(/\s+/g, "").toUpperCase().slice(0, 8);
-        const year = new Date().getFullYear();
-        return `${title || "EVENT"}${year}`;
+    // Handle image upload
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            setNewEvent({ ...newEvent, posterImage: reader.result as string });
+        };
+        reader.readAsDataURL(file);
+        if (imageInputRef.current) imageInputRef.current.value = "";
     };
 
     const handleAddEvent = async () => {
@@ -114,11 +125,13 @@ const AdminEvents = () => {
             entryFee: newEvent.entryFee || "Free",
             maxParticipants: newEvent.maxParticipants ? parseInt(newEvent.maxParticipants) : 0,
             prizes: newEvent.prizes,
-            registrationDeadline: newEvent.registrationDeadline || newEvent.date,
+            registrationDeadline: newEvent.registrationDeadline || undefined,
             highlights: newEvent.highlights ? newEvent.highlights.split(",").map((h) => h.trim()) : [],
             contactEmail: newEvent.contactEmail,
             contactPhone: newEvent.contactPhone,
             featured: newEvent.featured,
+            posterImage: newEvent.posterImage || undefined,
+            registrationLink: newEvent.registrationLink || undefined,
             status: "Open",
         };
 
@@ -152,6 +165,8 @@ const AdminEvents = () => {
                 contactEmail: "",
                 contactPhone: "",
                 featured: false,
+                posterImage: "",
+                registrationLink: "",
             });
             setIsAddModalOpen(false);
         } catch (err: any) {
@@ -290,24 +305,13 @@ const AdminEvents = () => {
                                                 <Label className="text-sm font-semibold">
                                                     Event ID <span className="text-destructive">*</span>
                                                 </Label>
-                                                <div className="flex gap-2">
-                                                    <Input
-                                                        value={newEvent.event_id}
-                                                        onChange={(e) =>
-                                                            setNewEvent({ ...newEvent, event_id: e.target.value.toUpperCase() })
-                                                        }
-                                                        placeholder="e.g., HACKATHON2025"
-                                                        className="flex-1"
-                                                    />
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => setNewEvent({ ...newEvent, event_id: generateEventId() })}
-                                                    >
-                                                        Auto
-                                                    </Button>
-                                                </div>
+                                                <Input
+                                                    value={newEvent.event_id}
+                                                    onChange={(e) =>
+                                                        setNewEvent({ ...newEvent, event_id: e.target.value.toUpperCase() })
+                                                    }
+                                                    placeholder="e.g., HACKATHON2025"
+                                                />
                                             </div>
                                             <div className="space-y-2">
                                                 <Label className="text-sm font-semibold">
@@ -506,6 +510,66 @@ const AdminEvents = () => {
                                                 />
                                                 <p className="text-xs text-muted-foreground">Separate with commas</p>
                                             </div>
+                                        </div>
+
+                                        {/* Registration Link - only shown when deadline is entered */}
+                                        {newEvent.registrationDeadline && (
+                                            <div className="space-y-2">
+                                                <Label className="text-sm font-semibold flex items-center gap-2">
+                                                    <Link className="w-4 h-4" />
+                                                    Registration Link
+                                                </Label>
+                                                <Input
+                                                    value={newEvent.registrationLink}
+                                                    onChange={(e) =>
+                                                        setNewEvent({ ...newEvent, registrationLink: e.target.value })
+                                                    }
+                                                    placeholder="https://forms.google.com/..."
+                                                />
+                                                <p className="text-xs text-muted-foreground">External registration form URL (optional)</p>
+                                            </div>
+                                        )}
+
+                                        {/* Event Poster Image Upload */}
+                                        <div className="space-y-2">
+                                            <Label className="text-sm font-semibold flex items-center gap-2">
+                                                <Image className="w-4 h-4" />
+                                                Event Poster Image
+                                            </Label>
+                                            {newEvent.posterImage ? (
+                                                <div className="relative rounded-lg overflow-hidden border border-border">
+                                                    <img
+                                                        src={newEvent.posterImage}
+                                                        alt="Event poster preview"
+                                                        className="w-full h-48 object-cover"
+                                                    />
+                                                    <Button
+                                                        type="button"
+                                                        variant="destructive"
+                                                        size="icon"
+                                                        className="absolute top-2 right-2 w-8 h-8"
+                                                        onClick={() => setNewEvent({ ...newEvent, posterImage: "" })}
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                <div
+                                                    className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                                                    onClick={() => imageInputRef.current?.click()}
+                                                >
+                                                    <Image className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
+                                                    <p className="text-sm text-muted-foreground">Click to upload event poster</p>
+                                                    <p className="text-xs text-muted-foreground/60 mt-1">PNG, JPG, WEBP (recommended: 1200×600)</p>
+                                                </div>
+                                            )}
+                                            <input
+                                                ref={imageInputRef}
+                                                type="file"
+                                                accept="image/*"
+                                                className="hidden"
+                                                onChange={handleImageUpload}
+                                            />
                                         </div>
 
                                         {/* Contact Info */}
@@ -714,9 +778,19 @@ const AdminEvents = () => {
                                     <CardContent className="p-6">
                                         <div className="flex items-start justify-between">
                                             <div className="flex items-start gap-4">
-                                                <div className="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
-                                                    <CalendarDays className="w-8 h-8 text-primary" />
-                                                </div>
+                                                {event.posterImage ? (
+                                                    <div className="w-20 h-20 rounded-lg overflow-hidden shrink-0 border border-border shadow-sm">
+                                                        <img
+                                                            src={event.posterImage}
+                                                            alt={event.title}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
+                                                        <CalendarDays className="w-8 h-8 text-primary" />
+                                                    </div>
+                                                )}
                                                 <div className="space-y-2">
                                                     <div className="flex items-center gap-2">
                                                         <h3 className="text-xl font-bold text-foreground">

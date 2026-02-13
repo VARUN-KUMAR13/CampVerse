@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,8 +12,18 @@ interface AdminLayoutProps {
 }
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
+    const navigate = useNavigate();
     const { userData, logout } = useAuth();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+            navigate("/", { replace: true });
+        } catch (error) {
+            console.error("Logout error:", error);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-background">
@@ -22,7 +33,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                     <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-3">
                             <button
-                                onClick={logout}
+                                onClick={handleLogout}
                                 className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center hover:bg-primary/90 transition-colors cursor-pointer"
                                 title="Logout and return to home"
                             >
@@ -63,7 +74,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={logout}
+                            onClick={handleLogout}
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
                             Logout

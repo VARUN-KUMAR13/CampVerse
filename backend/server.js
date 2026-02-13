@@ -42,8 +42,11 @@ try {
         auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
         client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
       }),
+      databaseURL: process.env.FIREBASE_DATABASE_URL ||
+        process.env.VITE_FIREBASE_DATABASE_URL ||
+        "https://campverse-2004-default-rtdb.asia-southeast1.firebasedatabase.app",
     });
-    console.log("Firebase Admin initialized");
+    console.log("Firebase Admin initialized with Realtime Database");
   } else {
     console.log("Firebase Admin not configured; skipping admin initialization");
   }
@@ -62,6 +65,7 @@ const paymentRoutes = require("./routes/payments");
 const chatbotRoutes = require("./routes/chatbot");
 const assignmentRoutes = require("./routes/assignments");
 const gradeRoutes = require("./routes/grades");
+const courseRoutes = require("./routes/courses");
 
 // Import middleware
 const { corsHandler, rateLimiter, validateApiVersion } = require("./middleware/auth");
@@ -82,6 +86,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/chatbot", chatbotRoutes);
 app.use("/api/assignments", assignmentRoutes);
 app.use("/api/grades", gradeRoutes);
+app.use("/api/courses", courseRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

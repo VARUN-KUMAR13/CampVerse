@@ -13,6 +13,7 @@ import {
   FileText,
   Shield,
   ChevronLeft,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -65,9 +66,9 @@ const AdminSidebar = ({ onClose, isOpen }: AdminSidebarProps) => {
       path: "/admin/club",
     },
     {
-      icon: <FileText className="w-5 h-5" />,
-      label: "Exams",
-      path: "/admin/exam",
+      icon: <Calendar className="w-5 h-5" />,
+      label: "Scheduler",
+      path: "/admin/scheduler",
     },
     {
       icon: <BarChart3 className="w-5 h-5" />,

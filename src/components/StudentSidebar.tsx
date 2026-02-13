@@ -34,11 +34,6 @@ const StudentSidebar = () => {
       path: "/student/courses",
     },
     {
-      icon: <Clock className="w-5 h-5" />,
-      label: "Schedule",
-      path: "/student/schedule",
-    },
-    {
       icon: <Building2 className="w-5 h-5" />,
       label: "Placement",
       path: "/student/placement",
@@ -57,11 +52,6 @@ const StudentSidebar = () => {
       icon: <BarChart3 className="w-5 h-5" />,
       label: "Results Summary",
       path: "/student/results",
-    },
-    {
-      icon: <GraduationCap className="w-5 h-5" />,
-      label: "Upcoming Exams",
-      path: "/student/exams",
     },
     {
       icon: <FileText className="w-5 h-5" />,

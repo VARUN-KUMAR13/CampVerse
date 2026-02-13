@@ -84,6 +84,12 @@ const eventSchema = new mongoose.Schema({
     websiteLink: {
         type: String
     },
+    posterImage: {
+        type: String  // base64-encoded image
+    },
+    registrationLink: {
+        type: String  // external registration URL
+    },
     attachments: [{
         filename: String,
         url: String

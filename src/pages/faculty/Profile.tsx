@@ -10,8 +10,14 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { useState } from "react";
+import { toast } from "sonner";
+import { Pencil, Save, X, Plus, User } from "lucide-react";
 
 const branchNames: Record<string, string> = {
   "01": "Civil Engineering",
@@ -22,14 +28,104 @@ const branchNames: Record<string, string> = {
   "12": "Information Technology",
 };
 
+interface ProfileFormData {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  officeLocation: string;
+  designation: string;
+  specializations: string[];
+  availability: string;
+  bio: string;
+}
+
 const FacultyProfile = () => {
   const { userData } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [newSpecialization, setNewSpecialization] = useState("");
 
-  const facultyId = userData?.collegeId || "FACULTYID";
-  const facultyName = userData?.name || "Faculty Member";
-  const facultyEmail = userData?.email || `${facultyId}@cvr.ac.in`;
-  const department = branchNames[userData?.branch || ""] || "Department of Engineering";
-  const section = userData?.section === "Z" ? "Faculty" : userData?.section || "";
+  const facultyId = userData?.collegeId || "";
+  const facultyName = userData?.name || "";
+  const facultyEmail = userData?.email || "";
+  const department = branchNames[userData?.branch || ""] || "";
+
+  // Form state - Use type casting for optional properties
+  const userDataAny = userData as any;
+
+  // Split name into first and last name (only if name exists)
+  const nameParts = facultyName ? facultyName.split(" ") : [];
+  const defaultFirstName = nameParts[0] || "";
+  const defaultLastName = nameParts.slice(1).join(" ") || "";
+
+  const [formData, setFormData] = useState<ProfileFormData>({
+    firstName: userDataAny?.firstName || defaultFirstName,
+    lastName: userDataAny?.lastName || defaultLastName,
+    phone: userDataAny?.phone || "",
+    officeLocation: userDataAny?.address || "",
+    designation: userDataAny?.designation || "",
+    specializations: userDataAny?.specializations || [],
+    availability: userDataAny?.availability || "",
+    bio: userDataAny?.bio || "",
+  });
+
+  const handleInputChange = (field: keyof ProfileFormData, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleAddSpecialization = () => {
+    if (newSpecialization.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        specializations: [...prev.specializations, newSpecialization.trim()],
+      }));
+      setNewSpecialization("");
+    }
+  };
+
+  const handleRemoveSpecialization = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      specializations: prev.specializations.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      // TODO: Implement API call to save profile data
+      // await updateFacultyProfile(facultyId, formData);
+
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      toast.success("Profile updated successfully!");
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      toast.error("Failed to update profile");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    // Reset form data to original values
+    setFormData({
+      firstName: userDataAny?.firstName || defaultFirstName,
+      lastName: userDataAny?.lastName || defaultLastName,
+      phone: userDataAny?.phone || "",
+      officeLocation: userDataAny?.address || "",
+      designation: userDataAny?.designation || "",
+      specializations: userDataAny?.specializations || [],
+      availability: userDataAny?.availability || "",
+      bio: userDataAny?.bio || "",
+    });
+    setIsEditing(false);
+  };
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -45,12 +141,7 @@ const FacultyProfile = () => {
                 <div className="flex items-center gap-4">
                   <Avatar className="h-16 w-16">
                     <AvatarFallback className="text-lg">
-                      {facultyName
-                        .split(" ")
-                        .map((part) => part[0])
-                        .join("")
-                        .slice(0, 2)
-                        .toUpperCase()}
+                      {(formData.firstName[0] || "") + (formData.lastName[0] || "")}
                     </AvatarFallback>
                   </Avatar>
                   <div>
@@ -64,9 +155,88 @@ const FacultyProfile = () => {
                   <Badge variant="secondary" className="text-sm">
                     Faculty ID: {facultyId}
                   </Badge>
+                  {isEditing && (
+                    <Badge variant="outline" className="text-sm text-blue-500 border-blue-500">
+                      <Pencil className="w-3 h-3 mr-1" />
+                      Editing
+                    </Badge>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* Profile Information Section */}
+                <div>
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Profile Information
+                  </h3>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First Name</Label>
+                      {isEditing ? (
+                        <Input
+                          id="firstName"
+                          value={formData.firstName}
+                          onChange={(e) => handleInputChange("firstName", e.target.value)}
+                          placeholder="Enter first name"
+                        />
+                      ) : (
+                        <p className="font-medium text-foreground">{formData.firstName || "-"}</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last Name</Label>
+                      {isEditing ? (
+                        <Input
+                          id="lastName"
+                          value={formData.lastName}
+                          onChange={(e) => handleInputChange("lastName", e.target.value)}
+                          placeholder="Enter last name"
+                        />
+                      ) : (
+                        <p className="font-medium text-foreground">{formData.lastName || "-"}</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Department</Label>
+                      <p className="font-medium text-foreground">{department}</p>
+                      {isEditing && (
+                        <p className="text-xs text-muted-foreground italic">Department cannot be changed</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="designation">Designation</Label>
+                      {isEditing ? (
+                        <Input
+                          id="designation"
+                          value={formData.designation}
+                          onChange={(e) => handleInputChange("designation", e.target.value)}
+                          placeholder="e.g., Assistant Professor"
+                        />
+                      ) : (
+                        <p className="font-medium text-foreground">{formData.designation || "-"}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    <Label htmlFor="bio">Bio</Label>
+                    {isEditing ? (
+                      <Textarea
+                        id="bio"
+                        value={formData.bio}
+                        onChange={(e) => handleInputChange("bio", e.target.value)}
+                        placeholder="Enter your professional bio..."
+                        rows={3}
+                      />
+                    ) : (
+                      <p className="font-medium text-foreground">{formData.bio || "-"}</p>
+                    )}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Contact Information Section */}
                 <div>
                   <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
                     Contact Information
@@ -75,20 +245,45 @@ const FacultyProfile = () => {
                     <div className="space-y-1">
                       <p className="text-sm text-muted-foreground">Email</p>
                       <p className="font-medium text-foreground">{facultyEmail}</p>
+                      {isEditing && (
+                        <p className="text-xs text-muted-foreground italic">Email cannot be changed</p>
+                      )}
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm text-muted-foreground">Phone</p>
-                      <p className="font-medium text-foreground">
-                        {userData?.phone || "+91 98765 43210"}
-                      </p>
+                      {isEditing ? (
+                        <Input
+                          value={formData.phone}
+                          onChange={(e) => handleInputChange("phone", e.target.value)}
+                          placeholder="+91 98765 43210"
+                        />
+                      ) : (
+                        <p className="font-medium text-foreground">{formData.phone}</p>
+                      )}
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm text-muted-foreground">Office Location</p>
-                      <p className="font-medium text-foreground">{userData?.address || "Block C, Room 308"}</p>
+                      {isEditing ? (
+                        <Input
+                          value={formData.officeLocation}
+                          onChange={(e) => handleInputChange("officeLocation", e.target.value)}
+                          placeholder="Block C, Room 308"
+                        />
+                      ) : (
+                        <p className="font-medium text-foreground">{formData.officeLocation}</p>
+                      )}
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm text-muted-foreground">Availability</p>
-                      <p className="font-medium text-foreground">Mon - Fri, 9:00 AM to 5:00 PM</p>
+                      {isEditing ? (
+                        <Input
+                          value={formData.availability}
+                          onChange={(e) => handleInputChange("availability", e.target.value)}
+                          placeholder="Mon - Fri, 9:00 AM to 5:00 PM"
+                        />
+                      ) : (
+                        <p className="font-medium text-foreground">{formData.availability}</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -102,9 +297,15 @@ const FacultyProfile = () => {
                   <div className="mt-4 grid gap-6 md:grid-cols-2">
                     <div className="space-y-2">
                       <p className="text-sm text-muted-foreground">Designation</p>
-                      <p className="font-medium text-foreground">
-                        {userData?.role === "faculty" ? "Assistant Professor" : "Faculty"}
-                      </p>
+                      {isEditing ? (
+                        <Input
+                          value={formData.designation}
+                          onChange={(e) => handleInputChange("designation", e.target.value)}
+                          placeholder="Assistant Professor"
+                        />
+                      ) : (
+                        <p className="font-medium text-foreground">{formData.designation}</p>
+                      )}
                       <p className="text-sm text-muted-foreground">
                         Primary responsibility for teaching core subjects and guiding student projects.
                       </p>
@@ -112,65 +313,46 @@ const FacultyProfile = () => {
                     <div className="space-y-2">
                       <p className="text-sm text-muted-foreground">Expertise Areas</p>
                       <div className="flex flex-wrap gap-2">
-                        {(
-                          userData?.specializations || [
-                            "Data Structures",
-                            "Algorithms",
-                            "Database Systems",
-                          ]
-                        ).map((area) => (
-                          <Badge key={area} variant="outline">
+                        {formData.specializations.map((area, index) => (
+                          <Badge key={index} variant="outline" className="gap-1">
                             {area}
+                            {isEditing && (
+                              <button
+                                onClick={() => handleRemoveSpecialization(index)}
+                                className="ml-1 hover:text-red-500 transition-colors"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            )}
                           </Badge>
                         ))}
                       </div>
+                      {isEditing && (
+                        <div className="flex gap-2 mt-2">
+                          <Input
+                            value={newSpecialization}
+                            onChange={(e) => setNewSpecialization(e.target.value)}
+                            placeholder="Add new expertise..."
+                            className="flex-1"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleAddSpecialization();
+                              }
+                            }}
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={handleAddSpecialization}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
-
-                <Separator />
-
-                <div className="grid gap-6 md:grid-cols-2">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Current Teaching Load</CardTitle>
-                      <CardDescription>Overview of active courses</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Courses</span>
-                        <span className="text-sm font-semibold text-foreground">05</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Total Students</span>
-                        <span className="text-sm font-semibold text-foreground">180</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Active Assignments</span>
-                        <span className="text-sm font-semibold text-foreground">12</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Upcoming Milestones</CardTitle>
-                      <CardDescription>Important academic dates</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">Midterm Evaluation Week</p>
-                        <p className="text-xs text-muted-foreground">Starts 15 Aug 2025</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">Capstone Review</p>
-                        <p className="text-xs text-muted-foreground">Scheduled 10 Sep 2025</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">Curriculum Workshop</p>
-                        <p className="text-xs text-muted-foreground">23 Sep 2025</p>
-                      </div>
-                    </CardContent>
-                  </Card>
                 </div>
               </CardContent>
             </Card>
@@ -181,11 +363,45 @@ const FacultyProfile = () => {
                 <CardDescription>Manage visibility and export reports</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button className="w-full">Update Profile Details</Button>
-                <Button variant="outline" className="w-full">
+                {isEditing ? (
+                  <>
+                    <Button
+                      className="w-full bg-green-600 hover:bg-green-700"
+                      onClick={handleSave}
+                      disabled={isSaving}
+                    >
+                      {isSaving ? (
+                        <>
+                          <Save className="w-4 h-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4 mr-2" />
+                          Save Changes
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={handleCancel}
+                      disabled={isSaving}
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Cancel
+                    </Button>
+                  </>
+                ) : (
+                  <Button className="w-full" onClick={() => setIsEditing(true)}>
+                    <Pencil className="w-4 h-4 mr-2" />
+                    Update Profile Details
+                  </Button>
+                )}
+                <Button variant="outline" className="w-full" disabled={isEditing}>
                   Download Teaching Portfolio
                 </Button>
-                <Button variant="outline" className="w-full">
+                <Button variant="outline" className="w-full" disabled={isEditing}>
                   Share Availability Calendar
                 </Button>
               </CardContent>
@@ -198,3 +414,4 @@ const FacultyProfile = () => {
 };
 
 export default FacultyProfile;
+

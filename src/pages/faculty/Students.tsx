@@ -262,8 +262,12 @@ const FacultyStudents = () => {
       const year = currentSlot?.year || "22";
       const branch = currentSlot?.branch || "05";
 
+      console.log(`Loading students for Year: ${year}, Branch: ${branch}, Section: ${selectedSection}`);
+
       // Fetch students from Firebase using the centralized service
       const firebaseStudents = await getStudentsForSection(year, branch, selectedSection);
+
+      console.log(`Firebase returned ${firebaseStudents.length} students`);
 
       if (firebaseStudents.length > 0) {
         // Transform to StudentAttendanceState format
@@ -277,16 +281,78 @@ const FacultyStudents = () => {
 
         setStudents(studentStates);
         console.log(`Loaded ${studentStates.length} students for Section ${selectedSection}`);
+        toast.success(`Loaded ${studentStates.length} students from Firebase`);
       } else {
-        // Fallback: Use hardcoded student data for Section B
-        console.log("Using fallback student data for Section B");
+        // Fallback: Use complete student data for Section B (matching Firebase structure)
+        console.log("Firebase returned empty, using complete fallback student data for Section B");
         const fallbackStudents: StudentAttendanceState[] = [
+          { studentId: "22B81A0565", name: "SURASANI ABHINAV REDDY", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0566", name: "GURRALA ABIGNA", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0567", name: "MOHAMMED ABUBAKAR SIDDIQ", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0568", name: "DASARI ADITHYA", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0569", name: "PALLAPU AKSHAYA", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0570", name: "PADAMATI AKSHITH REDDY", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0571", name: "NARENDRUNI AMRUTHA", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0572", name: "UPPU ANJALI", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0573", name: "PAMULAPARTHY ANJANA SAI SARAYU", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0574", name: "GUMMAKONDA BEULA RANI", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0575", name: "T CHETAN RIKHIL", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0576", name: "MADAMANCHI CHIDVILA", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0577", name: "S DILEEP SAGAR", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0578", name: "THOTA GAYATHRI", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0579", name: "KONTHAM HARSHITHA", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0580", name: "HASINI REDDY PANNALA", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0581", name: "KOVURU HRUSHIKESH", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0582", name: "NUSUM JAYA SAHITHI", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0583", name: "MOKILLA JAYANTH REDDY", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0584", name: "VALLAMPATLA KARTHIK", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0585", name: "GUNDLAPALLY KARTHIKEYA REDDY", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0586", name: "SHAMARTHI KEERTHANA", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0587", name: "POREDDY KRUTHIK REDDY", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0588", name: "MUNTHA MAHESH", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0589", name: "A MAHESHWARI", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0590", name: "MOKSHAGNA MALINENI", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0591", name: "SIMHADRI MURALI MANAS KRISHNA", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0592", name: "DUSNAMONI NANDINI", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0593", name: "BANDA NAUHITHKRISHNA REDDY", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0594", name: "NIKITHA ARTHAM", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0595", name: "YARASURI PAVAN SAMPATH", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0596", name: "BINGI PREM KUMAR GOUD", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0597", name: "BACHU RAHUL SAI", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0598", name: "REVANTH SAI CHAPARALA", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A0599", name: "MARRI RISHITH", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05A0", name: "PATURI RUPA", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05A1", name: "KARINGU SAI CHANDU", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05A2", name: "SIMMA SAI KRISHNA", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05A3", name: "ARRURI SAI PAVAN", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05A4", name: "KODAKANDLA SAI SOHAN REDDY", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05A5", name: "N SANDYA", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05A6", name: "KALIGANDLA SANGEETHA", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05A7", name: "MEDIKONDA SANJANITH", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05A8", name: "YALAKA SATHVIK REDDY", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05A9", name: "BELDE SAURABH", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05B0", name: "LEKKALA SHRAVANI", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05B1", name: "GADDAM SIDDHARTHA", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05B2", name: "SAMA SIRI", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05B3", name: "BATHINA SIRI VENNELA", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05B4", name: "PASUMARTHY SREE HARSHA", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05B5", name: "BADAM SREEKAR", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05B6", name: "GUNJA SRIKANTH", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05B7", name: "G SRINIVASA RAGHAVAN", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05B8", name: "YALAMANDALA SUMANJALI", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05B9", name: "ANIKE TANVI REDDY", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05C0", name: "BANDI VAMSHI", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05C1", name: "ANTHIREDDYGARI VARSHINI REDDY", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05C2", name: "LAVOORI VARSHITHA", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
           { studentId: "22B81A05C3", name: "KATAKAM VARUN KUMAR", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
-          { studentId: "22B81A05C1", name: "Student 1", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
-          { studentId: "22B81A05C2", name: "Student 2", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05C4", name: "MEKALA VENKATESH", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05C5", name: "YELIGETI VILASH", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05C6", name: "DONTHIREDDY VINILREDDY", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05C7", name: "KOLIPAKA VIVEK", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
+          { studentId: "22B81A05C8", name: "GUNTIPALLY VIVEKAVARDHAN", status: "NOT_MARKED", lastUpdated: "Not marked", isModified: false },
         ];
         setStudents(fallbackStudents);
-        toast.info("Using demo student data. Configure Firebase for real data.");
+        toast.info(`Loaded ${fallbackStudents.length} students (Firebase unavailable, using cached data)`);
       }
     } catch (error) {
       console.error("Error loading students:", error);

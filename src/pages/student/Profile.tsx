@@ -21,6 +21,7 @@ import {
 import StudentSidebar from "@/components/StudentSidebar";
 import StudentTopbar from "@/components/StudentTopbar";
 import { useAuth } from "@/contexts/AuthContext";
+import { auth } from "@/lib/firebase";
 import {
   User,
   Mail,
@@ -71,42 +72,130 @@ const StudentProfile = () => {
     if (!userData?.collegeId) return;
 
     const fetchStudentName = async () => {
+      const rollNumber = userData.collegeId;
+      console.log(`[Profile] Fetching student name for roll number: ${rollNumber}`);
+
+      // Development mode fallback - hardcoded student names
+      const DEV_STUDENT_NAMES: Record<string, string> = {
+        '22B81A05C3': 'KATAKAM VARUN KUMAR',
+        '22B81A05C4': 'KATAKAM VARUN KUMAR',
+        // Add more students as needed
+      };
+
+      // Check if we have a hardcoded name for this roll number (for development)
+      if (DEV_STUDENT_NAMES[rollNumber]) {
+        console.log(`[Profile] Using dev fallback name: ${DEV_STUDENT_NAMES[rollNumber]}`);
+        const name = DEV_STUDENT_NAMES[rollNumber];
+        setStudentName(name);
+        const nameParts = name.trim().split(' ');
+        setProfileData(prev => ({
+          ...prev,
+          lastName: nameParts[0] || '',
+          firstName: nameParts.slice(1).join(' ') || '',
+        }));
+        return; // Exit early, no need to fetch from Firebase
+      }
+
       try {
-        // Fetch all student records from Firebase
-        // Structure: /{index} -> { "Name of the student": "...", "ROLL NO": "..." }
-        const response = await fetch(
-          `https://campverse-2004-default-rtdb.asia-southeast1.firebasedatabase.app/.json`
-        );
+        const databaseUrl = import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://campverse-2004-default-rtdb.asia-southeast1.firebasedatabase.app";
 
-        if (response.ok) {
-          const allData = await response.json();
+        // Get auth token for authenticated requests
+        let authToken = "";
+        if (auth?.currentUser) {
+          try {
+            authToken = await auth.currentUser.getIdToken();
+            console.log("[Profile] Got auth token for REST requests");
+          } catch (e) {
+            console.log("[Profile] Could not get auth token:", e);
+          }
+        }
 
-          if (allData) {
-            // Search through all entries to find the one with matching ROLL NO
-            for (const key in allData) {
-              const student = allData[key];
-              if (student && student["ROLL NO"] === userData.collegeId) {
-                // Found the student! Get the name
-                const name = student["Name of the student"] || student["Name"] || student["name"] || null;
-                console.log("Found student:", student);
-                console.log("Student name:", name);
+        // Build auth query parameter
+        const authQuery = authToken ? `?auth=${authToken}` : "";
 
+        // Strategy 1: Try specific paths first
+        const paths = [
+          `${databaseUrl}/students/${rollNumber}.json${authQuery}`,
+          `${databaseUrl}/users/${rollNumber}.json${authQuery}`,
+        ];
+
+        for (const path of paths) {
+          try {
+            const response = await fetch(path);
+            if (response.ok) {
+              const data = await response.json();
+              if (data) {
+                const name = data.name || data.Name || data["Name of the student"] || data.studentName;
                 if (name) {
+                  console.log(`[Profile] Found name at ${path}: ${name}`);
                   setStudentName(name);
                   const nameParts = name.trim().split(' ');
                   setProfileData(prev => ({
                     ...prev,
-                    lastName: nameParts[0] || '',           // Surname (first word)
-                    firstName: nameParts.slice(1).join(' ') || '',  // Given name (remaining)
+                    lastName: nameParts[0] || '',
+                    firstName: nameParts.slice(1).join(' ') || '',
                   }));
+                  return;
                 }
-                break; // Found the student, exit loop
+              }
+            }
+          } catch (e) {
+            // Continue to next path
+          }
+        }
+
+        // Strategy 2: Search root-level data with auth
+        const rootResponse = await fetch(`${databaseUrl}/.json${authQuery}`);
+        if (rootResponse.ok) {
+          const allData = await rootResponse.json();
+          if (allData) {
+            // First, try direct key lookup
+            if (allData[rollNumber] && typeof allData[rollNumber] === 'object') {
+              const student = allData[rollNumber];
+              const name = student["Name of the student"] || student.Name || student.name || student.studentName;
+              if (name) {
+                console.log(`[Profile] Found name via direct key ${rollNumber}: ${name}`);
+                setStudentName(name);
+                const nameParts = name.trim().split(' ');
+                setProfileData(prev => ({
+                  ...prev,
+                  lastName: nameParts[0] || '',
+                  firstName: nameParts.slice(1).join(' ') || '',
+                }));
+                return;
+              }
+            }
+
+            // Search through all entries for ROLL NO field match
+            for (const key in allData) {
+              // Skip system paths
+              if (['attendance', 'notifications', 'schedules', 'clubs', 'exams', 'jobs', 'users', 'students'].includes(key)) continue;
+
+              const student = allData[key];
+              if (student && typeof student === 'object') {
+                const studentRoll = student["ROLL NO"] || student.rollNumber || student.collegeId || student["Roll No"];
+                if (studentRoll === rollNumber) {
+                  const name = student["Name of the student"] || student.Name || student.name || student.studentName;
+                  if (name) {
+                    console.log(`[Profile] Found name via root search: ${name}`);
+                    setStudentName(name);
+                    const nameParts = name.trim().split(' ');
+                    setProfileData(prev => ({
+                      ...prev,
+                      lastName: nameParts[0] || '',
+                      firstName: nameParts.slice(1).join(' ') || '',
+                    }));
+                    return;
+                  }
+                }
               }
             }
           }
         }
+
+        console.log(`[Profile] No student name found for ${rollNumber}`);
       } catch (error) {
-        console.error("Error fetching from Firebase:", error);
+        console.error("[Profile] Error fetching student name:", error);
       }
     };
 

@@ -434,11 +434,11 @@ const AdminDashboard = () => {
       action: () => setIsEventModalOpen(true),
     },
     {
-      title: "Post Upcoming Exam",
-      description: "Update dashboards for targeted cohorts",
+      title: "Scheduler",
+      description: "Manage class timetables",
       icon: <Calendar className="w-5 h-5" />,
       color: "bg-amber-600",
-      action: () => setIsExamModalOpen(true),
+      action: () => window.location.href = "/admin/scheduler",
     },
     {
       title: "Club",
@@ -2441,46 +2441,26 @@ const AdminDashboard = () => {
                     />
                   </div>
 
-                  {/* Urgency and Category */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-sm font-semibold">Urgency Level</Label>
-                      <Select
-                        value={notificationForm.urgency}
-                        onValueChange={(value: "normal" | "important" | "critical") =>
-                          setNotificationForm({ ...notificationForm, urgency: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="normal">Normal</SelectItem>
-                          <SelectItem value="important">Important</SelectItem>
-                          <SelectItem value="critical">Critical/Urgent</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-semibold">Category</Label>
-                      <Select
-                        value={notificationForm.category}
-                        onValueChange={(value: "general" | "academic" | "placement" | "event" | "emergency") =>
-                          setNotificationForm({ ...notificationForm, category: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="general">General</SelectItem>
-                          <SelectItem value="academic">Academic</SelectItem>
-                          <SelectItem value="placement">Placement</SelectItem>
-                          <SelectItem value="event">Event</SelectItem>
-                          <SelectItem value="emergency">Emergency</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  {/* Category */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold">Category</Label>
+                    <Select
+                      value={notificationForm.category}
+                      onValueChange={(value: "general" | "academic" | "placement" | "event" | "emergency") =>
+                        setNotificationForm({ ...notificationForm, category: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="general">General</SelectItem>
+                        <SelectItem value="academic">Academic</SelectItem>
+                        <SelectItem value="placement">Placement</SelectItem>
+                        <SelectItem value="event">Event</SelectItem>
+                        <SelectItem value="emergency">Emergency</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Target Audience */}
@@ -2559,18 +2539,7 @@ const AdminDashboard = () => {
                     </div>
                   )}
 
-                  {/* Preview */}
-                  <div className="flex items-center justify-between rounded-lg border border-border bg-muted/20 p-3">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">
-                        Real-time Sync
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        This notification will be sent instantly via Firebase to all targeted users
-                      </p>
-                    </div>
-                    <Bell className="w-5 h-5 text-primary animate-pulse" />
-                  </div>
+
 
                   {/* Form Actions */}
                   <div className="flex justify-end gap-3 pt-4 border-t">
