@@ -30,20 +30,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isDevelopment || !firebaseReady || !auth) {
-      // In development mode or Firebase not ready, check for stored user data
-      console.log("AuthContext: Using development mode");
+    // Helper to restore user from localStorage
+    const restoreFromStorage = (): boolean => {
       const storedUser = localStorage.getItem("dev-user");
       if (storedUser && storedUser !== "undefined" && storedUser !== "null") {
         try {
           const parsedUser = JSON.parse(storedUser);
           if (parsedUser && parsedUser.uid && parsedUser.email) {
             setUserData(parsedUser);
-            // Create a mock User object
             setCurrentUser({
               uid: parsedUser.uid,
               email: parsedUser.email,
             } as User);
+            return true;
           } else {
             localStorage.removeItem("dev-user");
           }
@@ -52,6 +51,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           localStorage.removeItem("dev-user");
         }
       }
+      return false;
+    };
+
+    if (isDevelopment || !firebaseReady || !auth) {
+      console.log("AuthContext: Using development mode");
+      restoreFromStorage();
       setLoading(false);
       return;
     }
@@ -66,7 +71,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const data = await getCurrentUserData(user);
         setUserData(data);
       } else {
-        setUserData(null);
+        // No Firebase user — try localStorage fallback (for backend JWT login)
+        restoreFromStorage();
       }
 
       setLoading(false);
@@ -80,41 +86,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     password: string,
   ): Promise<CollegeUser> => {
     const { signInUser } = await import("@/lib/auth");
-    const userData = await signInUser(collegeId, password);
+    const result = await signInUser(collegeId, password);
 
-    if (isDevelopment || !firebaseReady) {
-      // Store user data in localStorage for development mode
-      try {
-        localStorage.setItem("dev-user", JSON.stringify(userData));
-        setUserData(userData);
-        setCurrentUser({
-          uid: userData.uid,
-          email: userData.email,
-        } as User);
-      } catch (error) {
-        console.error("Error storing user data:", error);
-        setUserData(userData);
-        setCurrentUser({
-          uid: userData.uid,
-          email: userData.email,
-        } as User);
-      }
+    // Always set user data after successful login (both dev and production)
+    try {
+      localStorage.setItem("dev-user", JSON.stringify(result));
+      setUserData(result);
+      setCurrentUser({
+        uid: result.uid,
+        email: result.email,
+      } as User);
+    } catch (error) {
+      console.error("Error storing user data:", error);
+      setUserData(result);
+      setCurrentUser({
+        uid: result.uid,
+        email: result.email,
+      } as User);
     }
 
-    return userData;
+    return result;
   };
 
   const logout = async (): Promise<void> => {
-    if (isDevelopment || !firebaseReady) {
-      // Clear stored user data in development mode
-      localStorage.removeItem("dev-user");
-      setUserData(null);
-      setCurrentUser(null);
-      return;
-    }
+    // Always clear stored user data
+    localStorage.removeItem("dev-user");
+    setUserData(null);
+    setCurrentUser(null);
 
-    const { signOutUser } = await import("@/lib/auth");
-    await signOutUser();
+    if (!isDevelopment && firebaseReady) {
+      const { signOutUser } = await import("@/lib/auth");
+      await signOutUser();
+    }
   };
 
   const resetPassword = async (collegeId: string): Promise<void> => {
