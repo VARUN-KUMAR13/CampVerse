@@ -15,9 +15,8 @@ import {
   AlertCircle,
   RefreshCw,
 } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
-import { database, isDevelopment, firebaseReady, auth } from "@/lib/firebase";
-import { ref, onValue, off, get } from "firebase/database";
+import { useState, useEffect } from "react";
+
 import {
   AttendanceRecord,
   AttendanceStatus,
@@ -99,7 +98,8 @@ const StudentDashboard = () => {
     return value >= startValue && value <= endValue;
   };
 
-  // Fetch student name and validate section from Firebase Realtime Database
+  // Fetch student name and validate section via Backend API
+  // The backend uses Firebase Admin SDK so it doesn't need client-side Firebase auth
   useEffect(() => {
     if (!userData?.collegeId) return;
 
@@ -107,208 +107,43 @@ const StudentDashboard = () => {
       const rollNumber = userData.collegeId;
       console.log(`[StudentData] Fetching data for roll number: ${rollNumber}`);
 
-      // Development mode fallback - hardcoded student names
-      const DEV_STUDENT_NAMES: Record<string, string> = {
-        '22B81A05C3': 'KATAKAM VARUN KUMAR',
-        '22B81A05C4': 'KATAKAM VARUN KUMAR',
-        // Add more students as needed
-      };
-
-      // Check if we have a hardcoded name for this roll number (for development)
-      if (DEV_STUDENT_NAMES[rollNumber]) {
-        console.log(`[StudentData] Using dev fallback name: ${DEV_STUDENT_NAMES[rollNumber]}`);
-        setStudentName(DEV_STUDENT_NAMES[rollNumber]);
-        const isValidRollNumber = isValidSectionBRollNumber(rollNumber);
-        setIsEligibleForAttendance(isValidRollNumber);
-        setStudentSection('C'); // Default section for development
-        return; // Exit early, skip Firebase calls in dev mode
-      }
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
       try {
-        // Strategy 1: Use Firebase SDK if available
-        if (firebaseReady && database) {
-          console.log("[StudentData] Using Firebase SDK...");
+        // Fetch student data from backend API (uses Firebase Admin SDK internally)
+        const response = await fetch(`${apiBaseUrl}/students/${rollNumber}`);
 
-          // Try direct path: students/{rollNumber}
-          try {
-            const studentRef = ref(database, `students/${rollNumber}`);
-            const snapshot = await get(studentRef);
-            if (snapshot.exists()) {
-              const data = snapshot.val();
-              const name = data.name || data.Name || data["Name of the student"] || data.studentName;
-              if (name) {
-                console.log(`[StudentData] Found name at students/${rollNumber}: ${name}`);
-                setStudentName(name);
-                const section = data.section || data.Section || data.SECTION || null;
-                setStudentSection(section);
-                const isValidRollNumber = isValidSectionBRollNumber(rollNumber);
-                setIsEligibleForAttendance(isValidRollNumber);
-                return;
-              }
-            }
-          } catch (e) {
-            console.log("[StudentData] students/{rollNumber} path failed, trying alternatives...");
+        if (response.ok) {
+          const data = await response.json();
+          console.log(`[StudentData] Got student data from backend:`, data);
+
+          if (data.name) {
+            setStudentName(data.name);
           }
 
-          // Try users path
-          try {
-            const usersRef = ref(database, `users/${rollNumber}`);
-            const snapshot = await get(usersRef);
-            if (snapshot.exists()) {
-              const data = snapshot.val();
-              const name = data.name || data.Name || data["Name of the student"] || data.studentName;
-              if (name) {
-                console.log(`[StudentData] Found name at users/${rollNumber}: ${name}`);
-                setStudentName(name);
-                const section = data.section || data.Section || data.SECTION || null;
-                setStudentSection(section);
-                const isValidRollNumber = isValidSectionBRollNumber(rollNumber);
-                setIsEligibleForAttendance(isValidRollNumber);
-                return;
-              }
-            }
-          } catch (e) {
-            console.log("[StudentData] users/{rollNumber} path failed, trying root search...");
+          if (data.section) {
+            setStudentSection(data.section);
           }
 
-          // Try root-level search (students stored with numeric keys)
-          try {
-            const rootRef = ref(database);
-            const snapshot = await get(rootRef);
-            if (snapshot.exists()) {
-              const allData = snapshot.val();
-              for (const key in allData) {
-                // Skip system paths
-                if (['attendance', 'notifications', 'schedules', 'clubs', 'exams', 'jobs', 'users', 'students'].includes(key)) continue;
-
-                const student = allData[key];
-                if (student && typeof student === 'object') {
-                  const studentRoll = student["ROLL NO"] || student.rollNumber || student.collegeId || student["Roll No"];
-                  if (studentRoll === rollNumber) {
-                    const name = student["Name of the student"] || student.Name || student.name || student.studentName;
-                    if (name) {
-                      console.log(`[StudentData] Found name at root/${key}: ${name}`);
-                      setStudentName(name);
-                      const section = student.Section || student.SECTION || student.section || null;
-                      setStudentSection(section);
-                      const isValidRollNumber = isValidSectionBRollNumber(rollNumber);
-                      setIsEligibleForAttendance(isValidRollNumber);
-                      return;
-                    }
-                  }
-                }
-              }
-            }
-          } catch (e) {
-            console.log("[StudentData] Root search via SDK failed:", e);
-          }
+          const isValidRollNumber = isValidSectionBRollNumber(rollNumber);
+          setIsEligibleForAttendance(isValidRollNumber);
+          return;
         }
 
-        // Strategy 2: Fallback to REST API fetch with auth token
-        console.log("[StudentData] Falling back to REST API...");
-        const databaseUrl = import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://campverse-2004-default-rtdb.asia-southeast1.firebasedatabase.app";
-
-        // Get auth token for authenticated requests
-        let authToken = "";
-        if (auth?.currentUser) {
-          try {
-            authToken = await auth.currentUser.getIdToken();
-            console.log("[StudentData] Got auth token for REST requests");
-          } catch (e) {
-            console.log("[StudentData] Could not get auth token:", e);
-          }
-        }
-
-        // Build auth query parameter
-        const authQuery = authToken ? `?auth=${authToken}` : "";
-
-        // Try specific student paths first
-        const paths = [
-          `${databaseUrl}/students/${rollNumber}.json${authQuery}`,
-          `${databaseUrl}/users/${rollNumber}.json${authQuery}`,
-        ];
-
-        for (const path of paths) {
-          try {
-            const response = await fetch(path);
-            if (response.ok) {
-              const data = await response.json();
-              if (data) {
-                const name = data.name || data.Name || data["Name of the student"] || data.studentName;
-                if (name) {
-                  console.log(`[StudentData] Found name via REST at ${path}: ${name}`);
-                  setStudentName(name);
-                  const section = data.section || data.Section || data.SECTION || null;
-                  setStudentSection(section);
-                  const isValidRollNumber = isValidSectionBRollNumber(rollNumber);
-                  setIsEligibleForAttendance(isValidRollNumber);
-                  return;
-                }
-              }
-            }
-          } catch (e) {
-            // Continue to next path
-          }
-        }
-
-        // Try root-level search via REST with auth
-        const rootResponse = await fetch(`${databaseUrl}/.json${authQuery}`);
-        if (rootResponse.ok) {
-          const allData = await rootResponse.json();
-          if (allData) {
-            // First, check if rollNumber is used as direct key
-            if (allData[rollNumber] && typeof allData[rollNumber] === 'object') {
-              const student = allData[rollNumber];
-              const name = student["Name of the student"] || student.Name || student.name || student.studentName;
-              if (name) {
-                console.log(`[StudentData] Found name via direct key ${rollNumber}: ${name}`);
-                setStudentName(name);
-                const section = student.Section || student.SECTION || student.section || null;
-                setStudentSection(section);
-                const isValidRollNumber = isValidSectionBRollNumber(rollNumber);
-                setIsEligibleForAttendance(isValidRollNumber);
-                return;
-              }
-            }
-
-            // Search through all keys for ROLL NO field match
-            for (const key in allData) {
-              // Skip system paths
-              if (['attendance', 'notifications', 'schedules', 'clubs', 'exams', 'jobs', 'users', 'students'].includes(key)) continue;
-
-              const student = allData[key];
-              if (student && typeof student === 'object') {
-                const studentRoll = student["ROLL NO"] || student.rollNumber || student.collegeId || student["Roll No"];
-                if (studentRoll === rollNumber) {
-                  const name = student["Name of the student"] || student.Name || student.name || student.studentName;
-                  if (name) {
-                    console.log(`[StudentData] Found name via REST root search: ${name}`);
-                    setStudentName(name);
-                    const section = student.Section || student.SECTION || student.section || null;
-                    setStudentSection(section);
-                    const isValidRollNumber = isValidSectionBRollNumber(rollNumber);
-                    setIsEligibleForAttendance(isValidRollNumber);
-                    return;
-                  }
-                }
-              }
-            }
-          }
+        // If backend returned 404, student not found in Firebase or MongoDB
+        if (response.status === 404) {
+          console.log(`[StudentData] Student ${rollNumber} not found in backend`);
         } else {
-          console.log(`[StudentData] REST API returned ${rootResponse.status}: ${rootResponse.statusText}`);
+          console.warn(`[StudentData] Backend returned ${response.status}`);
         }
-
-        // If no name found, log and set eligibility based on roll number
-        console.log(`[StudentData] No student name found for ${rollNumber}`);
-        const isValidRollNumber = isValidSectionBRollNumber(rollNumber);
-        setIsEligibleForAttendance(isValidRollNumber);
-
       } catch (error) {
-        console.error("[StudentData] Error fetching student data:", error);
-        // Still set eligibility on error
-        const isValidRollNumber = isValidSectionBRollNumber(rollNumber);
-        setIsEligibleForAttendance(isValidRollNumber);
+        console.warn("[StudentData] Backend API call failed:", error);
       }
+
+      // Fallback: set eligibility based on roll number even if name not found
+      console.log(`[StudentData] Using fallback for ${rollNumber}`);
+      const isValidRollNumber = isValidSectionBRollNumber(rollNumber);
+      setIsEligibleForAttendance(isValidRollNumber);
     };
 
     fetchStudentData();

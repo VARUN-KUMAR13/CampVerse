@@ -354,7 +354,7 @@ const FacultyAssignments = () => {
                             setFormData({ ...formData, year: value })
                           }
                         >
-                          <SelectTrigger>
+                          <SelectTrigger id="year">
                             <SelectValue placeholder="Select Year" />
                           </SelectTrigger>
                           <SelectContent>
@@ -373,7 +373,7 @@ const FacultyAssignments = () => {
                             setFormData({ ...formData, branch: value })
                           }
                         >
-                          <SelectTrigger>
+                          <SelectTrigger id="branch">
                             <SelectValue placeholder="Select Branch" />
                           </SelectTrigger>
                           <SelectContent>
@@ -393,7 +393,7 @@ const FacultyAssignments = () => {
                             setFormData({ ...formData, section: value })
                           }
                         >
-                          <SelectTrigger>
+                          <SelectTrigger id="section">
                             <SelectValue placeholder="Select Section" />
                           </SelectTrigger>
                           <SelectContent>

@@ -77,15 +77,15 @@ const FacultySettings = () => {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="currentPassword">Current Password</Label>
-                  <Input id="currentPassword" type="password" />
+                  <Input id="currentPassword" type="password" autoComplete="current-password" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="newPassword">New Password</Label>
-                  <Input id="newPassword" type="password" />
+                  <Input id="newPassword" type="password" autoComplete="new-password" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                  <Input id="confirmPassword" type="password" />
+                  <Input id="confirmPassword" type="password" autoComplete="new-password" />
                 </div>
               </CardContent>
             </Card>

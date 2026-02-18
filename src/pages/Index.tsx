@@ -362,6 +362,7 @@ const Index = () => {
                       value={formData.name}
                       onChange={handleInputChange}
                       className="h-12"
+                      autoComplete="name"
                       required
                     />
                   </div>
@@ -380,6 +381,7 @@ const Index = () => {
                       value={formData.email}
                       onChange={handleInputChange}
                       className="h-12"
+                      autoComplete="email"
                       required
                     />
                   </div>

@@ -187,6 +187,7 @@ const Login = () => {
                     value={userId}
                     onChange={(e) => handleUserIdChange(e.target.value)}
                     className="h-12"
+                    autoComplete="username"
                     required
                   />
                 </div>
@@ -202,6 +203,7 @@ const Login = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="h-12 pr-10"
+                      autoComplete="current-password"
                       required
                     />
                     <button

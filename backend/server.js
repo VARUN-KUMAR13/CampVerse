@@ -66,6 +66,7 @@ const chatbotRoutes = require("./routes/chatbot");
 const assignmentRoutes = require("./routes/assignments");
 const gradeRoutes = require("./routes/grades");
 const courseRoutes = require("./routes/courses");
+const studentRoutes = require("./routes/students");
 
 // Import middleware
 const { corsHandler, rateLimiter, validateApiVersion } = require("./middleware/auth");
@@ -87,6 +88,7 @@ app.use("/api/chatbot", chatbotRoutes);
 app.use("/api/assignments", assignmentRoutes);
 app.use("/api/grades", gradeRoutes);
 app.use("/api/courses", courseRoutes);
+app.use("/api/students", studentRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

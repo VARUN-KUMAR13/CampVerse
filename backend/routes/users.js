@@ -126,9 +126,7 @@ router.post("/", async (req, res) => {
 // Get user by UID
 router.get("/:uid", async (req, res) => {
   try {
-    const user = await User.findOne({ uid: req.params.uid }).select(
-      "-_id -__v",
-    );
+    const user = await User.findOne({ uid: req.params.uid });
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -137,7 +135,12 @@ router.get("/:uid", async (req, res) => {
     // Update last login
     await user.updateLastLogin();
 
-    res.json(user);
+    // Strip internal MongoDB fields before responding
+    const userObj = user.toObject();
+    delete userObj._id;
+    delete userObj.__v;
+
+    res.json(userObj);
   } catch (error) {
     console.error("Get user error:", error);
     res.status(500).json({ error: "Failed to get user" });

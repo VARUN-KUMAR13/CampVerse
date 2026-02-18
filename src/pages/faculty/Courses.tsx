@@ -341,7 +341,7 @@ const FacultyCourses = () => {
                     <div className="space-y-2">
                       <Label htmlFor="credits">Credits</Label>
                       <Select value={credits} onValueChange={setCredits}>
-                        <SelectTrigger>
+                        <SelectTrigger id="credits">
                           <SelectValue placeholder="Credits" />
                         </SelectTrigger>
                         <SelectContent>
@@ -370,8 +370,8 @@ const FacultyCourses = () => {
                           <button
                             key={color}
                             className={`w-7 h-7 rounded-full ${color} border-2 transition-all ${courseColor === color
-                                ? "border-white scale-110 ring-2 ring-primary"
-                                : "border-transparent opacity-60 hover:opacity-100"
+                              ? "border-white scale-110 ring-2 ring-primary"
+                              : "border-transparent opacity-60 hover:opacity-100"
                               }`}
                             onClick={() => setCourseColor(color)}
                             type="button"

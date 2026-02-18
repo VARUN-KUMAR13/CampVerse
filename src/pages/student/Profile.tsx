@@ -75,128 +75,34 @@ const StudentProfile = () => {
       const rollNumber = userData.collegeId;
       console.log(`[Profile] Fetching student name for roll number: ${rollNumber}`);
 
-      // Development mode fallback - hardcoded student names
-      const DEV_STUDENT_NAMES: Record<string, string> = {
-        '22B81A05C3': 'KATAKAM VARUN KUMAR',
-        '22B81A05C4': 'KATAKAM VARUN KUMAR',
-        // Add more students as needed
-      };
-
-      // Check if we have a hardcoded name for this roll number (for development)
-      if (DEV_STUDENT_NAMES[rollNumber]) {
-        console.log(`[Profile] Using dev fallback name: ${DEV_STUDENT_NAMES[rollNumber]}`);
-        const name = DEV_STUDENT_NAMES[rollNumber];
-        setStudentName(name);
-        const nameParts = name.trim().split(' ');
-        setProfileData(prev => ({
-          ...prev,
-          lastName: nameParts[0] || '',
-          firstName: nameParts.slice(1).join(' ') || '',
-        }));
-        return; // Exit early, no need to fetch from Firebase
-      }
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
       try {
-        const databaseUrl = import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://campverse-2004-default-rtdb.asia-southeast1.firebasedatabase.app";
+        // Fetch student data from backend API (uses Firebase Admin SDK internally)
+        const response = await fetch(`${apiBaseUrl}/students/${rollNumber}`);
 
-        // Get auth token for authenticated requests
-        let authToken = "";
-        if (auth?.currentUser) {
-          try {
-            authToken = await auth.currentUser.getIdToken();
-            console.log("[Profile] Got auth token for REST requests");
-          } catch (e) {
-            console.log("[Profile] Could not get auth token:", e);
+        if (response.ok) {
+          const data = await response.json();
+          console.log(`[Profile] Got student data from backend:`, data);
+
+          if (data.name) {
+            setStudentName(data.name);
+            const nameParts = data.name.trim().split(' ');
+            setProfileData(prev => ({
+              ...prev,
+              lastName: nameParts[0] || '',
+              firstName: nameParts.slice(1).join(' ') || '',
+            }));
           }
+          return;
         }
 
-        // Build auth query parameter
-        const authQuery = authToken ? `?auth=${authToken}` : "";
-
-        // Strategy 1: Try specific paths first
-        const paths = [
-          `${databaseUrl}/students/${rollNumber}.json${authQuery}`,
-          `${databaseUrl}/users/${rollNumber}.json${authQuery}`,
-        ];
-
-        for (const path of paths) {
-          try {
-            const response = await fetch(path);
-            if (response.ok) {
-              const data = await response.json();
-              if (data) {
-                const name = data.name || data.Name || data["Name of the student"] || data.studentName;
-                if (name) {
-                  console.log(`[Profile] Found name at ${path}: ${name}`);
-                  setStudentName(name);
-                  const nameParts = name.trim().split(' ');
-                  setProfileData(prev => ({
-                    ...prev,
-                    lastName: nameParts[0] || '',
-                    firstName: nameParts.slice(1).join(' ') || '',
-                  }));
-                  return;
-                }
-              }
-            }
-          } catch (e) {
-            // Continue to next path
-          }
-        }
-
-        // Strategy 2: Search root-level data with auth
-        const rootResponse = await fetch(`${databaseUrl}/.json${authQuery}`);
-        if (rootResponse.ok) {
-          const allData = await rootResponse.json();
-          if (allData) {
-            // First, try direct key lookup
-            if (allData[rollNumber] && typeof allData[rollNumber] === 'object') {
-              const student = allData[rollNumber];
-              const name = student["Name of the student"] || student.Name || student.name || student.studentName;
-              if (name) {
-                console.log(`[Profile] Found name via direct key ${rollNumber}: ${name}`);
-                setStudentName(name);
-                const nameParts = name.trim().split(' ');
-                setProfileData(prev => ({
-                  ...prev,
-                  lastName: nameParts[0] || '',
-                  firstName: nameParts.slice(1).join(' ') || '',
-                }));
-                return;
-              }
-            }
-
-            // Search through all entries for ROLL NO field match
-            for (const key in allData) {
-              // Skip system paths
-              if (['attendance', 'notifications', 'schedules', 'clubs', 'exams', 'jobs', 'users', 'students'].includes(key)) continue;
-
-              const student = allData[key];
-              if (student && typeof student === 'object') {
-                const studentRoll = student["ROLL NO"] || student.rollNumber || student.collegeId || student["Roll No"];
-                if (studentRoll === rollNumber) {
-                  const name = student["Name of the student"] || student.Name || student.name || student.studentName;
-                  if (name) {
-                    console.log(`[Profile] Found name via root search: ${name}`);
-                    setStudentName(name);
-                    const nameParts = name.trim().split(' ');
-                    setProfileData(prev => ({
-                      ...prev,
-                      lastName: nameParts[0] || '',
-                      firstName: nameParts.slice(1).join(' ') || '',
-                    }));
-                    return;
-                  }
-                }
-              }
-            }
-          }
-        }
-
-        console.log(`[Profile] No student name found for ${rollNumber}`);
+        console.log(`[Profile] Backend returned ${response.status} for ${rollNumber}`);
       } catch (error) {
-        console.error("[Profile] Error fetching student name:", error);
+        console.warn("[Profile] Backend API call failed:", error);
       }
+
+      console.log(`[Profile] No student name found for ${rollNumber}`);
     };
 
     fetchStudentName();
@@ -287,6 +193,35 @@ const StudentProfile = () => {
   const onAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) handleAvatarUpload(file);
+  };
+
+  const handleRemoveAvatar = async () => {
+    try {
+      setProfileData(prev => ({ ...prev, avatar: '' }));
+
+      // Remove from Firebase Storage & update MongoDB
+      if (userData?.uid) {
+        try {
+          const { storage, isDevelopment, firebaseReady } = await import('@/lib/firebase');
+          if (!isDevelopment && firebaseReady && storage) {
+            const { ref, deleteObject } = await import('firebase/storage');
+            const path = `avatars/${userData.uid || userData.collegeId}.jpg`;
+            const storageRef = ref(storage, path);
+            await deleteObject(storageRef).catch(() => {
+              // File may not exist in storage, that's fine
+            });
+          }
+        } catch {
+          // Storage deletion is best-effort
+        }
+
+        await api.put(`/users/${userData.uid}`, { avatar: '' });
+      }
+
+      console.log('✅ Avatar removed successfully');
+    } catch (e) {
+      console.error('Failed to remove avatar:', e);
+    }
   };
 
   const addSkill = () => {
@@ -459,6 +394,17 @@ const StudentProfile = () => {
                         >
                           <Camera className="w-4 h-4" />
                         </Button>
+                        {profileData.avatar && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="absolute top-0 right-0 rounded-full p-2 h-7 w-7 print-hidden"
+                            onClick={handleRemoveAvatar}
+                            aria-label="Remove profile photo"
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        )}
                       </>
                     )}
                   </div>
@@ -635,7 +581,7 @@ const StudentProfile = () => {
                       }
                       disabled={!isEditing}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="branch">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -663,7 +609,7 @@ const StudentProfile = () => {
                       }
                       disabled={!isEditing}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="section">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -686,7 +632,7 @@ const StudentProfile = () => {
                       }
                       disabled={!isEditing}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="semester">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
