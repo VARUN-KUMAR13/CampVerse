@@ -2,8 +2,7 @@ import { useState, useEffect, useRef, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import StudentSidebar from "@/components/StudentSidebar";
-import StudentTopbar from "@/components/StudentTopbar";
+import StudentLayout from "@/components/StudentLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
@@ -241,13 +240,7 @@ const StudentAssignments = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <StudentSidebar />
-
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <StudentTopbar studentId={userData?.collegeId || ""} />
-
-        <main className="flex-1 p-6 space-y-6 overflow-y-auto">
+    <StudentLayout>
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-foreground">My Assignments</h1>
             <p className="text-muted-foreground mt-1">
@@ -392,11 +385,7 @@ const StudentAssignments = () => {
                 </Card>
               ))}
             </div>
-          )}
-        </main>
-      </div>
-    </div>
-  );
+          )}    </StudentLayout>  );
 };
 
 export default StudentAssignments;

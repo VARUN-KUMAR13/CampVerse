@@ -225,12 +225,12 @@ placementJobSchema.pre("save", function (next) {
   if (this.job_id) {
     this.job_id = this.job_id.toUpperCase();
   }
-  
+
   // Auto-close job if deadline has passed
   if (this.deadline <= new Date() && this.status === "Open") {
     this.status = "Closed";
   }
-  
+
   next();
 });
 
@@ -238,16 +238,19 @@ placementJobSchema.pre("save", function (next) {
 placementJobSchema.methods.canUserApply = function (user) {
   // Check if job is open
   if (this.status !== "Open") return false;
-  
+
   // Check if deadline has passed
   if (this.deadline <= new Date()) return false;
-  
+
+  // Admin can apply to any job
+  if (user.role === "admin") return true;
+
   // Check if user is a student
   if (user.role !== "student") return false;
-  
+
   // Check eligibility criteria
   if (this.eligibility.includes("All Branches")) return true;
-  
+
   // Check if user's branch is in eligibility list
   const branchMap = {
     "05": "CSE",
@@ -261,7 +264,7 @@ placementJobSchema.methods.canUserApply = function (user) {
     "09": "BIOTECH",
     "10": "DS",
   };
-  
+
   const userBranch = branchMap[user.branch];
   return this.eligibility.includes(userBranch);
 };
@@ -273,7 +276,7 @@ placementJobSchema.methods.incrementViewCount = function () {
 
 placementJobSchema.methods.updateApplicationCounts = async function () {
   const JobApplication = mongoose.model("JobApplication");
-  
+
   const counts = await JobApplication.aggregate([
     { $match: { jobId: this._id } },
     {
@@ -283,12 +286,12 @@ placementJobSchema.methods.updateApplicationCounts = async function () {
       },
     },
   ]);
-  
+
   // Reset counts
   this.appliedCount = 0;
   this.shortlistedCount = 0;
   this.selectedCount = 0;
-  
+
   // Update counts based on aggregation
   counts.forEach((item) => {
     switch (item._id) {
@@ -303,7 +306,7 @@ placementJobSchema.methods.updateApplicationCounts = async function () {
         break;
     }
   });
-  
+
   return this.save();
 };
 
@@ -326,7 +329,7 @@ placementJobSchema.statics.getJobsByEligibility = function (userBranch) {
       { eligibility: userBranch },
     ],
   };
-  
+
   return this.find(query).sort({ createdAt: -1 });
 };
 

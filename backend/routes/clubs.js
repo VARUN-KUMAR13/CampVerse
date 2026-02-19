@@ -185,8 +185,8 @@ router.delete('/:id', authenticateToken, authorizeRoles(['admin', 'faculty']), a
 
 // @route   POST /api/clubs/:id/join
 // @desc    Join a club
-// @access  Students
-router.post('/:id/join', authenticateToken, authorizeRoles(['student']), async (req, res) => {
+// @access  Students, Admin
+router.post('/:id/join', authenticateToken, authorizeRoles(['student', 'admin']), async (req, res) => {
     try {
         const club = await Club.findById(req.params.id);
 

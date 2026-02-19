@@ -22,8 +22,6 @@ export interface CollegeUser {
 
 // College ID pattern validation
 export const validateCollegeId = (id: string): boolean => {
-  // Pattern: YYBBBSBBR (e.g., 22B81A05C3)
-  // YY = Year, BBB = College code, S = Section, BB = Branch, R = Roll
   const pattern = /^[0-9]{2}[A-Z0-9]{3}[A-Z][0-9]{2}[A-Z0-9]{1,2}$/;
   return pattern.test(id);
 };
@@ -40,17 +38,9 @@ export const parseCollegeId = (id: string) => {
   const branch = id.substring(6, 8);
   const rollNumber = id.substring(8);
 
-  // Determine role based on section
   const role: "student" | "faculty" = section === "Z" ? "faculty" : "student";
 
-  return {
-    year,
-    collegeCode,
-    section,
-    branch,
-    rollNumber,
-    role,
-  };
+  return { year, collegeCode, section, branch, rollNumber, role };
 };
 
 // Convert college ID to email
@@ -58,142 +48,199 @@ export const collegeIdToEmail = (id: string): string => {
   return `${id}@cvr.ac.in`;
 };
 
-// API base URL (should be environment variable)
+// API base URL
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
-// Mock users for development (fallback only)
-const mockUsers: Record<string, CollegeUser> = {
-  admin: {
-    uid: "admin-uid",
-    name: "Administrator",
-    collegeId: "admin",
-    email: "admin@cvr.ac.in",
-    role: "admin",
-    year: "",
-    section: "",
-    branch: "",
-    rollNumber: "",
-  },
-  "22B81A05C3": {
-    uid: "student-uid-1",
-    name: "John Doe",
-    collegeId: "22B81A05C3",
-    email: "22B81A05C3@cvr.ac.in",
-    role: "student",
-    year: "22",
-    section: "A",
-    branch: "05",
-    rollNumber: "C3",
-  },
-  "22B81Z05F1": {
-    uid: "faculty-uid-1",
-    name: "Dr. Jane Smith",
-    collegeId: "22B81Z05F1",
-    email: "22B81Z05F1@cvr.ac.in",
-    role: "faculty",
-    year: "22",
-    section: "Z",
-    branch: "05",
-    rollNumber: "F1",
-  },
+// Create user account — provisions Firebase Auth user via backend
+export const createUserAccount = async (collegeId: string, name: string) => {
+  if (collegeId !== "admin" && !validateCollegeId(collegeId)) {
+    throw new Error("Invalid college ID format");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/auth/provision`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ collegeId }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to create user");
+  }
+
+  const email = collegeIdToEmail(collegeId);
+  const parsedInfo = validateCollegeId(collegeId) ? parseCollegeId(collegeId) : { year: "", collegeCode: "", section: "", branch: "", rollNumber: "", role: "admin" as const };
+
+  return {
+    uid: `${collegeId}-uid`,
+    name,
+    collegeId,
+    email,
+    ...parsedInfo,
+  };
 };
 
-// Backend API login - Primary authentication method
+// Backend API login — for admin or fallback
 const backendLogin = async (
   collegeId: string,
   password: string,
 ): Promise<CollegeUser> => {
-  try {
-    console.log("Attempting backend login for:", collegeId);
+  const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ collegeId, password }),
+  });
 
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ collegeId, password }),
-    });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Login failed");
+  }
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || "Login failed");
-    }
+  const data = await response.json();
 
-    const data = await response.json();
-    console.log("Backend login successful, storing JWT token");
+  if (data.token) {
+    setAuthToken(data.token);
+  }
 
-    // Store the JWT token
-    if (data.token) {
-      setAuthToken(data.token);
-    }
+  const user = data.user;
+  return {
+    uid: user.uid || user._id,
+    name: user.name,
+    collegeId: user.collegeId,
+    email: user.email,
+    role: user.role,
+    year: user.year || "",
+    section: user.section || "",
+    branch: user.branch || "",
+    rollNumber: user.rollNumber || "",
+  };
+};
 
-    // Return user data normalized to CollegeUser interface
-    const user = data.user;
-    return {
-      uid: user.uid || user._id,
-      name: user.name,
-      collegeId: user.collegeId,
-      email: user.email,
-      role: user.role,
-      year: user.year || "",
-      section: user.section || "",
-      branch: user.branch || "",
-      rollNumber: user.rollNumber || "",
-    };
-  } catch (error: any) {
-    console.error("Backend login error:", error);
-    throw error;
+// Firebase login — exchange Firebase ID token for backend JWT + user data
+const firebaseBackendLogin = async (
+  idToken: string,
+  collegeId: string,
+): Promise<CollegeUser> => {
+  const response = await fetch(`${API_BASE_URL}/auth/firebase-login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ idToken, collegeId }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Firebase login failed");
+  }
+
+  const data = await response.json();
+
+  if (data.token) {
+    setAuthToken(data.token);
+  }
+
+  const user = data.user;
+  return {
+    uid: user.uid || user._id,
+    name: user.name,
+    collegeId: user.collegeId,
+    email: user.email,
+    role: user.role,
+    year: user.year || "",
+    section: user.section || "",
+    branch: user.branch || "",
+    rollNumber: user.rollNumber || "",
+  };
+};
+
+// Provision Firebase user via backend (Admin SDK creates the user)
+const provisionFirebaseUser = async (collegeId: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/auth/provision`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ collegeId }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to provision user");
   }
 };
 
-// Development mode authentication (fallback)
-const devSignIn = async (
+// Sign in user — Firebase Auth first, backend JWT second
+export const signInUser = async (
   collegeId: string,
   password: string,
 ): Promise<CollegeUser> => {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  // Check for admin login
-  if (collegeId === "admin" && password === "admin") {
-    return mockUsers.admin;
+  // Admin login — bypass Firebase Auth entirely
+  if (collegeId === "admin") {
+    return await backendLogin(collegeId, password);
   }
 
-  // Check if user exists in mock data
-  if (mockUsers[collegeId]) {
-    if (password === collegeId) {
-      return mockUsers[collegeId];
-    } else {
-      throw new Error("Invalid password");
+  // Validate college ID
+  if (!validateCollegeId(collegeId)) {
+    throw new Error("Invalid college ID format");
+  }
+
+  const email = collegeIdToEmail(collegeId);
+
+  // If Firebase is ready, use Firebase Auth
+  if (firebaseReady && auth) {
+    try {
+      // Step 1: Sign in with Firebase Auth
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+      // Step 2: Get Firebase ID token
+      const idToken = await userCredential.user.getIdToken();
+
+      // Step 3: Exchange ID token for backend JWT + user data
+      return await firebaseBackendLogin(idToken, collegeId);
+    } catch (firebaseError: any) {
+      // If user doesn't exist in Firebase, provision them
+      if (firebaseError.code === "auth/user-not-found") {
+        // Only allow provisioning if password matches collegeId (initial password)
+        if (password !== collegeId) {
+          throw new Error("Invalid college ID or password");
+        }
+
+        try {
+          // Provision Firebase user via backend Admin SDK
+          await provisionFirebaseUser(collegeId);
+
+          // Retry sign-in after provisioning
+          const userCredential = await signInWithEmailAndPassword(auth, email, password);
+          const idToken = await userCredential.user.getIdToken();
+          return await firebaseBackendLogin(idToken, collegeId);
+        } catch (provisionError: any) {
+          console.error("Provision error:", provisionError);
+          // Fall back to backend-only login
+          return await backendLogin(collegeId, password);
+        }
+      }
+
+      // If it's an invalid credential error, provide clear message
+      if (firebaseError.code === "auth/wrong-password" ||
+        firebaseError.code === "auth/invalid-credential") {
+        throw new Error("Invalid password. If you've reset your password, use the new one.");
+      }
+
+      // For other Firebase errors, re-throw with clear message
+      if (firebaseError.code === "auth/too-many-requests") {
+        throw new Error("Too many login attempts. Please try again later.");
+      }
+
+      // Fallback to backend login for any other Firebase error
+      console.warn("Firebase sign-in failed, trying backend:", firebaseError.message);
+      return await backendLogin(collegeId, password);
     }
   }
 
-  // If user doesn't exist, try to create based on college ID format
-  if (validateCollegeId(collegeId)) {
-    if (password === collegeId) {
-      const parsedInfo = parseCollegeId(collegeId);
-      const newUser: CollegeUser = {
-        uid: `${collegeId}-uid`,
-        name: `User ${collegeId}`,
-        collegeId,
-        email: collegeIdToEmail(collegeId),
-        ...parsedInfo,
-      };
-      mockUsers[collegeId] = newUser;
-      return newUser;
-    } else {
-      throw new Error("Invalid password");
-    }
-  }
-
-  throw new Error("User not found");
+  // Firebase not ready — fallback to backend-only login
+  return await backendLogin(collegeId, password);
 };
 
-// Development mode password reset
-const devResetPassword = async (collegeId: string): Promise<void> => {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
+// Send password reset email via backend (handles provisioning + Nodemailer)
+export const resetPassword = async (collegeId: string): Promise<void> => {
   if (collegeId === "admin") {
     throw new Error("Admin password cannot be reset");
   }
@@ -202,143 +249,28 @@ const devResetPassword = async (collegeId: string): Promise<void> => {
     throw new Error("Invalid college ID format");
   }
 
-  console.log(
-    `Development mode: Password reset email would be sent to ${collegeIdToEmail(collegeId)}`,
-  );
-};
+  const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ collegeId }),
+  });
 
-// Create user account
-export const createUserAccount = async (collegeId: string, name: string) => {
-  try {
-    // Validate college ID
-    if (!validateCollegeId(collegeId)) {
-      throw new Error("Invalid college ID format");
-    }
+  const data = await response.json();
 
-    if (isDevelopment) {
-      // Development mode - just create mock user
-      const parsedInfo = parseCollegeId(collegeId);
-      const userData: CollegeUser = {
-        uid: `${collegeId}-uid`,
-        name,
-        collegeId,
-        email: collegeIdToEmail(collegeId),
-        ...parsedInfo,
-      };
-      mockUsers[collegeId] = userData;
-      return userData;
-    }
-
-    const email = collegeIdToEmail(collegeId);
-    const password = collegeId; // Default password is the college ID
-
-    // Create Firebase user
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password,
-    );
-    const user = userCredential.user;
-
-    // Parse college ID for additional info
-    const parsedInfo = parseCollegeId(collegeId);
-
-    // Create user in MongoDB via API
-    const userData = {
-      uid: user.uid,
-      name,
-      collegeId,
-      email,
-      ...parsedInfo,
-    };
-
-    const response = await fetch(`${API_BASE_URL}/users`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(userData),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to create user in database");
-    }
-
-    return userData;
-  } catch (error) {
-    console.error("Error creating user account:", error);
-    throw error;
-  }
-};
-
-// Sign in user
-export const signInUser = async (
-  collegeId: string,
-  password: string,
-) => {
-  try {
-    // ALWAYS try backend login first to get JWT token
-    // This works for both development and production
-    try {
-      console.log("Attempting backend authentication...");
-      const userData = await backendLogin(collegeId, password);
-      console.log("Backend login successful for:", collegeId);
-      return userData;
-    } catch (backendError: any) {
-      console.warn("Backend login failed, trying fallback:", backendError.message);
-
-      // If backend is unreachable (network error), use dev fallback
-      if (backendError.message?.includes("fetch") || backendError.message?.includes("network")) {
-        console.log("Backend unreachable, using development mode fallback");
-        return await devSignIn(collegeId, password);
-      }
-
-      // If it's an auth error (wrong password, user not found), propagate it
-      throw backendError;
-    }
-  } catch (error) {
-    console.error("Error signing in:", error);
-    throw error;
-  }
-};
-
-// Send password reset email
-export const resetPassword = async (collegeId: string) => {
-  try {
-    // Development mode or Firebase not ready
-    if (isDevelopment || !firebaseReady || !auth) {
-      return await devResetPassword(collegeId);
-    }
-
-    if (collegeId === "admin") {
-      throw new Error("Admin password cannot be reset");
-    }
-
-    if (!validateCollegeId(collegeId)) {
-      throw new Error("Invalid college ID format");
-    }
-
-    const email = collegeIdToEmail(collegeId);
-    await sendPasswordResetEmail(auth, email);
-  } catch (error) {
-    console.error("Error sending password reset email:", error);
-    throw error;
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to send reset email");
   }
 };
 
 // Sign out user
 export const signOutUser = async () => {
   try {
-    // Always clear the JWT token
     clearAuthToken();
     console.log("Auth token cleared");
 
-    if (isDevelopment || !firebaseReady || !auth) {
-      // In development mode, just clear any stored state
-      console.log("User signed out");
-      return;
+    if (firebaseReady && auth) {
+      await signOut(auth);
     }
-    await signOut(auth);
   } catch (error) {
     console.error("Error signing out:", error);
     throw error;
@@ -350,12 +282,6 @@ export const getCurrentUserData = async (
   user: User,
 ): Promise<CollegeUser | null> => {
   try {
-    if (isDevelopment) {
-      // Return mock user data based on user object
-      const collegeId = user.email?.split("@")[0] || "admin";
-      return mockUsers[collegeId] || null;
-    }
-
     const response = await fetch(`${API_BASE_URL}/users/${user.uid}`);
     if (!response.ok) {
       return null;

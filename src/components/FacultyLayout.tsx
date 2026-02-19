@@ -1,19 +1,13 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search, Shield, ChevronLeft, ChevronRight } from "lucide-react";
-import AdminSidebar from "@/components/AdminSidebar";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import FacultySidebar from "@/components/FacultySidebar";
+import FacultyTopbar from "@/components/FacultyTopbar";
 
-interface AdminLayoutProps {
+interface FacultyLayoutProps {
     children: React.ReactNode;
 }
 
-const AdminLayout = ({ children }: AdminLayoutProps) => {
-    const navigate = useNavigate();
-    const { userData, logout } = useAuth();
+const FacultyLayout = ({ children }: FacultyLayoutProps) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
         return typeof window !== "undefined" && window.innerWidth >= 768;
     });
@@ -60,73 +54,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         setIsSidebarOpen(false);
     }, []);
 
-    const handleLogout = async () => {
-        try {
-            await logout();
-            navigate("/", { replace: true });
-        } catch (error) {
-            console.error("Logout error:", error);
-        }
-    };
-
     return (
         <div className="min-h-screen bg-background">
             {/* Top Bar */}
-            <div ref={topbarRef} className="sticky top-0 z-30">
-                <header className="bg-card border-b border-border px-6 py-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-3">
-                                <button
-                                    onClick={handleLogout}
-                                    className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center hover:bg-primary/90 transition-colors cursor-pointer"
-                                    title="Logout and return to home"
-                                >
-                                    <Shield className="w-5 h-5 text-primary-foreground" />
-                                </button>
-                                <div>
-                                    <h1 className="font-bold text-foreground">CampVerse Admin</h1>
-                                    <p className="text-xs text-muted-foreground">
-                                        System Administration
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="relative hidden sm:block">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                                <Input
-                                    placeholder="Search users, courses..."
-                                    className="pl-10 w-64"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex items-center space-x-4">
-                            <Badge
-                                variant="outline"
-                                className="bg-green-50 text-green-700 border-green-200 hidden sm:flex"
-                            >
-                                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                                System Online
-                            </Badge>
-                            <div className="text-right hidden sm:block">
-                                <div className="font-medium text-foreground">
-                                    {userData?.name || "Administrator"}
-                                </div>
-                                <div className="text-sm text-muted-foreground">
-                                    {userData?.email || "admin@cvr.ac.in"}
-                                </div>
-                            </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleLogout}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                                Logout
-                            </Button>
-                        </div>
-                    </div>
-                </header>
+            <div className="sticky top-0 z-30" ref={topbarRef}>
+                <FacultyTopbar />
             </div>
 
             {/* Main layout — flex container */}
@@ -143,7 +75,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                             top: `${topbarHeight}px`,
                         }}
                     >
-                        <AdminSidebar onClose={closeSidebar} isOpen={isSidebarOpen} />
+                        <FacultySidebar />
                     </div>
                 </div>
 
@@ -180,7 +112,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                         height: `calc(100vh - ${topbarHeight}px)`,
                     }}
                 >
-                    <AdminSidebar onClose={closeSidebar} isOpen={isSidebarOpen} />
+                    <FacultySidebar onNavigate={closeSidebar} />
                 </div>
 
                 {/* Main content */}
@@ -188,11 +120,13 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                     className="flex-1 min-w-0 transition-all duration-300 ease-in-out"
                     style={{ minHeight: `calc(100vh - ${topbarHeight}px)` }}
                 >
-                    {children}
+                    <main className="p-6 space-y-6 overflow-y-auto">
+                        {children}
+                    </main>
                 </div>
             </div>
         </div>
     );
 };
 
-export default AdminLayout;
+export default FacultyLayout;

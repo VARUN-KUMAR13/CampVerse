@@ -18,8 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import FacultySidebar from "@/components/FacultySidebar";
-import FacultyTopbar from "@/components/FacultyTopbar";
+import FacultyLayout from "@/components/FacultyLayout";
 import {
   CheckCircle2,
   XCircle,
@@ -505,243 +504,237 @@ const FacultyStudents = () => {
   const statusCounts = getStatusCount();
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <FacultySidebar />
-
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <FacultyTopbar />
-
-        <main className="flex-1 p-6 space-y-6 overflow-y-auto">
-          {/* Time & Permission Alert */}
-          {permission && !permission.canMark && (
-            <Alert variant="destructive" className="border-red-500/50 bg-red-500/10">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Attendance Marking Restricted</AlertTitle>
-              <AlertDescription>
-                {permission.reason}
-                {!permission.isSlotOpen && (
-                  <span className="block mt-1 text-sm">
-                    Contact your administrator for attendance override.
-                  </span>
-                )}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Main Attendance Card */}
-          <Card className="border-border/50 shadow-lg">
-            <CardHeader className="border-b border-border/50">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-xl">Student Attendance</CardTitle>
-                  <CardDescription className="mt-1">
-                    Mark attendance for your class. Changes sync in real-time.
-                  </CardDescription>
-                </div>
-
-                {/* Timer Badge */}
-                {selectedSlot && permission?.canMark && (
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "gap-2 py-1.5 px-3",
-                      remainingTime === "Expired"
-                        ? "border-red-500 text-red-500"
-                        : "border-green-500 text-green-500"
-                    )}
-                  >
-                    <Timer className="w-4 h-4" />
-                    {remainingTime}
-                  </Badge>
-                )}
-              </div>
-            </CardHeader>
-
-            <CardContent className="pt-6">
-              {/* Filters and Actions */}
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
-                <div className="flex gap-4 flex-1">
-                  <Select value={selectedCourse} onValueChange={setSelectedCourse}>
-                    <SelectTrigger className="w-full md:w-64">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {courses.map((course) => (
-                        <SelectItem key={course.code} value={course.name}>
-                          {course.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={selectedSection} onValueChange={setSelectedSection}>
-                    <SelectTrigger className="w-full md:w-48">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="B">Section B</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={markAllPresent}
-                    disabled={!permission?.canMark}
-                    className="gap-2"
-                  >
-                    <CheckCheck className="w-4 h-4" />
-                    All Present
-                  </Button>
-
-                  <Button
-                    onClick={() => setShowSaveConfirm(true)}
-                    disabled={!hasUnsavedChanges || !permission?.canMark}
-                    className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
-                  >
-                    {isSaving ? (
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Save className="w-4 h-4" />
-                    )}
-                    Take Attendance
-                  </Button>
-                </div>
-              </div>
-
-              {/* Status Summary */}
-              <div className="grid grid-cols-4 gap-4 mb-6">
-                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-green-500">{statusCounts.present}</div>
-                  <div className="text-xs text-muted-foreground">Present</div>
-                </div>
-                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-red-500">{statusCounts.absent}</div>
-                  <div className="text-xs text-muted-foreground">Absent</div>
-                </div>
-                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-yellow-500">{statusCounts.late}</div>
-                  <div className="text-xs text-muted-foreground">Late</div>
-                </div>
-                <div className="bg-gray-500/10 border border-gray-500/30 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-gray-500">{statusCounts.unmarked}</div>
-                  <div className="text-xs text-muted-foreground">Not Marked</div>
-                </div>
-              </div>
-
-              {/* Attendance Table */}
-              <div className="space-y-2">
-                <div className="grid grid-cols-3 gap-8 py-3 border-b text-sm font-medium text-muted-foreground px-4">
-                  <div>Roll Number</div>
-                  <div>Status</div>
-                  <div>Last Updated</div>
-                </div>
-
-                {isLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : (
-                  students.map((student) => (
-                    <div
-                      key={student.studentId}
-                      className={cn(
-                        "grid grid-cols-3 gap-8 py-3 px-4 items-center rounded-lg transition-all duration-200",
-                        "hover:bg-muted/30",
-                        student.isModified && "bg-blue-500/5 border-l-2 border-l-blue-500",
-                        !permission?.canMark && "opacity-60"
-                      )}
-                    >
-                      <div className="text-foreground font-medium">{student.studentId}</div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleAttendanceStatus(student.studentId, "PRESENT")}
-                          disabled={!permission?.canMark}
-                          className={cn(
-                            "p-2 rounded-lg transition-all duration-200",
-                            "hover:bg-green-500/20 hover:scale-110",
-                            "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                          )}
-                          title="Present"
-                        >
-                          <CheckCircle2
-                            className={cn(
-                              "w-5 h-5 transition-colors",
-                              student.status === "PRESENT"
-                                ? "text-green-500"
-                                : "text-gray-400 hover:text-green-400"
-                            )}
-                          />
-                        </button>
-                        <button
-                          onClick={() => handleAttendanceStatus(student.studentId, "ABSENT")}
-                          disabled={!permission?.canMark}
-                          className={cn(
-                            "p-2 rounded-lg transition-all duration-200",
-                            "hover:bg-red-500/20 hover:scale-110",
-                            "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                          )}
-                          title="Absent"
-                        >
-                          <XCircle
-                            className={cn(
-                              "w-5 h-5 transition-colors",
-                              student.status === "ABSENT"
-                                ? "text-red-500"
-                                : "text-gray-400 hover:text-red-400"
-                            )}
-                          />
-                        </button>
-                        <button
-                          onClick={() => handleAttendanceStatus(student.studentId, "LATE")}
-                          disabled={!permission?.canMark}
-                          className={cn(
-                            "p-2 rounded-lg transition-all duration-200",
-                            "hover:bg-yellow-500/20 hover:scale-110",
-                            "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                          )}
-                          title="Late"
-                        >
-                          <Clock
-                            className={cn(
-                              "w-5 h-5 transition-colors",
-                              student.status === "LATE"
-                                ? "text-yellow-500"
-                                : "text-gray-400 hover:text-yellow-400"
-                            )}
-                          />
-                        </button>
-                      </div>
-                      <div className="text-muted-foreground text-sm flex items-center gap-2">
-                        {student.lastUpdated}
-                        {student.isModified && (
-                          <Badge variant="outline" className="text-xs text-blue-500 border-blue-500">
-                            Modified
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* Slot Lock Warning Notice */}
-              {selectedSlot && (
-                <div className="mt-6 p-4 bg-muted/30 rounded-lg border border-border/50">
-                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                    <LockKeyhole className="w-4 h-4" />
-                    <span>
-                      Attendance marking will be locked 15 minutes after the slot ends
-                      ({selectedSlot.endTime}). Contact admin for late entries.
-                    </span>
-                  </div>
-                </div>
+    <FacultyLayout>
+      <div className="space-y-6">
+        {/* Time & Permission Alert */}
+        {permission && !permission.canMark && (
+          <Alert variant="destructive" className="border-red-500/50 bg-red-500/10">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Attendance Marking Restricted</AlertTitle>
+            <AlertDescription>
+              {permission.reason}
+              {!permission.isSlotOpen && (
+                <span className="block mt-1 text-sm">
+                  Contact your administrator for attendance override.
+                </span>
               )}
-            </CardContent>
-          </Card>
-        </main>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Main Attendance Card */}
+        <Card className="border-border/50 shadow-lg">
+          <CardHeader className="border-b border-border/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl">Student Attendance</CardTitle>
+                <CardDescription className="mt-1">
+                  Mark attendance for your class. Changes sync in real-time.
+                </CardDescription>
+              </div>
+
+              {/* Timer Badge */}
+              {selectedSlot && permission?.canMark && (
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "gap-2 py-1.5 px-3",
+                    remainingTime === "Expired"
+                      ? "border-red-500 text-red-500"
+                      : "border-green-500 text-green-500"
+                  )}
+                >
+                  <Timer className="w-4 h-4" />
+                  {remainingTime}
+                </Badge>
+              )}
+            </div>
+          </CardHeader>
+
+          <CardContent className="pt-6">
+            {/* Filters and Actions */}
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+              <div className="flex gap-4 flex-1">
+                <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+                  <SelectTrigger className="w-full md:w-64">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {courses.map((course) => (
+                      <SelectItem key={course.code} value={course.name}>
+                        {course.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedSection} onValueChange={setSelectedSection}>
+                  <SelectTrigger className="w-full md:w-48">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="B">Section B</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={markAllPresent}
+                  disabled={!permission?.canMark}
+                  className="gap-2"
+                >
+                  <CheckCheck className="w-4 h-4" />
+                  All Present
+                </Button>
+
+                <Button
+                  onClick={() => setShowSaveConfirm(true)}
+                  disabled={!hasUnsavedChanges || !permission?.canMark}
+                  className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+                >
+                  {isSaving ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  Take Attendance
+                </Button>
+              </div>
+            </div>
+
+            {/* Status Summary */}
+            <div className="grid grid-cols-4 gap-4 mb-6">
+              <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-green-500">{statusCounts.present}</div>
+                <div className="text-xs text-muted-foreground">Present</div>
+              </div>
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-red-500">{statusCounts.absent}</div>
+                <div className="text-xs text-muted-foreground">Absent</div>
+              </div>
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-yellow-500">{statusCounts.late}</div>
+                <div className="text-xs text-muted-foreground">Late</div>
+              </div>
+              <div className="bg-gray-500/10 border border-gray-500/30 rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-gray-500">{statusCounts.unmarked}</div>
+                <div className="text-xs text-muted-foreground">Not Marked</div>
+              </div>
+            </div>
+
+            {/* Attendance Table */}
+            <div className="space-y-2">
+              <div className="grid grid-cols-3 gap-8 py-3 border-b text-sm font-medium text-muted-foreground px-4">
+                <div>Roll Number</div>
+                <div>Status</div>
+                <div>Last Updated</div>
+              </div>
+
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                students.map((student) => (
+                  <div
+                    key={student.studentId}
+                    className={cn(
+                      "grid grid-cols-3 gap-8 py-3 px-4 items-center rounded-lg transition-all duration-200",
+                      "hover:bg-muted/30",
+                      student.isModified && "bg-blue-500/5 border-l-2 border-l-blue-500",
+                      !permission?.canMark && "opacity-60"
+                    )}
+                  >
+                    <div className="text-foreground font-medium">{student.studentId}</div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleAttendanceStatus(student.studentId, "PRESENT")}
+                        disabled={!permission?.canMark}
+                        className={cn(
+                          "p-2 rounded-lg transition-all duration-200",
+                          "hover:bg-green-500/20 hover:scale-110",
+                          "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                        )}
+                        title="Present"
+                      >
+                        <CheckCircle2
+                          className={cn(
+                            "w-5 h-5 transition-colors",
+                            student.status === "PRESENT"
+                              ? "text-green-500"
+                              : "text-gray-400 hover:text-green-400"
+                          )}
+                        />
+                      </button>
+                      <button
+                        onClick={() => handleAttendanceStatus(student.studentId, "ABSENT")}
+                        disabled={!permission?.canMark}
+                        className={cn(
+                          "p-2 rounded-lg transition-all duration-200",
+                          "hover:bg-red-500/20 hover:scale-110",
+                          "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                        )}
+                        title="Absent"
+                      >
+                        <XCircle
+                          className={cn(
+                            "w-5 h-5 transition-colors",
+                            student.status === "ABSENT"
+                              ? "text-red-500"
+                              : "text-gray-400 hover:text-red-400"
+                          )}
+                        />
+                      </button>
+                      <button
+                        onClick={() => handleAttendanceStatus(student.studentId, "LATE")}
+                        disabled={!permission?.canMark}
+                        className={cn(
+                          "p-2 rounded-lg transition-all duration-200",
+                          "hover:bg-yellow-500/20 hover:scale-110",
+                          "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                        )}
+                        title="Late"
+                      >
+                        <Clock
+                          className={cn(
+                            "w-5 h-5 transition-colors",
+                            student.status === "LATE"
+                              ? "text-yellow-500"
+                              : "text-gray-400 hover:text-yellow-400"
+                          )}
+                        />
+                      </button>
+                    </div>
+                    <div className="text-muted-foreground text-sm flex items-center gap-2">
+                      {student.lastUpdated}
+                      {student.isModified && (
+                        <Badge variant="outline" className="text-xs text-blue-500 border-blue-500">
+                          Modified
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Slot Lock Warning Notice */}
+            {selectedSlot && (
+              <div className="mt-6 p-4 bg-muted/30 rounded-lg border border-border/50">
+                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                  <LockKeyhole className="w-4 h-4" />
+                  <span>
+                    Attendance marking will be locked 15 minutes after the slot ends
+                    ({selectedSlot.endTime}). Contact admin for late entries.
+                  </span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Slot Lock Warning Dialog */}
@@ -813,7 +806,7 @@ const FacultyStudents = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </FacultyLayout>
   );
 };
 

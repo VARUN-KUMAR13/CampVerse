@@ -67,6 +67,7 @@ const assignmentRoutes = require("./routes/assignments");
 const gradeRoutes = require("./routes/grades");
 const courseRoutes = require("./routes/courses");
 const studentRoutes = require("./routes/students");
+const contactRoutes = require("./routes/contact");
 
 // Import middleware
 const { corsHandler, rateLimiter, validateApiVersion } = require("./middleware/auth");
@@ -89,6 +90,7 @@ app.use("/api/assignments", assignmentRoutes);
 app.use("/api/grades", gradeRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/students", studentRoutes);
+app.use("/api/contact", contactRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

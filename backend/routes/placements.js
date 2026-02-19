@@ -305,8 +305,8 @@ router.delete("/:id", authenticateToken, authorizeRoles(["admin"]), async (req, 
 
 // @route   POST /api/placements/:id/apply
 // @desc    Apply to a placement job
-// @access  Students only
-router.post("/:id/apply", authenticateToken, authorizeRoles(["student"]), upload.array("documents", 5), async (req, res) => {
+// @access  Students, Admin
+router.post("/:id/apply", authenticateToken, authorizeRoles(["student", "admin"]), upload.array("documents", 5), async (req, res) => {
   try {
     const job = await PlacementJob.findById(req.params.id);
 
@@ -470,8 +470,8 @@ router.put("/:jobId/applications/:applicationId", authenticateToken, authorizeRo
 
 // @route   GET /api/placements/student/applications
 // @desc    Get current student's applications
-// @access  Students only
-router.get("/student/applications", authenticateToken, authorizeRoles(["student"]), async (req, res) => {
+// @access  Students, Admin
+router.get("/student/applications", authenticateToken, authorizeRoles(["student", "admin"]), async (req, res) => {
   try {
     const { status, page = 1, limit = 10 } = req.query;
 

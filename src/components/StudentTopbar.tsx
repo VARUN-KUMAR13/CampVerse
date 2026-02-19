@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Bell, Search, Menu, User, Settings, LogOut } from "lucide-react";
+import { Bell, Search, Menu, User, Settings, LogOut, GraduationCap } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -26,7 +26,7 @@ const StudentTopbar = ({ studentId }: StudentTopbarProps) => {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentDateTime(new Date());
-    }, 60000); // Update every minute
+    }, 1000); // Update every second for accurate time
 
     return () => clearInterval(timer);
   }, []);
@@ -42,20 +42,26 @@ const StudentTopbar = ({ studentId }: StudentTopbarProps) => {
   return (
     <header className="sticky top-0 z-50 w-full bg-background border-b border-border px-6 py-4">
       <div className="flex items-center justify-between">
-        {/* Left side - Mobile menu and breadcrumb */}
-        <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="sm" className="md:hidden">
-            <Menu className="w-5 h-5" />
-          </Button>
+        {/* Left side - CampVerse branding */}
+        <div className="flex items-center space-x-2.5">
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+            <GraduationCap className="w-5 h-5 text-primary-foreground" />
+          </div>
+          <span className="font-bold text-foreground text-lg">CampVerse</span>
         </div>
 
         {/* Right side - Time, Notifications, Student ID, and Avatar */}
         <div className="flex items-center space-x-4">
-          <div className="text-right">
-            <div className="text-sm font-medium text-foreground">
-              {format(currentDateTime, "MMM dd, yyyy")}
+          <div className="flex items-center gap-3">
+            <div>
+              <div className="text-sm font-medium text-foreground">
+                {format(currentDateTime, "MMM dd, yyyy")}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {format(currentDateTime, "EEEE")}
+              </div>
             </div>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-lg font-semibold text-foreground">
               {format(currentDateTime, "h:mm a")}
             </div>
           </div>
@@ -103,7 +109,7 @@ const StudentTopbar = ({ studentId }: StudentTopbarProps) => {
                 <span>Account Settings</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>
+              <DropdownMenuItem onClick={handleLogout} className="bg-red-500/10 text-red-500 focus:bg-red-500/20 focus:text-red-500 cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Sign Out</span>
               </DropdownMenuItem>

@@ -1,8 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import StudentSidebar from "@/components/StudentSidebar";
-import StudentTopbar from "@/components/StudentTopbar";
+import StudentLayout from "@/components/StudentLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMemo, useRef, useState } from "react";
 
@@ -163,154 +162,145 @@ const StudentSchedule = () => {
   const filteredDays = viewDay === 'ALL' ? days : days.filter((d) => d === viewDay);
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <StudentSidebar />
-
-      <div className="flex-1 flex flex-col">
-        <StudentTopbar studentId={userData?.collegeId || ""} />
-
-        <main className="flex-1 p-6" ref={containerRef}>
-          {/* Header */}
-          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Weekly Schedule</h1>
-              <p className="text-muted-foreground">Welcome back, {userData?.collegeId}</p>
-            </div>
-            <div className="flex gap-2">
-              <select
-                className="bg-background border rounded px-2 py-1 text-sm"
-                value={viewDay}
-                onChange={(e) => setViewDay(e.target.value)}
-                aria-label="Filter by day"
-              >
-                <option value="ALL">All Days</option>
-                {days.map((d) => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
-              <Button variant={compact ? "outline" : "default"} onClick={() => setCompact((v) => !v)}>
-                {compact ? 'Comfortable' : 'Compact'}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={async () => {
-                  if (!containerRef.current) return;
-                  const [{ default: html2canvas }, jsPDFModule] = await Promise.all([
-                    import('html2canvas'),
-                    import('jspdf'),
-                  ]);
-                  const jsPDFCtor: any = (jsPDFModule as any).jsPDF || (jsPDFModule as any).default;
-                  const node = containerRef.current.querySelector('#timetable') as HTMLElement;
-                  if (!node) return;
-                  const canvas = await html2canvas(node as HTMLElement, { scale: 2, useCORS: true });
-                  const imgData = canvas.toDataURL('image/png');
-                  const pdf = new jsPDFCtor('l', 'mm', 'a4');
-                  const pageWidth = pdf.internal.pageSize.getWidth();
-                  const pageHeight = pdf.internal.pageSize.getHeight();
-                  const margin = 6;
-                  const imgWidth = pageWidth - margin * 2;
-                  const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                  let heightLeft = imgHeight;
-                  let position = margin;
-                  pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
-                  heightLeft -= pageHeight - margin * 2;
-                  while (heightLeft > 0) {
-                    pdf.addPage();
-                    position = margin - (imgHeight - heightLeft);
-                    pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight - margin * 2;
-                  }
-                  pdf.save('schedule.pdf');
-                }}
-              >
-                Export PDF
-              </Button>
-            </div>
-          </div>
-
-          {/* Schedule Info */}
-          <Card className="mb-4">
-            <CardHeader>
-              <CardTitle className="text-lg">SEC - CSE- B (Class Room - 303CB)</CardTitle>
-              <p className="text-sm text-muted-foreground">Class In-Charge: Dr. Baddepaka Prasad | W.E.F: 08/09/2025</p>
-            </CardHeader>
-          </Card>
-
-
-          {/* Timetable */}
-          <Card id="timetable">
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className={`w-full ${compact ? 'text-xs' : ''}`}>
-                  <thead className="bg-muted/50 sticky top-0 z-10">
-                    <tr>
-                      <th className="p-3 text-left font-medium text-muted-foreground border-r sticky left-0 bg-muted/50 z-10">
-                        DAY
-                      </th>
-                      {timeSlots.map((slot, index) => (
-                        <th key={index} className="p-3 text-center font-medium text-muted-foreground border-r min-w-[140px]">
-                          <div className="text-xs">{slot}</div>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredDays.map((day) => (
-                      <tr key={day} className="border-t">
-                        <td className="p-3 font-medium text-foreground border-r bg-muted/30 sticky left-0 z-10">
-                          {day}
-                          {day === currentDay && <span className="ml-2 text-xs text-primary">(Today)</span>}
-                        </td>
-                        {schedule[day].map((subject, slotIndex) => (
-                          <td key={slotIndex} className={`p-2 border-r ${day === currentDay && isCurrentSlot(slotIndex) ? 'bg-primary/5' : ''}`}>
-                            {subject && (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <div className={`rounded ${compact ? 'p-1' : 'p-2'} text-center border ${getClassColor(subject)}`}>
-                                      {subject}
-                                    </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <div className="space-y-1">
-                                      <div className="font-medium text-foreground">{subjectInfo[Object.keys(subjectInfo).find(k => subject.includes(k)) || '']?.name || subject}</div>
-                                      {subjectInfo[Object.keys(subjectInfo).find(k => subject.includes(k)) || '']?.instructor && (
-                                        <div className="text-xs text-muted-foreground">{subjectInfo[Object.keys(subjectInfo).find(k => subject.includes(k)) || '']?.instructor}</div>
-                                      )}
-                                    </div>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Subjects List */}
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle className="text-lg">List of Subjects</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {subjects.map((subject, index) => (
-                  <div key={index} className="flex justify-between items-center">
-                    <span className="text-sm">{index + 1}. {subject.name}</span>
-                    <span className="text-sm text-muted-foreground">{subject.instructor}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </main>
+    <StudentLayout>
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Weekly Schedule</h1>
+          <p className="text-muted-foreground">Welcome back, {userData?.collegeId}</p>
+        </div>
+        <div className="flex gap-2">
+          <select
+            className="bg-background border rounded px-2 py-1 text-sm"
+            value={viewDay}
+            onChange={(e) => setViewDay(e.target.value)}
+            aria-label="Filter by day"
+          >
+            <option value="ALL">All Days</option>
+            {days.map((d) => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+          <Button variant={compact ? "outline" : "default"} onClick={() => setCompact((v) => !v)}>
+            {compact ? 'Comfortable' : 'Compact'}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={async () => {
+              if (!containerRef.current) return;
+              const [{ default: html2canvas }, jsPDFModule] = await Promise.all([
+                import('html2canvas'),
+                import('jspdf'),
+              ]);
+              const jsPDFCtor: any = (jsPDFModule as any).jsPDF || (jsPDFModule as any).default;
+              const node = containerRef.current.querySelector('#timetable') as HTMLElement;
+              if (!node) return;
+              const canvas = await html2canvas(node as HTMLElement, { scale: 2, useCORS: true });
+              const imgData = canvas.toDataURL('image/png');
+              const pdf = new jsPDFCtor('l', 'mm', 'a4');
+              const pageWidth = pdf.internal.pageSize.getWidth();
+              const pageHeight = pdf.internal.pageSize.getHeight();
+              const margin = 6;
+              const imgWidth = pageWidth - margin * 2;
+              const imgHeight = (canvas.height * imgWidth) / canvas.width;
+              let heightLeft = imgHeight;
+              let position = margin;
+              pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+              heightLeft -= pageHeight - margin * 2;
+              while (heightLeft > 0) {
+                pdf.addPage();
+                position = margin - (imgHeight - heightLeft);
+                pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight - margin * 2;
+              }
+              pdf.save('schedule.pdf');
+            }}
+          >
+            Export PDF
+          </Button>
+        </div>
       </div>
-    </div>
+
+      {/* Schedule Info */}
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle className="text-lg">SEC - CSE- B (Class Room - 303CB)</CardTitle>
+          <p className="text-sm text-muted-foreground">Class In-Charge: Dr. Baddepaka Prasad | W.E.F: 08/09/2025</p>
+        </CardHeader>
+      </Card>
+
+
+      {/* Timetable */}
+      <Card id="timetable">
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className={`w-full ${compact ? 'text-xs' : ''}`}>
+              <thead className="bg-muted/50 sticky top-0 z-10">
+                <tr>
+                  <th className="p-3 text-left font-medium text-muted-foreground border-r sticky left-0 bg-muted/50 z-10">
+                    DAY
+                  </th>
+                  {timeSlots.map((slot, index) => (
+                    <th key={index} className="p-3 text-center font-medium text-muted-foreground border-r min-w-[140px]">
+                      <div className="text-xs">{slot}</div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredDays.map((day) => (
+                  <tr key={day} className="border-t">
+                    <td className="p-3 font-medium text-foreground border-r bg-muted/30 sticky left-0 z-10">
+                      {day}
+                      {day === currentDay && <span className="ml-2 text-xs text-primary">(Today)</span>}
+                    </td>
+                    {schedule[day].map((subject, slotIndex) => (
+                      <td key={slotIndex} className={`p-2 border-r ${day === currentDay && isCurrentSlot(slotIndex) ? 'bg-primary/5' : ''}`}>
+                        {subject && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className={`rounded ${compact ? 'p-1' : 'p-2'} text-center border ${getClassColor(subject)}`}>
+                                  {subject}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <div className="space-y-1">
+                                  <div className="font-medium text-foreground">{subjectInfo[Object.keys(subjectInfo).find(k => subject.includes(k)) || '']?.name || subject}</div>
+                                  {subjectInfo[Object.keys(subjectInfo).find(k => subject.includes(k)) || '']?.instructor && (
+                                    <div className="text-xs text-muted-foreground">{subjectInfo[Object.keys(subjectInfo).find(k => subject.includes(k)) || '']?.instructor}</div>
+                                  )}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Subjects List */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="text-lg">List of Subjects</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {subjects.map((subject, index) => (
+              <div key={index} className="flex justify-between items-center">
+                <span className="text-sm">{index + 1}. {subject.name}</span>
+                <span className="text-sm text-muted-foreground">{subject.instructor}</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </StudentLayout>
   );
 };
 

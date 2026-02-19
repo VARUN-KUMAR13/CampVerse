@@ -1,7 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import StudentSidebar from "@/components/StudentSidebar";
-import StudentTopbar from "@/components/StudentTopbar";
+import StudentLayout from "@/components/StudentLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useExams } from "@/contexts/ExamContext";
 import { Calendar, Clock, MapPin, Loader2, FileText, AlertTriangle, RefreshCw } from "lucide-react";
@@ -80,13 +79,7 @@ const StudentExams = () => {
   });
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <StudentSidebar />
-
-      <div className="flex-1 flex flex-col">
-        <StudentTopbar studentId={userData?.collegeId || ""} />
-
-        <main className="flex-1 p-6 space-y-6">
+    <StudentLayout>
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
@@ -258,11 +251,7 @@ const StudentExams = () => {
                 );
               })}
             </div>
-          )}
-        </main>
-      </div>
-    </div>
-  );
+          )}    </StudentLayout>  );
 };
 
 export default StudentExams;

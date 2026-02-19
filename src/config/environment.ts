@@ -96,17 +96,16 @@ const getNumericEnvVar = (key: string, fallback: number): number => {
 // Determine current environment
 const currentEnv: Environment = (getEnvVar('VITE_NODE_ENV', 'development') as Environment);
 
-// Firebase configuration
+// Firebase configuration (campverse-2004)
 const firebaseConfig = {
-  apiKey: getEnvVar('VITE_FIREBASE_API_KEY', 'AIzaSyBRY5horWW28vr3UhqVbG-uAVZahHTPVLU'),
-  authDomain: getEnvVar('VITE_FIREBASE_AUTH_DOMAIN', 'campverse-1374.firebaseapp.com'),
-  databaseURL: getEnvVar('VITE_FIREBASE_DATABASE_URL', 'https://campverse-1374-default-rtdb.firebaseio.com'),
-  projectId: getEnvVar('VITE_FIREBASE_PROJECT_ID', 'campverse-1374'),
-  storageBucket: getEnvVar('VITE_FIREBASE_STORAGE_BUCKET', 'campverse-1374.firebasestorage.app'),
-  messagingSenderId: getEnvVar('VITE_FIREBASE_MESSAGING_SENDER_ID', '123456789'),
-  appId: getEnvVar('VITE_FIREBASE_APP_ID', '1:730878450982:web:2a29ae46e611b1431235e7'),
-  // Use provided measurement ID or fallback to the default demo ID
-  measurementId: getEnvVar('VITE_FIREBASE_MEASUREMENT_ID', 'G-J32WZ6RH8W'),
+  apiKey: getEnvVar('VITE_FIREBASE_API_KEY', 'AIzaSyDF4a7LBt8tZXbnLSa_U-pssT99ALzryz8'),
+  authDomain: getEnvVar('VITE_FIREBASE_AUTH_DOMAIN', 'campverse-2004.firebaseapp.com'),
+  databaseURL: getEnvVar('VITE_FIREBASE_DATABASE_URL', 'https://campverse-2004-default-rtdb.asia-southeast1.firebasedatabase.app'),
+  projectId: getEnvVar('VITE_FIREBASE_PROJECT_ID', 'campverse-2004'),
+  storageBucket: getEnvVar('VITE_FIREBASE_STORAGE_BUCKET', 'campverse-2004.firebasestorage.app'),
+  messagingSenderId: getEnvVar('VITE_FIREBASE_MESSAGING_SENDER_ID', '438351495331'),
+  appId: getEnvVar('VITE_FIREBASE_APP_ID', '1:438351495331:web:be6636c1feba63ab54bf16'),
+  measurementId: getEnvVar('VITE_FIREBASE_MEASUREMENT_ID', 'G-5RT4X6KTN5'),
 };
 
 

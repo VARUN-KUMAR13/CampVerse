@@ -24,7 +24,7 @@ const AdminTopbar = () => {
     useEffect(() => {
         const timer = setInterval(() => {
             setCurrentDateTime(new Date());
-        }, 60000);
+        }, 1000);
 
         return () => clearInterval(timer);
     }, []);
@@ -55,11 +55,16 @@ const AdminTopbar = () => {
                 </div>
 
                 <div className="flex items-center space-x-4">
-                    <div className="hidden sm:block text-right">
-                        <div className="text-sm font-medium text-foreground">
-                            {format(currentDateTime, "MMM dd, yyyy")}
+                    <div className="hidden sm:flex items-center gap-3">
+                        <div>
+                            <div className="text-sm font-medium text-foreground">
+                                {format(currentDateTime, "MMM dd, yyyy")}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                                {format(currentDateTime, "EEEE")}
+                            </div>
                         </div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-lg font-semibold text-foreground">
                             {format(currentDateTime, "h:mm a")}
                         </div>
                     </div>
@@ -108,7 +113,7 @@ const AdminTopbar = () => {
                                 <span>Admin Settings</span>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={handleLogout} className="text-red-500">
+                            <DropdownMenuItem onClick={handleLogout} className="bg-red-500/10 text-red-500 focus:bg-red-500/20 focus:text-red-500 cursor-pointer">
                                 <LogOut className="mr-2 h-4 w-4" />
                                 <span>Sign Out</span>
                             </DropdownMenuItem>

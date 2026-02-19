@@ -20,10 +20,6 @@ if (config.IS_DEVELOPMENT) {
   logConfig();
 }
 
-// Force development mode until Firebase Authentication is properly configured
-// This prevents CONFIGURATION_NOT_FOUND errors
-const isDevelopment = config.IS_DEVELOPMENT || !config.IS_PRODUCTION;
-
 // Initialize Firebase
 let app: any;
 let auth: any;
@@ -52,7 +48,7 @@ try {
     }
 
     firebaseReady = true;
-    console.log("Firebase initialized successfully");
+    console.log("Firebase initialized successfully (campverse-2004)");
   } else {
     console.log("Firebase credentials not configured, using development mode");
   }
@@ -64,9 +60,11 @@ try {
   }
 }
 
+// Development mode — only true if Firebase failed to initialize
+const isDevelopment = !firebaseReady;
+
 // Export environment flags
 export const isProduction = config.IS_PRODUCTION;
 
 export { auth, analytics, database, storage, firestore, isDevelopment, firebaseReady };
 export default app;
-

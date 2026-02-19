@@ -30,7 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Helper to restore user from localStorage
+    // Helper to restore user from localStorage (for JWT-based sessions)
     const restoreFromStorage = (): boolean => {
       const storedUser = localStorage.getItem("dev-user");
       if (storedUser && storedUser !== "undefined" && storedUser !== "null") {
@@ -54,31 +54,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       return false;
     };
 
-    if (isDevelopment || !firebaseReady || !auth) {
-      console.log("AuthContext: Using development mode");
+    // If Firebase is ready, listen for auth state changes
+    if (firebaseReady && auth) {
+      console.log("AuthContext: Using Firebase Authentication");
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        setCurrentUser(user);
+
+        if (user) {
+          // Firebase user is signed in — check if we have stored user data
+          const stored = restoreFromStorage();
+          if (!stored) {
+            // Try to fetch from backend
+            const data = await getCurrentUserData(user);
+            if (data) {
+              setUserData(data);
+              localStorage.setItem("dev-user", JSON.stringify(data));
+            }
+          }
+        } else {
+          // No Firebase user — try localStorage fallback (admin/JWT sessions)
+          restoreFromStorage();
+        }
+
+        setLoading(false);
+      });
+
+      return unsubscribe;
+    } else {
+      // Firebase not available — use localStorage only
+      console.log("AuthContext: Firebase not available, using localStorage");
       restoreFromStorage();
       setLoading(false);
-      return;
     }
-
-    // Production mode with Firebase
-    console.log("AuthContext: Using Firebase authentication");
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user);
-
-      if (user) {
-        // Get user data from database
-        const data = await getCurrentUserData(user);
-        setUserData(data);
-      } else {
-        // No Firebase user — try localStorage fallback (for backend JWT login)
-        restoreFromStorage();
-      }
-
-      setLoading(false);
-    });
-
-    return unsubscribe;
   }, []);
 
   const login = async (
@@ -88,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const { signInUser } = await import("@/lib/auth");
     const result = await signInUser(collegeId, password);
 
-    // Always set user data after successful login (both dev and production)
+    // Store user data for session persistence
     try {
       localStorage.setItem("dev-user", JSON.stringify(result));
       setUserData(result);
@@ -109,12 +116,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const logout = async (): Promise<void> => {
-    // Always clear stored user data
     localStorage.removeItem("dev-user");
     setUserData(null);
     setCurrentUser(null);
 
-    if (!isDevelopment && firebaseReady) {
+    if (firebaseReady) {
       const { signOutUser } = await import("@/lib/auth");
       await signOutUser();
     }

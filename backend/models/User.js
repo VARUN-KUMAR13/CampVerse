@@ -124,6 +124,32 @@ const userSchema = new mongoose.Schema(
     skills: { type: [String], default: [] },
     achievements: { type: [String], default: [] },
     avatar: { type: String, default: "" },
+    projects: {
+      type: [
+        {
+          title: { type: String, default: "" },
+          description: { type: String, default: "" },
+          techStack: { type: String, default: "" },
+          link: { type: String, default: "" },
+        },
+      ],
+      default: [],
+    },
+    certifications: {
+      type: [
+        {
+          name: { type: String, default: "" },
+          issuer: { type: String, default: "" },
+          date: { type: String, default: "" },
+          credentialLink: { type: String, default: "" },
+        },
+      ],
+      default: [],
+    },
+    linkedin: { type: String, default: "" },
+    github: { type: String, default: "" },
+    portfolio: { type: String, default: "" },
+    twitter: { type: String, default: "" },
   },
   {
     timestamps: true,

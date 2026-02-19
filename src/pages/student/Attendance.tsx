@@ -3,8 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import StudentSidebar from "@/components/StudentSidebar";
-import StudentTopbar from "@/components/StudentTopbar";
+import StudentLayout from "@/components/StudentLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   CheckCircle2,
@@ -183,13 +182,7 @@ const StudentAttendance = () => {
   ];
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <StudentSidebar />
-
-      <div className="flex-1 flex flex-col">
-        <StudentTopbar studentId={userData?.collegeId || ""} />
-
-        <main className="flex-1 p-6 space-y-6">
+    <StudentLayout>
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
@@ -467,11 +460,7 @@ const StudentAttendance = () => {
                 </div>
               </CardContent>
             </Card>
-          )}
-        </main>
-      </div>
-    </div>
-  );
+          )}    </StudentLayout>  );
 };
 
 export default StudentAttendance;

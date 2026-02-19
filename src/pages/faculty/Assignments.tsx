@@ -21,8 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import FacultySidebar from "@/components/FacultySidebar";
-import FacultyTopbar from "@/components/FacultyTopbar";
+import FacultyLayout from "@/components/FacultyLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
@@ -226,290 +225,282 @@ const FacultyAssignments = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <FacultySidebar />
-
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <FacultyTopbar />
-
-        <main className="flex-1 p-6 space-y-6 overflow-y-auto">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <h1 className="text-2xl font-bold text-foreground">
-              Assignment Management
-            </h1>
-            <div className="flex flex-col gap-3 w-full md:w-auto md:flex-row md:items-center">
-              <div className="relative w-full md:w-72">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  placeholder="Search assignments..."
-                  className="pl-10"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-
-              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="w-full md:w-auto">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Assignment
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]">
-                  <DialogHeader>
-                    <DialogTitle>Create New Assignment</DialogTitle>
-                    <DialogDescription>
-                      Fill in the details to create a new assignment for students.
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="title">Assignment Title *</Label>
-                      <Input
-                        id="title"
-                        placeholder="e.g., Data Analysis Project"
-                        value={formData.title}
-                        onChange={(e) =>
-                          setFormData({ ...formData, title: e.target.value })
-                        }
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="course">Course Name *</Label>
-                        <Input
-                          id="course"
-                          placeholder="e.g., Python for EDA"
-                          value={formData.course}
-                          onChange={(e) =>
-                            setFormData({ ...formData, course: e.target.value })
-                          }
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="courseCode">Course Code</Label>
-                        <Input
-                          id="courseCode"
-                          placeholder="e.g., 22CS401"
-                          value={formData.courseCode}
-                          onChange={(e) =>
-                            setFormData({ ...formData, courseCode: e.target.value })
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid gap-2">
-                      <Label htmlFor="description">Description</Label>
-                      <Textarea
-                        id="description"
-                        placeholder="Describe the assignment requirements..."
-                        rows={3}
-                        value={formData.description}
-                        onChange={(e) =>
-                          setFormData({ ...formData, description: e.target.value })
-                        }
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="dueDate">Due Date *</Label>
-                        <Input
-                          id="dueDate"
-                          type="date"
-                          value={formData.dueDate}
-                          onChange={(e) =>
-                            setFormData({ ...formData, dueDate: e.target.value })
-                          }
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="maxMarks">Max Marks</Label>
-                        <Input
-                          id="maxMarks"
-                          type="number"
-                          min={0}
-                          max={100}
-                          value={formData.maxMarks}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              maxMarks: parseInt(e.target.value) || 100,
-                            })
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    {/* Student Category Selection */}
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="year">Year *</Label>
-                        <Select
-                          value={formData.year}
-                          onValueChange={(value) =>
-                            setFormData({ ...formData, year: value })
-                          }
-                        >
-                          <SelectTrigger id="year">
-                            <SelectValue placeholder="Select Year" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="2022">2022 (4th Year)</SelectItem>
-                            <SelectItem value="2023">2023 (3rd Year)</SelectItem>
-                            <SelectItem value="2024">2024 (2nd Year)</SelectItem>
-                            <SelectItem value="2025">2025 (1st Year)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="branch">Branch *</Label>
-                        <Select
-                          value={formData.branch}
-                          onValueChange={(value) =>
-                            setFormData({ ...formData, branch: value })
-                          }
-                        >
-                          <SelectTrigger id="branch">
-                            <SelectValue placeholder="Select Branch" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="CSE">CSE</SelectItem>
-                            <SelectItem value="ECE">ECE</SelectItem>
-                            <SelectItem value="EEE">EEE</SelectItem>
-                            <SelectItem value="MECH">MECH</SelectItem>
-                            <SelectItem value="CIVIL">CIVIL</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="section">Section *</Label>
-                        <Select
-                          value={formData.section}
-                          onValueChange={(value) =>
-                            setFormData({ ...formData, section: value })
-                          }
-                        >
-                          <SelectTrigger id="section">
-                            <SelectValue placeholder="Select Section" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="A">Section A (01-64)</SelectItem>
-                            <SelectItem value="B">Section B (65-C8)</SelectItem>
-                            <SelectItem value="C">Section C (C9-12C)</SelectItem>
-                            <SelectItem value="D">Section D (12D-190)</SelectItem>
-                            <SelectItem value="E">Section E (191-1F4)</SelectItem>
-                            <SelectItem value="F">Section F (1F5-258)</SelectItem>
-                            <SelectItem value="G">Section G (259-2BC)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-
-                  <DialogFooter>
-                    <Button
-                      variant="outline"
-                      onClick={() => setIsCreateDialogOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button onClick={handleCreateAssignment} disabled={creating}>
-                      {creating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                      Create Assignment
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
+    <FacultyLayout>
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <h1 className="text-2xl font-bold text-foreground">
+          Assignment Management
+        </h1>
+        <div className="flex flex-col gap-3 w-full md:w-auto md:flex-row md:items-center">
+          <div className="relative w-full md:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input
+              placeholder="Search assignments..."
+              className="pl-10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
 
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
-          ) : filteredAssignments.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium text-foreground mb-2">
-                  No Assignments Found
-                </h3>
-                <p className="text-muted-foreground">
-                  {searchQuery
-                    ? "No assignments match your search."
-                    : "Click 'Create Assignment' to add your first assignment."}
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent className="p-0">
-                <div className="space-y-1">
-                  <div className="grid grid-cols-6 gap-4 p-4 border-b text-sm font-medium text-muted-foreground bg-muted/30">
-                    <div>Assignment</div>
-                    <div>Due Date</div>
-                    <div>Submissions</div>
-                    <div>Status</div>
-                    <div className="col-span-2">Actions</div>
-                  </div>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="w-full md:w-auto">
+                <Plus className="w-4 h-4 mr-2" />
+                Create Assignment
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Create New Assignment</DialogTitle>
+                <DialogDescription>
+                  Fill in the details to create a new assignment for students.
+                </DialogDescription>
+              </DialogHeader>
 
-                  {filteredAssignments.map((assignment) => (
-                    <div
-                      key={assignment._id}
-                      className="grid grid-cols-6 gap-4 p-4 items-center hover:bg-muted/20 transition-colors"
-                    >
-                      <div>
-                        <div className="font-medium text-foreground">
-                          {assignment.title}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {assignment.course}
-                        </div>
-                      </div>
-                      <div className="text-muted-foreground">
-                        {formatDate(assignment.dueDate)}
-                      </div>
-                      <div className="text-muted-foreground">
-                        <span className="font-medium text-foreground">
-                          {assignment.submissionCount}
-                        </span>{" "}
-                        submissions
-                      </div>
-                      <div>{getStatusBadge(assignment)}</div>
-                      <div className="col-span-2 flex items-center space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleViewSubmissions(assignment)}
-                          title="View Submissions"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" title="Edit">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-500"
-                          onClick={() => handleDeleteAssignment(assignment._id)}
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="title">Assignment Title *</Label>
+                  <Input
+                    id="title"
+                    placeholder="e.g., Data Analysis Project"
+                    value={formData.title}
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
+                  />
                 </div>
-              </CardContent>
-            </Card>
-          )}
-        </main>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="course">Course Name *</Label>
+                    <Input
+                      id="course"
+                      placeholder="e.g., Python for EDA"
+                      value={formData.course}
+                      onChange={(e) =>
+                        setFormData({ ...formData, course: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="courseCode">Course Code</Label>
+                    <Input
+                      id="courseCode"
+                      placeholder="e.g., 22CS401"
+                      value={formData.courseCode}
+                      onChange={(e) =>
+                        setFormData({ ...formData, courseCode: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Describe the assignment requirements..."
+                    rows={3}
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="dueDate">Due Date *</Label>
+                    <Input
+                      id="dueDate"
+                      type="date"
+                      value={formData.dueDate}
+                      onChange={(e) =>
+                        setFormData({ ...formData, dueDate: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="maxMarks">Max Marks</Label>
+                    <Input
+                      id="maxMarks"
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={formData.maxMarks}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          maxMarks: parseInt(e.target.value) || 100,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+
+                {/* Student Category Selection */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="year">Year *</Label>
+                    <Select
+                      value={formData.year}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, year: value })
+                      }
+                    >
+                      <SelectTrigger id="year">
+                        <SelectValue placeholder="Select Year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="2022">2022 (4th Year)</SelectItem>
+                        <SelectItem value="2023">2023 (3rd Year)</SelectItem>
+                        <SelectItem value="2024">2024 (2nd Year)</SelectItem>
+                        <SelectItem value="2025">2025 (1st Year)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="branch">Branch *</Label>
+                    <Select
+                      value={formData.branch}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, branch: value })
+                      }
+                    >
+                      <SelectTrigger id="branch">
+                        <SelectValue placeholder="Select Branch" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CSE">CSE</SelectItem>
+                        <SelectItem value="ECE">ECE</SelectItem>
+                        <SelectItem value="EEE">EEE</SelectItem>
+                        <SelectItem value="MECH">MECH</SelectItem>
+                        <SelectItem value="CIVIL">CIVIL</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="section">Section *</Label>
+                    <Select
+                      value={formData.section}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, section: value })
+                      }
+                    >
+                      <SelectTrigger id="section">
+                        <SelectValue placeholder="Select Section" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="A">Section A (01-64)</SelectItem>
+                        <SelectItem value="B">Section B (65-C8)</SelectItem>
+                        <SelectItem value="C">Section C (C9-12C)</SelectItem>
+                        <SelectItem value="D">Section D (12D-190)</SelectItem>
+                        <SelectItem value="E">Section E (191-1F4)</SelectItem>
+                        <SelectItem value="F">Section F (1F5-258)</SelectItem>
+                        <SelectItem value="G">Section G (259-2BC)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsCreateDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleCreateAssignment} disabled={creating}>
+                  {creating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Create Assignment
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      ) : filteredAssignments.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">
+              No Assignments Found
+            </h3>
+            <p className="text-muted-foreground">
+              {searchQuery
+                ? "No assignments match your search."
+                : "Click 'Create Assignment' to add your first assignment."}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <div className="space-y-1">
+              <div className="grid grid-cols-6 gap-4 p-4 border-b text-sm font-medium text-muted-foreground bg-muted/30">
+                <div>Assignment</div>
+                <div>Due Date</div>
+                <div>Submissions</div>
+                <div>Status</div>
+                <div className="col-span-2">Actions</div>
+              </div>
+
+              {filteredAssignments.map((assignment) => (
+                <div
+                  key={assignment._id}
+                  className="grid grid-cols-6 gap-4 p-4 items-center hover:bg-muted/20 transition-colors"
+                >
+                  <div>
+                    <div className="font-medium text-foreground">
+                      {assignment.title}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {assignment.course}
+                    </div>
+                  </div>
+                  <div className="text-muted-foreground">
+                    {formatDate(assignment.dueDate)}
+                  </div>
+                  <div className="text-muted-foreground">
+                    <span className="font-medium text-foreground">
+                      {assignment.submissionCount}
+                    </span>{" "}
+                    submissions
+                  </div>
+                  <div>{getStatusBadge(assignment)}</div>
+                  <div className="col-span-2 flex items-center space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleViewSubmissions(assignment)}
+                      title="View Submissions"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" title="Edit">
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-500"
+                      onClick={() => handleDeleteAssignment(assignment._id)}
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Submissions Dialog */}
       <Dialog open={isSubmissionsDialogOpen} onOpenChange={setIsSubmissionsDialogOpen}>
@@ -573,7 +564,7 @@ const FacultyAssignments = () => {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </FacultyLayout>
   );
 };
 

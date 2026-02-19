@@ -182,6 +182,12 @@ router.put("/:uid", verifyToken, async (req, res) => {
       "skills",
       "achievements",
       "avatar",
+      "projects",
+      "certifications",
+      "linkedin",
+      "github",
+      "portfolio",
+      "twitter",
     ];
     const updates = {};
 

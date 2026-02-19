@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import NotificationBell from "@/components/NotificationBell";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut, Menu, Settings, User } from "lucide-react";
+import { LogOut, Menu, Settings, User, GraduationCap } from "lucide-react";
 
 const FacultyTopbar = () => {
   const { userData, logout } = useAuth();
@@ -22,7 +22,7 @@ const FacultyTopbar = () => {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentDateTime(new Date());
-    }, 60000);
+    }, 1000);
 
     return () => clearInterval(timer);
   }, []);
@@ -42,18 +42,25 @@ const FacultyTopbar = () => {
   return (
     <header className="sticky top-0 z-50 w-full bg-background border-b border-border px-6 py-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="sm" className="md:hidden">
-            <Menu className="w-5 h-5" />
-          </Button>
+        {/* Left side - CampVerse branding */}
+        <div className="flex items-center space-x-2.5">
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+            <GraduationCap className="w-5 h-5 text-primary-foreground" />
+          </div>
+          <span className="font-bold text-foreground text-lg">CampVerse</span>
         </div>
 
         <div className="flex items-center space-x-4">
-          <div className="hidden sm:block text-right">
-            <div className="text-sm font-medium text-foreground">
-              {format(currentDateTime, "MMM dd, yyyy")}
+          <div className="hidden sm:flex items-center gap-3">
+            <div>
+              <div className="text-sm font-medium text-foreground">
+                {format(currentDateTime, "MMM dd, yyyy")}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {format(currentDateTime, "EEEE")}
+              </div>
             </div>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-lg font-semibold text-foreground">
               {format(currentDateTime, "h:mm a")}
             </div>
           </div>
@@ -95,7 +102,7 @@ const FacultyTopbar = () => {
                 <span>Account Settings</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>
+              <DropdownMenuItem onClick={handleLogout} className="bg-red-500/10 text-red-500 focus:bg-red-500/20 focus:text-red-500 cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Sign Out</span>
               </DropdownMenuItem>

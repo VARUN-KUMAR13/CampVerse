@@ -50,7 +50,7 @@ const Contact = () => {
     {
       icon: <MapPin className="w-5 h-5" />,
       label: "Address",
-      value: "10-1-92/118/A,Kothapet,Hyderabad,Telangana,India",
+      value: "CVR College Of Engineering,\nVastunagar, Mangalpalli (V), Ibrahimpatnam (M),\nRangareddy (D), Telangana 501 510",
       color: "text-blue-400",
     },
   ];
@@ -92,7 +92,7 @@ const Contact = () => {
                       <div className="font-semibold text-foreground">
                         {info.label}
                       </div>
-                      <div className="text-muted-foreground">{info.value}</div>
+                      <div className="text-muted-foreground whitespace-pre-line">{info.value}</div>
                     </div>
                   </div>
                 ))}

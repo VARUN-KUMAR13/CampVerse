@@ -5,7 +5,6 @@ import {
   Clock,
   BarChart3,
   FileText,
-  GraduationCap,
   Menu,
   LogOut,
   Building2,
@@ -17,7 +16,11 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
-const StudentSidebar = () => {
+interface StudentSidebarProps {
+  onNavigate?: () => void;
+}
+
+const StudentSidebar = ({ onNavigate }: StudentSidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
@@ -30,7 +33,7 @@ const StudentSidebar = () => {
     },
     {
       icon: <BookOpen className="w-5 h-5" />,
-      label: "Courses",
+      label: "My Courses",
       path: "/student/courses",
     },
     {
@@ -84,27 +87,14 @@ const StudentSidebar = () => {
   };
 
   return (
-    <div className="w-64 bg-sidebar border-r border-sidebar-border min-h-screen flex flex-col">
-      {/* Header - aligned with topbar (px-6 py-4) */}
-      <div className="px-6 py-4 border-b border-sidebar-border">
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={handleLogout}
-            className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center hover:bg-primary/80 transition-colors cursor-pointer"
-            title="Logout"
-          >
-            <GraduationCap className="w-5 h-5 text-primary-foreground" />
-          </button>
-          <span className="font-bold text-sidebar-foreground">CampVerse</span>
-        </div>
-      </div>
-
+    <div className="w-64 bg-sidebar border-r border-sidebar-border h-full flex flex-col">
       {/* Menu Items */}
-      <nav className="p-4 space-y-2 flex-1">
+      <nav className="px-4 space-y-1 flex-1">
         {menuItems.map((item) => (
           <Link
             key={item.path}
             to={item.path}
+            onClick={onNavigate}
             className={cn(
               "flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors",
               isActiveRoute(item.path) &&
@@ -116,18 +106,6 @@ const StudentSidebar = () => {
           </Link>
         ))}
       </nav>
-
-      {/* Logout Button */}
-      <div className="p-4 border-t border-sidebar-border">
-        <Button
-          onClick={handleLogout}
-          variant="ghost"
-          className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-500/10"
-        >
-          <LogOut className="w-5 h-5 mr-3" />
-          Logout
-        </Button>
-      </div>
     </div>
   );
 };

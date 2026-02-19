@@ -61,7 +61,7 @@ const Login = () => {
 
   const handlePasswordReset = async () => {
     if (!userId) {
-      setError("Please enter your ID first");
+      setError("Please enter your User ID first");
       return;
     }
 
@@ -83,7 +83,11 @@ const Login = () => {
       await resetPassword(userId);
       setResetEmailSent(true);
     } catch (error: any) {
-      setError(error.message || "Failed to send reset email");
+      if (error.code === "auth/user-not-found") {
+        setError("No account found for this ID. Please login first to create your account.");
+      } else {
+        setError(error.message || "Failed to send reset email. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

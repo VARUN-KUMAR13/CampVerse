@@ -2,8 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Calendar } from "@/components/ui/calendar";
-import StudentSidebar from "@/components/StudentSidebar";
-import StudentTopbar from "@/components/StudentTopbar";
+import StudentLayout from "@/components/StudentLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Clock,
@@ -767,344 +766,336 @@ const StudentDashboard = () => {
   ];
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <StudentSidebar />
+    <StudentLayout>
+      {/* Welcome Section */}
+      <div>
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+          Hello <span className="text-primary">{studentName || userData?.collegeId}</span> <span className="text-2xl">👋</span>
+        </h1>
+        <p className="text-muted-foreground">
+          Let's learn something new today!
+        </p>
+      </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <StudentTopbar studentId={userData?.collegeId || ""} />
+      {/* Netflix-style Event Showcase */}
+      <EventShowcase />
 
-        <main className="flex-1 p-6 space-y-6 overflow-y-auto">
-          {/* Welcome Section */}
+      {/* Today's Schedule & Attendance */}
+      <Card className="border-border/50 shadow-lg">
+        <CardHeader>
           <div>
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              Hello <span className="text-primary">{studentName || userData?.collegeId}</span> <span className="text-2xl">👋</span>
-            </h1>
-            <p className="text-muted-foreground">
-              Let's learn something new today!
-            </p>
+            <CardTitle className="text-xl">Today's Schedule & Attendance</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {todaySchedule.map((item) => {
+              // Determine background color based on who marked attendance
+              const markedByRole = attendanceMarkedBy[item.slotId] || (item as any).markedByRole;
+
+              // DEBUG: Log to help identify color issue
+              if (item.status === "PRESENT") {
+                console.log(`[Color Debug] ${item.subjectName}: markedByRole = "${markedByRole}", status = ${item.status}`);
+              }
+
+              let bgClass = "bg-muted/30 hover:bg-muted/50";
+              let borderClass = "";
+
+              if (item.status === "PRESENT") {
+                if (markedByRole === "FACULTY") {
+                  bgClass = "bg-green-500/20 hover:bg-green-500/25";
+                  borderClass = "border-l-4 border-l-green-500";
+                } else if (markedByRole === "ADMIN" || markedByRole === "SUB_ADMIN") {
+                  // More prominent blue background for admin-marked attendance
+                  bgClass = "bg-blue-500/20 hover:bg-blue-500/25";
+                  borderClass = "border-l-4 border-l-blue-500";
+                } else if (markedByRole === "STUDENT") {
+                  // Green for student self-marked (demo mode) - same as faculty
+                  bgClass = "bg-green-500/20 hover:bg-green-500/25";
+                  borderClass = "border-l-4 border-l-green-500";
+                } else {
+                  // Default for present - treat as admin-marked (blue)
+                  bgClass = "bg-blue-500/20 hover:bg-blue-500/25";
+                  borderClass = "border-l-4 border-l-blue-500";
+                }
+              } else if (item.status === "ABSENT") {
+                bgClass = "bg-red-500/20 hover:bg-red-500/25";
+                borderClass = "border-l-4 border-l-red-500";
+              } else if (item.status === "LATE") {
+                bgClass = "bg-yellow-500/20 hover:bg-yellow-500/25";
+                borderClass = "border-l-4 border-l-yellow-500";
+              }
+
+              return (
+                <div
+                  key={item.slotId}
+                  className={cn(
+                    "flex items-center justify-between p-4 rounded-lg transition-all duration-300",
+                    bgClass,
+                    borderClass
+                  )}
+                >
+                  <div className="flex-1">
+                    <div className="font-medium text-foreground">
+                      {item.subjectName}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {item.subjectCode}
+                    </div>
+                  </div>
+                  <div className="text-center mx-4">
+                    <div className="text-sm text-muted-foreground">
+                      {item.time}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {getStatusBadge(item.status, markedByRole)}
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
-          {/* Netflix-style Event Showcase */}
-          <EventShowcase />
+        </CardContent>
+      </Card>
 
-          {/* Today's Schedule & Attendance */}
+      {/* Today's Attendance Summary - Real-time Metrics */}
+      <Card className="border-border/50 shadow-lg bg-gradient-to-r from-primary/5 to-primary/10">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-primary" />
+            Today's Attendance Summary
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {/* Calculate totals from historical + today's data */}
+          {(() => {
+            // Get historical totals from performance metrics
+            const historicalPresent = performanceMetrics.reduce((sum, m) => sum + m.attended, 0);
+            const historicalTotal = performanceMetrics.reduce((sum, m) => sum + m.totalClasses, 0);
+            const historicalAbsent = historicalTotal - historicalPresent;
+
+            // Today's not marked count
+            const todayNotMarked = todaySchedule.filter(s => s.status === "NOT_MARKED").length;
+            const todayPresent = todaySchedule.filter(s => s.status === "PRESENT").length;
+            const todayAbsent = todaySchedule.filter(s => s.status === "ABSENT").length;
+
+            // Combined totals (historical + today's marked)
+            const totalClasses = historicalTotal + todaySchedule.length;
+            const totalPresent = historicalPresent + todayPresent;
+            const totalAbsent = historicalAbsent + todayAbsent;
+            const percentage = totalClasses > 0 ? Math.round((totalPresent / totalClasses) * 100) : 0;
+
+            return (
+              <div className="grid grid-cols-5 gap-4">
+                <div className="text-center p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                  <div className="text-2xl font-bold text-blue-500">{totalClasses}</div>
+                  <div className="text-xs text-muted-foreground">Total Classes</div>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                  <div className="text-2xl font-bold text-green-500">{totalPresent}</div>
+                  <div className="text-xs text-muted-foreground">Present</div>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                  <div className="text-2xl font-bold text-red-500">{totalAbsent}</div>
+                  <div className="text-xs text-muted-foreground">Absent</div>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-gray-500/10 border border-gray-500/20">
+                  <div className="text-2xl font-bold text-gray-500">{todayNotMarked}</div>
+                  <div className="text-xs text-muted-foreground">Not Marked</div>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-primary/10 border border-primary/20">
+                  <div className={cn(
+                    "text-2xl font-bold",
+                    percentage >= 76 ? "text-green-500" :
+                      percentage >= 65 ? "text-orange-500" : "text-red-500"
+                  )}>
+                    {percentage}%
+                  </div>
+                  <div className="text-xs text-muted-foreground">Attendance</div>
+                </div>
+              </div>
+            );
+          })()}
+        </CardContent>
+      </Card>
+
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Stats Cards */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Quick Stats */}
+          <div className="grid grid-cols-4 gap-4">
+            {stats.map((stat, index) => (
+              <Card key={index} className="text-center border-border/50 hover:border-primary/50 transition-colors">
+                <CardContent className="p-4">
+                  <div className={`text-2xl font-bold ${stat.color} mb-2`}>
+                    {stat.value}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {stat.label}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Performance Metrics */}
           <Card className="border-border/50 shadow-lg">
             <CardHeader>
-              <div>
-                <CardTitle className="text-xl">Today's Schedule & Attendance</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Performance Metrics</CardTitle>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    overallAttendance.percentage >= 75
+                      ? "text-green-500 border-green-500"
+                      : "text-yellow-500 border-yellow-500"
+                  )}
+                >
+                  Overall: {overallAttendance.percentage}%
+                </Badge>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {todaySchedule.map((item) => {
-                  // Determine background color based on who marked attendance
-                  const markedByRole = attendanceMarkedBy[item.slotId] || (item as any).markedByRole;
-
-                  // DEBUG: Log to help identify color issue
-                  if (item.status === "PRESENT") {
-                    console.log(`[Color Debug] ${item.subjectName}: markedByRole = "${markedByRole}", status = ${item.status}`);
-                  }
-
-                  let bgClass = "bg-muted/30 hover:bg-muted/50";
-                  let borderClass = "";
-
-                  if (item.status === "PRESENT") {
-                    if (markedByRole === "FACULTY") {
-                      bgClass = "bg-green-500/20 hover:bg-green-500/25";
-                      borderClass = "border-l-4 border-l-green-500";
-                    } else if (markedByRole === "ADMIN" || markedByRole === "SUB_ADMIN") {
-                      // More prominent blue background for admin-marked attendance
-                      bgClass = "bg-blue-500/20 hover:bg-blue-500/25";
-                      borderClass = "border-l-4 border-l-blue-500";
-                    } else if (markedByRole === "STUDENT") {
-                      // Green for student self-marked (demo mode) - same as faculty
-                      bgClass = "bg-green-500/20 hover:bg-green-500/25";
-                      borderClass = "border-l-4 border-l-green-500";
-                    } else {
-                      // Default for present - treat as admin-marked (blue)
-                      bgClass = "bg-blue-500/20 hover:bg-blue-500/25";
-                      borderClass = "border-l-4 border-l-blue-500";
-                    }
-                  } else if (item.status === "ABSENT") {
-                    bgClass = "bg-red-500/20 hover:bg-red-500/25";
-                    borderClass = "border-l-4 border-l-red-500";
-                  } else if (item.status === "LATE") {
-                    bgClass = "bg-yellow-500/20 hover:bg-yellow-500/25";
-                    borderClass = "border-l-4 border-l-yellow-500";
-                  }
-
-                  return (
+            <CardContent className="space-y-6">
+              {performanceMetrics.map((metric, index) => (
+                <div key={index}>
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-foreground">{metric.subjectName}</span>
+                    <span className={cn(
+                      "font-medium",
+                      metric.percentage >= 75 ? "text-green-500" :
+                        metric.percentage >= 65 ? "text-yellow-500" : "text-red-500"
+                    )}>
+                      {metric.percentage}%
+                    </span>
+                  </div>
+                  <div className="relative h-2 bg-muted rounded-full overflow-hidden">
                     <div
-                      key={item.slotId}
                       className={cn(
-                        "flex items-center justify-between p-4 rounded-lg transition-all duration-300",
-                        bgClass,
-                        borderClass
+                        "absolute inset-y-0 left-0 rounded-full transition-all duration-500",
+                        getProgressColor(metric.percentage)
                       )}
-                    >
-                      <div className="flex-1">
-                        <div className="font-medium text-foreground">
-                          {item.subjectName}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {item.subjectCode}
-                        </div>
-                      </div>
-                      <div className="text-center mx-4">
-                        <div className="text-sm text-muted-foreground">
-                          {item.time}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {getStatusBadge(item.status, markedByRole)}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                      style={{ width: `${metric.percentage}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <span>{metric.attended}/{metric.totalClasses} classes</span>
+                    <span className={cn(
+                      metric.status === "SATISFACTORY" ? "text-green-500" :
+                        metric.status === "WARNING" ? "text-yellow-500" : "text-red-500"
+                    )}>
+                      {metric.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
 
+        {/* Calendar & Events */}
+        <div className="space-y-6">
+          <Card className="border-border/50 shadow-lg">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-4">
+                {/* Calendar on left */}
+                <div className="flex-shrink-0">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    className="rounded-md"
+                    modifiers={{
+                      fullAttendance: (day) => {
+                        const dateStr = formatDate(day);
+                        return calendarAttendance[dateStr] === 'full';
+                      },
+                      partialAttendance: (day) => {
+                        const dateStr = formatDate(day);
+                        return calendarAttendance[dateStr] === 'partial';
+                      },
+                      absentFull: (day) => {
+                        const dateStr = formatDate(day);
+                        return calendarAttendance[dateStr] === 'absent';
+                      },
+                      sunday: (day) => day.getDay() === 0,
+                    }}
+                    modifiersStyles={{
+                      fullAttendance: {
+                        backgroundColor: 'rgb(34, 197, 94)',
+                        color: 'white',
+                        borderRadius: '50%',
+                      },
+                      partialAttendance: {
+                        backgroundColor: 'rgb(249, 115, 22)',
+                        color: 'white',
+                        borderRadius: '50%',
+                      },
+                      absentFull: {
+                        backgroundColor: 'rgb(239, 68, 68)',
+                        color: 'white',
+                        borderRadius: '50%',
+                      },
+                      sunday: {
+                        color: 'rgb(156, 163, 175)',
+                      },
+                    }}
+                    disabled={(day) => day.getDay() === 0}
+                  />
+                </div>
+
+                {/* Attendance Legend on right */}
+                <div className="flex-1 flex items-center justify-center border-l border-border/50 pl-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-4 h-4 rounded-full bg-green-500"></div>
+                      <span className="text-sm text-foreground">Present</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-4 h-4 rounded-full bg-orange-500"></div>
+                      <span className="text-sm text-foreground">Partially Present</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-4 h-4 rounded-full bg-red-500"></div>
+                      <span className="text-sm text-foreground">Absent</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
-          {/* Today's Attendance Summary - Real-time Metrics */}
-          <Card className="border-border/50 shadow-lg bg-gradient-to-r from-primary/5 to-primary/10">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-primary" />
-                Today's Attendance Summary
-              </CardTitle>
+          <Card className="border-border/50 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-lg">Academic Calendar</CardTitle>
             </CardHeader>
-            <CardContent>
-              {/* Calculate totals from historical + today's data */}
-              {(() => {
-                // Get historical totals from performance metrics
-                const historicalPresent = performanceMetrics.reduce((sum, m) => sum + m.attended, 0);
-                const historicalTotal = performanceMetrics.reduce((sum, m) => sum + m.totalClasses, 0);
-                const historicalAbsent = historicalTotal - historicalPresent;
-
-                // Today's not marked count
-                const todayNotMarked = todaySchedule.filter(s => s.status === "NOT_MARKED").length;
-                const todayPresent = todaySchedule.filter(s => s.status === "PRESENT").length;
-                const todayAbsent = todaySchedule.filter(s => s.status === "ABSENT").length;
-
-                // Combined totals (historical + today's marked)
-                const totalClasses = historicalTotal + todaySchedule.length;
-                const totalPresent = historicalPresent + todayPresent;
-                const totalAbsent = historicalAbsent + todayAbsent;
-                const percentage = totalClasses > 0 ? Math.round((totalPresent / totalClasses) * 100) : 0;
-
-                return (
-                  <div className="grid grid-cols-5 gap-4">
-                    <div className="text-center p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                      <div className="text-2xl font-bold text-blue-500">{totalClasses}</div>
-                      <div className="text-xs text-muted-foreground">Total Classes</div>
+            <CardContent className="space-y-3">
+              {upcomingEvents.map((event, index) => (
+                <div
+                  key={index}
+                  className="flex items-center space-x-3 p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                >
+                  <div
+                    className={`w-3 h-3 rounded-full ${event.color}`}
+                  ></div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-foreground">
+                      {event.title}
                     </div>
-                    <div className="text-center p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                      <div className="text-2xl font-bold text-green-500">{totalPresent}</div>
-                      <div className="text-xs text-muted-foreground">Present</div>
-                    </div>
-                    <div className="text-center p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                      <div className="text-2xl font-bold text-red-500">{totalAbsent}</div>
-                      <div className="text-xs text-muted-foreground">Absent</div>
-                    </div>
-                    <div className="text-center p-3 rounded-lg bg-gray-500/10 border border-gray-500/20">
-                      <div className="text-2xl font-bold text-gray-500">{todayNotMarked}</div>
-                      <div className="text-xs text-muted-foreground">Not Marked</div>
-                    </div>
-                    <div className="text-center p-3 rounded-lg bg-primary/10 border border-primary/20">
-                      <div className={cn(
-                        "text-2xl font-bold",
-                        percentage >= 76 ? "text-green-500" :
-                          percentage >= 65 ? "text-orange-500" : "text-red-500"
-                      )}>
-                        {percentage}%
-                      </div>
-                      <div className="text-xs text-muted-foreground">Attendance</div>
+                    <div className="text-xs text-muted-foreground">
+                      {event.date}
                     </div>
                   </div>
-                );
-              })()}
+                  <Badge variant="secondary" className="text-xs">
+                    {event.timeLeft}
+                  </Badge>
+                </div>
+              ))}
             </CardContent>
           </Card>
-
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Stats Cards */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Quick Stats */}
-              <div className="grid grid-cols-4 gap-4">
-                {stats.map((stat, index) => (
-                  <Card key={index} className="text-center border-border/50 hover:border-primary/50 transition-colors">
-                    <CardContent className="p-4">
-                      <div className={`text-2xl font-bold ${stat.color} mb-2`}>
-                        {stat.value}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {stat.label}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              {/* Performance Metrics */}
-              <Card className="border-border/50 shadow-lg">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">Performance Metrics</CardTitle>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        overallAttendance.percentage >= 75
-                          ? "text-green-500 border-green-500"
-                          : "text-yellow-500 border-yellow-500"
-                      )}
-                    >
-                      Overall: {overallAttendance.percentage}%
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {performanceMetrics.map((metric, index) => (
-                    <div key={index}>
-                      <div className="flex justify-between text-sm mb-2">
-                        <span className="text-foreground">{metric.subjectName}</span>
-                        <span className={cn(
-                          "font-medium",
-                          metric.percentage >= 75 ? "text-green-500" :
-                            metric.percentage >= 65 ? "text-yellow-500" : "text-red-500"
-                        )}>
-                          {metric.percentage}%
-                        </span>
-                      </div>
-                      <div className="relative h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className={cn(
-                            "absolute inset-y-0 left-0 rounded-full transition-all duration-500",
-                            getProgressColor(metric.percentage)
-                          )}
-                          style={{ width: `${metric.percentage}%` }}
-                        />
-                      </div>
-                      <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                        <span>{metric.attended}/{metric.totalClasses} classes</span>
-                        <span className={cn(
-                          metric.status === "SATISFACTORY" ? "text-green-500" :
-                            metric.status === "WARNING" ? "text-yellow-500" : "text-red-500"
-                        )}>
-                          {metric.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Calendar & Events */}
-            <div className="space-y-6">
-              <Card className="border-border/50 shadow-lg">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-4">
-                    {/* Calendar on left */}
-                    <div className="flex-shrink-0">
-                      <Calendar
-                        mode="single"
-                        selected={date}
-                        onSelect={setDate}
-                        className="rounded-md"
-                        modifiers={{
-                          fullAttendance: (day) => {
-                            const dateStr = formatDate(day);
-                            return calendarAttendance[dateStr] === 'full';
-                          },
-                          partialAttendance: (day) => {
-                            const dateStr = formatDate(day);
-                            return calendarAttendance[dateStr] === 'partial';
-                          },
-                          absentFull: (day) => {
-                            const dateStr = formatDate(day);
-                            return calendarAttendance[dateStr] === 'absent';
-                          },
-                          sunday: (day) => day.getDay() === 0,
-                        }}
-                        modifiersStyles={{
-                          fullAttendance: {
-                            backgroundColor: 'rgb(34, 197, 94)',
-                            color: 'white',
-                            borderRadius: '50%',
-                          },
-                          partialAttendance: {
-                            backgroundColor: 'rgb(249, 115, 22)',
-                            color: 'white',
-                            borderRadius: '50%',
-                          },
-                          absentFull: {
-                            backgroundColor: 'rgb(239, 68, 68)',
-                            color: 'white',
-                            borderRadius: '50%',
-                          },
-                          sunday: {
-                            color: 'rgb(156, 163, 175)',
-                          },
-                        }}
-                        disabled={(day) => day.getDay() === 0}
-                      />
-                    </div>
-
-                    {/* Attendance Legend on right */}
-                    <div className="flex-1 flex items-center justify-center border-l border-border/50 pl-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-4 h-4 rounded-full bg-green-500"></div>
-                          <span className="text-sm text-foreground">Present</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-4 h-4 rounded-full bg-orange-500"></div>
-                          <span className="text-sm text-foreground">Partially Present</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-4 h-4 rounded-full bg-red-500"></div>
-                          <span className="text-sm text-foreground">Absent</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-border/50 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-lg">Academic Calendar</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {upcomingEvents.map((event, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center space-x-3 p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-                    >
-                      <div
-                        className={`w-3 h-3 rounded-full ${event.color}`}
-                      ></div>
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-foreground">
-                          {event.title}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {event.date}
-                        </div>
-                      </div>
-                      <Badge variant="secondary" className="text-xs">
-                        {event.timeLeft}
-                      </Badge>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </main>
+        </div>
       </div>
-    </div>
+    </StudentLayout>
   );
 };
 

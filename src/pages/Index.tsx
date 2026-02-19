@@ -19,7 +19,9 @@ import {
   Mail,
   Phone,
   MapPin,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 
 const Index = () => {
   const [formData, setFormData] = useState({
@@ -27,6 +29,7 @@ const Index = () => {
     email: "",
     message: "",
   });
+  const [isSending, setIsSending] = useState(false);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -38,14 +41,31 @@ const Index = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    setFormData({
-      name: "",
-      email: "",
-      message: "",
-    });
+    setIsSending(true);
+
+    try {
+      const res = await fetch("http://localhost:5000/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        toast.success("Message sent successfully! We'll get back to you soon.");
+        setFormData({ name: "", email: "", message: "" });
+      } else {
+        toast.error(data.error || "Failed to send message. Please try again.");
+      }
+    } catch (error) {
+      console.error("Contact form error:", error);
+      toast.error("Unable to send message. Please check your connection and try again.");
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const features = [
@@ -124,7 +144,7 @@ const Index = () => {
     {
       icon: <Mail className="w-5 h-5" />,
       label: "Email",
-      value: "campverse@gmail.com",
+      value: "campverse.app@gmail.com",
       color: "text-blue-400",
     },
     {
@@ -136,7 +156,7 @@ const Index = () => {
     {
       icon: <MapPin className="w-5 h-5" />,
       label: "Address",
-      value: "42-110/2/c,Madhapur,Hyderabad,Telangana,India",
+      value: "CVR College Of Engineering,\nVastunagar, Mangalpalli(V), Ibrahimpatnam(M),\nRangareddy(D), Telangana 501 510",
       color: "text-blue-400",
     },
   ];
@@ -338,7 +358,7 @@ const Index = () => {
                       <div className="font-semibold text-foreground">
                         {info.label}
                       </div>
-                      <div className="text-muted-foreground">{info.value}</div>
+                      <div className="text-muted-foreground whitespace-pre-line">{info.value}</div>
                     </div>
                   </div>
                 ))}
@@ -406,8 +426,16 @@ const Index = () => {
                     type="submit"
                     className="w-full h-12 text-lg font-semibold"
                     size="lg"
+                    disabled={isSending}
                   >
-                    Send Message
+                    {isSending ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      "Send Message"
+                    )}
                   </Button>
                 </form>
               </CardContent>

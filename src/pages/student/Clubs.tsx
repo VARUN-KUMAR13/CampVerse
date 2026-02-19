@@ -10,8 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import StudentSidebar from "@/components/StudentSidebar";
-import StudentTopbar from "@/components/StudentTopbar";
+import StudentLayout from "@/components/StudentLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClubs } from "@/contexts/ClubContext";
 import {
@@ -25,7 +24,6 @@ import {
   Camera,
   ExternalLink,
   UserPlus,
-  RefreshCw,
   Loader2,
   MapPin,
   Star,
@@ -108,258 +106,238 @@ const StudentClubs = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <StudentSidebar />
-      <div className="flex-1 flex flex-col">
-        <StudentTopbar studentId={userData?.collegeId || ""} />
+    <StudentLayout>
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+              <UsersRound className="w-8 h-8 text-primary" />
+              Student Clubs
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Discover and join clubs that match your interests
+            </p>
+          </div>
+        </div>
 
-        <main className="flex-1 p-6">
-          <div className="max-w-7xl mx-auto space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-                  <UsersRound className="w-8 h-8 text-primary" />
-                  Student Clubs
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  Discover and join clubs that match your interests
-                </p>
+        {/* Filters */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Find Clubs</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  <Input
+                    placeholder="Search clubs..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
               </div>
-              <Button
-                variant="outline"
-                onClick={fetchClubs}
-                disabled={loading}
-                className="flex items-center gap-2"
+              <Select
+                value={categoryFilter}
+                onValueChange={setCategoryFilter}
               >
-                {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-4 h-4" />
-                )}
-                Refresh
-              </Button>
+                <SelectTrigger className="w-full md:w-[200px]">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="technical">Technical</SelectItem>
+                  <SelectItem value="cultural">Cultural</SelectItem>
+                  <SelectItem value="sports">Sports</SelectItem>
+                  <SelectItem value="literary">Literary</SelectItem>
+                  <SelectItem value="social">Social</SelectItem>
+                  <SelectItem value="hobby">Hobby</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={statusFilter}
+                onValueChange={setStatusFilter}
+              >
+                <SelectTrigger className="w-full md:w-[200px]">
+                  <SelectValue placeholder="Recruitment" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Clubs</SelectItem>
+                  <SelectItem value="Open">Recruiting</SelectItem>
+                  <SelectItem value="Closed">Closed</SelectItem>
+                  <SelectItem value="Coming Soon">Coming Soon</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+          </CardContent>
+        </Card>
 
-            {/* Filters */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Find Clubs</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div className="flex-1">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                      <Input
-                        placeholder="Search clubs..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10"
-                      />
+        {/* Error Display */}
+        {error && (
+          <Card className="border-destructive bg-destructive/10">
+            <CardContent className="p-4 text-destructive">
+              {error}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Loading State */}
+        {loading && clubs.length === 0 && (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
+              <p className="text-muted-foreground">Loading clubs...</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Clubs Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {!loading && filteredClubs.length === 0 ? (
+            <div className="col-span-full">
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <UsersRound className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">
+                    No clubs found
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {clubs.length === 0
+                      ? "No clubs have been registered yet."
+                      : "Try adjusting your filters to discover more clubs."}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            filteredClubs.map((club) => (
+              <Card
+                key={club._id}
+                className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center text-white">
+                        <UsersRound className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-foreground">
+                            {club.name}
+                          </h3>
+                          {club.featured && (
+                            <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {club.foundedYear ? `Est. ${club.foundedYear}` : club.club_id}
+                        </p>
+                      </div>
+                    </div>
+                    {club.recruitmentStatus === "Open" && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleJoinClub(club._id)}
+                      >
+                        <UserPlus className="w-4 h-4 mr-1" />
+                        Join
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {getCategoryBadge(club.category)}
+                    {getRecruitmentBadge(club.recruitmentStatus)}
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground line-clamp-3">
+                    {club.description}
+                  </p>
+
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-4 py-3 border-y">
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-foreground">
+                        {club.memberCount || 0}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Members
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-foreground">
+                        {club.maxMembers || "∞"}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Max
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-foreground">
+                        {club.membershipFee || "Free"}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Fee
+                      </div>
                     </div>
                   </div>
-                  <Select
-                    value={categoryFilter}
-                    onValueChange={setCategoryFilter}
-                  >
-                    <SelectTrigger className="w-full md:w-[200px]">
-                      <SelectValue placeholder="Category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Categories</SelectItem>
-                      <SelectItem value="technical">Technical</SelectItem>
-                      <SelectItem value="cultural">Cultural</SelectItem>
-                      <SelectItem value="sports">Sports</SelectItem>
-                      <SelectItem value="literary">Literary</SelectItem>
-                      <SelectItem value="social">Social</SelectItem>
-                      <SelectItem value="hobby">Hobby</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select
-                    value={statusFilter}
-                    onValueChange={setStatusFilter}
-                  >
-                    <SelectTrigger className="w-full md:w-[200px]">
-                      <SelectValue placeholder="Recruitment" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Clubs</SelectItem>
-                      <SelectItem value="Open">Recruiting</SelectItem>
-                      <SelectItem value="Closed">Closed</SelectItem>
-                      <SelectItem value="Coming Soon">Coming Soon</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
 
-            {/* Error Display */}
-            {error && (
-              <Card className="border-destructive bg-destructive/10">
-                <CardContent className="p-4 text-destructive">
-                  {error}
+                  {/* Details */}
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    {club.venue && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4" />
+                        <span>{club.venue}</span>
+                      </div>
+                    )}
+                    {club.meetingSchedule && (
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        <span>{club.meetingSchedule}</span>
+                      </div>
+                    )}
+                    {club.president?.name && (
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4" />
+                        <span>President: {club.president.name}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Achievements */}
+                  {club.achievements && club.achievements.length > 0 && (
+                    <div>
+                      <h4 className="font-medium text-sm mb-2 flex items-center gap-1">
+                        <Trophy className="w-4 h-4" />
+                        Achievements
+                      </h4>
+                      <div className="flex flex-wrap gap-1">
+                        {club.achievements.slice(0, 2).map((achievement, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            {achievement}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-2">
+                    <Button size="sm" className="flex-1">
+                      View Details
+                      <ExternalLink className="w-3 h-3 ml-1" />
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
-            )}
-
-            {/* Loading State */}
-            {loading && clubs.length === 0 && (
-              <Card>
-                <CardContent className="p-12 text-center">
-                  <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
-                  <p className="text-muted-foreground">Loading clubs...</p>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Clubs Grid */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {!loading && filteredClubs.length === 0 ? (
-                <div className="col-span-full">
-                  <Card>
-                    <CardContent className="py-12 text-center">
-                      <UsersRound className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-foreground mb-2">
-                        No clubs found
-                      </h3>
-                      <p className="text-muted-foreground">
-                        {clubs.length === 0
-                          ? "No clubs have been registered yet."
-                          : "Try adjusting your filters to discover more clubs."}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
-              ) : (
-                filteredClubs.map((club) => (
-                  <Card
-                    key={club._id}
-                    className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
-                  >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center text-white">
-                            <UsersRound className="w-6 h-6" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-bold text-foreground">
-                                {club.name}
-                              </h3>
-                              {club.featured && (
-                                <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                              {club.foundedYear ? `Est. ${club.foundedYear}` : club.club_id}
-                            </p>
-                          </div>
-                        </div>
-                        {club.recruitmentStatus === "Open" && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleJoinClub(club._id)}
-                          >
-                            <UserPlus className="w-4 h-4 mr-1" />
-                            Join
-                          </Button>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {getCategoryBadge(club.category)}
-                        {getRecruitmentBadge(club.recruitmentStatus)}
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <p className="text-sm text-muted-foreground line-clamp-3">
-                        {club.description}
-                      </p>
-
-                      {/* Stats */}
-                      <div className="grid grid-cols-3 gap-4 py-3 border-y">
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-foreground">
-                            {club.memberCount || 0}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Members
-                          </div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-foreground">
-                            {club.maxMembers || "∞"}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Max
-                          </div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-foreground">
-                            {club.membershipFee || "Free"}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Fee
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Details */}
-                      <div className="space-y-2 text-sm text-muted-foreground">
-                        {club.venue && (
-                          <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4" />
-                            <span>{club.venue}</span>
-                          </div>
-                        )}
-                        {club.meetingSchedule && (
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
-                            <span>{club.meetingSchedule}</span>
-                          </div>
-                        )}
-                        {club.president?.name && (
-                          <div className="flex items-center gap-2">
-                            <Users className="w-4 h-4" />
-                            <span>President: {club.president.name}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Achievements */}
-                      {club.achievements && club.achievements.length > 0 && (
-                        <div>
-                          <h4 className="font-medium text-sm mb-2 flex items-center gap-1">
-                            <Trophy className="w-4 h-4" />
-                            Achievements
-                          </h4>
-                          <div className="flex flex-wrap gap-1">
-                            {club.achievements.slice(0, 2).map((achievement, idx) => (
-                              <Badge key={idx} variant="outline" className="text-xs">
-                                {achievement}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Actions */}
-                      <div className="flex gap-2 pt-2">
-                        <Button size="sm" className="flex-1">
-                          View Details
-                          <ExternalLink className="w-3 h-3 ml-1" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-          </div>
-        </main>
+            ))
+          )}
+        </div>
       </div>
-    </div>
+    </StudentLayout>
   );
 };
 

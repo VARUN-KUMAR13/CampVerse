@@ -141,7 +141,7 @@ const AdminSidebar = ({ onClose, isOpen }: AdminSidebarProps) => {
           className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-500/10"
         >
           <LogOut className="w-5 h-5 mr-3" />
-          Logout
+          Sign Out
         </Button>
       </div>
     </div>
