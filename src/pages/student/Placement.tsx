@@ -22,7 +22,12 @@ import {
   FileText,
   ExternalLink,
   Loader2,
+  MapPin,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
+
+const API_HOST = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").replace("/api", "");
 
 const StudentPlacement = () => {
   const { userData } = useAuth();
@@ -258,7 +263,7 @@ const StudentPlacement = () => {
                       <p className="text-sm text-muted-foreground">
                         Deadline
                       </p>
-                      <p className="font-medium text-destructive flex items-center gap-1">
+                      <p className="font-medium text-red-500 flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
                         {formatDeadline(job.deadline)}
                       </p>
@@ -280,6 +285,13 @@ const StudentPlacement = () => {
                           <DollarSign className="w-4 h-4 text-blue-500" />
                           <span className="font-medium">Stipend:</span>
                           <span>{job.stipend}</span>
+                        </div>
+                      )}
+                      {job.location && (
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-orange-500" />
+                          <span className="font-medium">Location:</span>
+                          <span>{job.location}</span>
                         </div>
                       )}
                       <div className="flex items-center gap-2">
@@ -318,35 +330,56 @@ const StudentPlacement = () => {
                   </div>
 
                   <div className="flex items-center justify-between pt-4 border-t">
-                    <div className="flex gap-2">
-                      {job.attachments && job.attachments.length > 0 && job.attachments.map((file: any, index: number) => (
-                        <Button key={typeof file === 'string' ? file : file.filename || index} variant="outline" size="sm">
-                          <FileText className="w-4 h-4 mr-2" />
-                          {typeof file === 'string' ? file : file.filename || 'Attachment'}
-                          <ExternalLink className="w-3 h-3 ml-1" />
-                        </Button>
-                      ))}
+                    <div className="flex gap-2 flex-wrap">
+                      {job.attachments && job.attachments.length > 0 && job.attachments.map((file: any, index: number) => {
+                        let fileUrl = typeof file === 'string' ? file : file.url;
+                        const fileName = typeof file === 'string' ? file : file.filename || 'Attachment';
+                        // For server-hosted files (like /uploads/...), prepend the backend host
+                        if (fileUrl && fileUrl.startsWith('/uploads')) {
+                          fileUrl = `${API_HOST}${fileUrl}`;
+                        }
+                        return (
+                          <Button
+                            key={fileName + index}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fileUrl && window.open(fileUrl, '_blank')}
+                            className={!fileUrl ? 'opacity-50 cursor-not-allowed' : ''}
+                          >
+                            <FileText className="w-4 h-4 mr-2" />
+                            {fileName}
+                            <ExternalLink className="w-3 h-3 ml-1" />
+                          </Button>
+                        );
+                      })}
                     </div>
                     <div className="flex gap-2">
-                      {job.eligible &&
-                        !job.applied &&
-                        job.status !== "Closed" && (
-                          <Button
-                            className="bg-green-600 hover:bg-green-700"
-                            onClick={() => handleApply(job.job_id)}
-                            disabled={isApplying === job.job_id}
-                          >
-                            {isApplying === job.job_id ? (
-                              <>
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                Applying...
-                              </>
-                            ) : (
-                              "Apply Now"
-                            )}
-                          </Button>
-                        )}
-                      <Button variant="outline">View Details</Button>
+                      {job.applied ? (
+                        <Button disabled className="bg-green-600 opacity-90 cursor-not-allowed">
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Applied
+                        </Button>
+                      ) : job.status === "Closed" || (job.deadline && new Date(job.deadline) < new Date()) ? (
+                        <Button disabled className="bg-red-600 opacity-90 cursor-not-allowed">
+                          <XCircle className="w-4 h-4 mr-2" />
+                          Not Applied
+                        </Button>
+                      ) : job.eligible ? (
+                        <Button
+                          className="bg-green-600 hover:bg-green-700"
+                          onClick={() => handleApply(job.job_id)}
+                          disabled={isApplying === job.job_id}
+                        >
+                          {isApplying === job.job_id ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Applying...
+                            </>
+                          ) : (
+                            "Apply Now"
+                          )}
+                        </Button>
+                      ) : null}
                     </div>
                   </div>
                 </CardContent>

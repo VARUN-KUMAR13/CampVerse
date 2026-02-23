@@ -52,17 +52,17 @@ const StudentTopbar = ({ studentId }: StudentTopbarProps) => {
 
         {/* Right side - Time, Notifications, Student ID, and Avatar */}
         <div className="flex items-center space-x-4">
-          <div className="flex items-center gap-3">
-            <div>
-              <div className="text-sm font-medium text-foreground">
-                {format(currentDateTime, "MMM dd, yyyy")}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {format(currentDateTime, "EEEE")}
-              </div>
-            </div>
+          <div className="flex items-center gap-6">
             <div className="text-lg font-semibold text-foreground">
               {format(currentDateTime, "h:mm a")}
+            </div>
+            <div className="text-center">
+              <div className="text-base font-medium text-foreground">
+                {format(currentDateTime, "MMM dd, yyyy")}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {format(currentDateTime, "EEEE")}
+              </div>
             </div>
           </div>
 

@@ -218,9 +218,21 @@ export const signInUser = async (
         }
       }
 
-      // If it's an invalid credential error, provide clear message
+      // If it's an invalid credential error
       if (firebaseError.code === "auth/wrong-password" ||
         firebaseError.code === "auth/invalid-credential") {
+        // If user is using initial password (collegeId), reset Firebase password and retry
+        if (password === collegeId) {
+          try {
+            await provisionFirebaseUser(collegeId); // This resets password to initial
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const idToken = await userCredential.user.getIdToken();
+            return await firebaseBackendLogin(idToken, collegeId);
+          } catch (retryError: any) {
+            console.error("Retry after password reset failed:", retryError);
+            return await backendLogin(collegeId, password);
+          }
+        }
         throw new Error("Invalid password. If you've reset your password, use the new one.");
       }
 
@@ -239,7 +251,7 @@ export const signInUser = async (
   return await backendLogin(collegeId, password);
 };
 
-// Send password reset email via backend (handles provisioning + Nodemailer)
+// Send password reset email via Firebase's built-in sender
 export const resetPassword = async (collegeId: string): Promise<void> => {
   if (collegeId === "admin") {
     throw new Error("Admin password cannot be reset");
@@ -249,16 +261,20 @@ export const resetPassword = async (collegeId: string): Promise<void> => {
     throw new Error("Invalid college ID format");
   }
 
-  const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ collegeId }),
-  });
+  const email = collegeIdToEmail(collegeId);
 
-  const data = await response.json();
+  // Step 1: Ensure Firebase Auth user exists
+  try {
+    await provisionFirebaseUser(collegeId);
+  } catch (err) {
+    console.warn("Provision check failed:", err);
+  }
 
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to send reset email");
+  // Step 2: Send Firebase's built-in reset email
+  if (firebaseReady && auth) {
+    await sendPasswordResetEmail(auth, email);
+  } else {
+    throw new Error("Password reset is currently unavailable. Please try again later.");
   }
 };
 

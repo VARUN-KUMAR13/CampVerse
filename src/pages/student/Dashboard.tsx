@@ -777,7 +777,7 @@ const StudentDashboard = () => {
         </p>
       </div>
 
-      {/* Netflix-style Event Showcase */}
+      {/* Netflix-style Event & Club Showcase */}
       <EventShowcase />
 
       {/* Today's Schedule & Attendance */}

@@ -24,6 +24,7 @@ import AdminLayout from "@/components/AdminLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEvents, Event } from "@/contexts/EventContext";
 import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
 import {
     Plus,
     Calendar,
@@ -46,15 +47,54 @@ import {
 
 const AdminEvents = () => {
     const { userData } = useAuth();
-    const { events, loading, error, addEvent, deleteEvent, fetchEvents } = useEvents();
+    const { events, loading, error, addEvent, updateEvent, deleteEvent, fetchEvents } = useEvents();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("all");
     const imageInputRef = useRef<HTMLInputElement>(null);
+    const editImageInputRef = useRef<HTMLInputElement>(null);
+
+    // Registrations state for view modal
+    const [registrations, setRegistrations] = useState<{
+        sno: number;
+        _id: string;
+        collegeId: string;
+        name: string;
+        email: string;
+        branch: string;
+        year: string;
+        section: string;
+        paymentStatus: string;
+    }[]>([]);
+    const [loadingRegistrations, setLoadingRegistrations] = useState(false);
+
+    const [editEvent, setEditEvent] = useState({
+        event_id: "",
+        title: "",
+        category: "",
+        date: "",
+        endDate: "",
+        time: "",
+        endTime: "",
+        venue: "",
+        organizer: "",
+        description: "",
+        entryFee: "Free",
+        maxParticipants: "",
+        prizes: "",
+        registrationDeadline: "",
+        highlights: "",
+        contactEmail: "",
+        contactPhone: "",
+        featured: false,
+        posterImage: "",
+        registrationLink: "",
+    });
 
     const [newEvent, setNewEvent] = useState({
         event_id: "",
@@ -79,7 +119,7 @@ const AdminEvents = () => {
         registrationLink: "",
     });
 
-    // Handle image upload
+    // Handle image upload for create
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -89,6 +129,116 @@ const AdminEvents = () => {
         };
         reader.readAsDataURL(file);
         if (imageInputRef.current) imageInputRef.current.value = "";
+    };
+
+    // Handle image upload for edit
+    const handleEditImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            setEditEvent({ ...editEvent, posterImage: reader.result as string });
+        };
+        reader.readAsDataURL(file);
+        if (editImageInputRef.current) editImageInputRef.current.value = "";
+    };
+
+    // Open edit modal with pre-populated data
+    const handleOpenEdit = (event: Event) => {
+        const dateObj = new Date(event.date);
+        const endDateObj = event.endDate ? new Date(event.endDate) : null;
+        const regDeadlineObj = event.registrationDeadline ? new Date(event.registrationDeadline) : null;
+
+        setEditEvent({
+            event_id: event.event_id,
+            title: event.title,
+            category: event.category,
+            date: dateObj.toISOString().split("T")[0],
+            endDate: endDateObj ? endDateObj.toISOString().split("T")[0] : "",
+            time: dateObj.toTimeString().slice(0, 5),
+            endTime: endDateObj ? endDateObj.toTimeString().slice(0, 5) : "",
+            venue: event.venue,
+            organizer: event.organizer,
+            description: event.description || "",
+            entryFee: event.entryFee || "Free",
+            maxParticipants: event.maxParticipants ? String(event.maxParticipants) : "",
+            prizes: event.prizes || "",
+            registrationDeadline: regDeadlineObj ? regDeadlineObj.toISOString().split("T")[0] : "",
+            highlights: event.highlights ? event.highlights.join(", ") : "",
+            contactEmail: event.contactEmail || "",
+            contactPhone: event.contactPhone || "",
+            featured: event.featured || false,
+            posterImage: event.posterImage || "",
+            registrationLink: event.registrationLink || "",
+        });
+        setSelectedEvent(event);
+        setIsEditModalOpen(true);
+    };
+
+    // Save edited event
+    const handleEditEvent = async () => {
+        if (!selectedEvent) return;
+        if (!editEvent.title || !editEvent.category || !editEvent.date || !editEvent.venue || !editEvent.organizer) {
+            toast({
+                title: "Missing Fields",
+                description: "Please fill in Title, Category, Date, Venue, and Organizer.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        let eventDate = editEvent.date;
+        if (editEvent.time) eventDate = `${editEvent.date}T${editEvent.time}:00`;
+        let eventEndDate = editEvent.endDate || editEvent.date;
+        if (editEvent.endTime) eventEndDate = `${editEvent.endDate || editEvent.date}T${editEvent.endTime}:00`;
+
+        const updates = {
+            title: editEvent.title,
+            category: editEvent.category,
+            date: eventDate,
+            endDate: eventEndDate,
+            venue: editEvent.venue,
+            organizer: editEvent.organizer,
+            description: editEvent.description,
+            entryFee: editEvent.entryFee || "Free",
+            maxParticipants: editEvent.maxParticipants ? parseInt(editEvent.maxParticipants) : 0,
+            prizes: editEvent.prizes,
+            registrationDeadline: editEvent.registrationDeadline || undefined,
+            highlights: editEvent.highlights ? editEvent.highlights.split(",").map((h: string) => h.trim()) : [],
+            contactEmail: editEvent.contactEmail,
+            contactPhone: editEvent.contactPhone,
+            featured: editEvent.featured,
+            posterImage: editEvent.posterImage || undefined,
+            registrationLink: editEvent.registrationLink || undefined,
+        };
+
+        try {
+            setIsSubmitting(true);
+            await updateEvent(selectedEvent._id, updates as any);
+            toast({ title: "Success!", description: "Event updated successfully." });
+            setIsEditModalOpen(false);
+            setSelectedEvent(null);
+        } catch (err: any) {
+            toast({ title: "Error", description: err.message || "Failed to update event.", variant: "destructive" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    // Open view modal
+    const handleOpenView = async (event: Event) => {
+        setSelectedEvent(event);
+        setIsViewModalOpen(true);
+        setLoadingRegistrations(true);
+        try {
+            const res = await api.get(`/events/${event._id}/registrations`);
+            setRegistrations(res.registrations || []);
+        } catch (err) {
+            console.error('Error fetching registrations:', err);
+            setRegistrations([]);
+        } finally {
+            setLoadingRegistrations(false);
+        }
     };
 
     const handleAddEvent = async () => {
@@ -271,19 +421,6 @@ const AdminEvents = () => {
                             </p>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Button
-                                variant="outline"
-                                onClick={fetchEvents}
-                                disabled={loading}
-                                className="flex items-center gap-2"
-                            >
-                                {loading ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                    <RefreshCw className="w-4 h-4" />
-                                )}
-                                Refresh
-                            </Button>
                             <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
                                 <DialogTrigger asChild>
                                     <Button className="flex items-center gap-2 bg-primary hover:bg-primary/90">
@@ -837,10 +974,10 @@ const AdminEvents = () => {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <Button variant="outline" size="icon" title="View Details">
+                                                <Button variant="outline" size="icon" title="View Details" onClick={() => handleOpenView(event)}>
                                                     <Eye className="w-4 h-4" />
                                                 </Button>
-                                                <Button variant="outline" size="icon" title="Edit Event">
+                                                <Button variant="outline" size="icon" title="Edit Event" onClick={() => handleOpenEdit(event)}>
                                                     <Edit className="w-4 h-4" />
                                                 </Button>
                                                 <Button
@@ -859,6 +996,374 @@ const AdminEvents = () => {
                         </div>
                     )}
                 </div>
+
+                {/* ═══ VIEW EVENT MODAL ═══ */}
+                <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+                    <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                                <CalendarDays className="w-5 h-5 text-primary" />
+                                {selectedEvent?.title}
+                            </DialogTitle>
+                            {selectedEvent && (
+                                <div className="flex items-center gap-2 mt-1 text-primary font-medium text-sm">
+                                    {selectedEvent.event_id} · {selectedEvent.category}
+                                </div>
+                            )}
+                        </DialogHeader>
+
+                        {selectedEvent && (
+                            <div className="space-y-4 py-2">
+                                {/* Poster */}
+                                {selectedEvent.posterImage && (
+                                    <div className="rounded-lg overflow-hidden border border-border">
+                                        <img src={selectedEvent.posterImage} alt={selectedEvent.title} className="w-full h-48 object-cover" />
+                                    </div>
+                                )}
+
+                                {/* Summary stat cards */}
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div className="p-3 rounded-lg bg-muted/50 text-center">
+                                        <p className="text-xs text-muted-foreground">Status</p>
+                                        <div className="mt-1">{getStatusBadge(selectedEvent.status)}</div>
+                                    </div>
+                                    <div className="p-3 rounded-lg bg-muted/50 text-center">
+                                        <p className="text-xs text-muted-foreground">Entry Fee</p>
+                                        <p className="font-semibold text-sm mt-0.5">{selectedEvent.entryFee || "Free"}</p>
+                                    </div>
+                                    <div className="p-3 rounded-lg bg-muted/50 text-center">
+                                        <p className="text-xs text-muted-foreground">Registered</p>
+                                        <p className="font-semibold text-sm mt-0.5">
+                                            {selectedEvent.registeredParticipants || 0}
+                                            {selectedEvent.maxParticipants > 0 ? ` / ${selectedEvent.maxParticipants}` : ""}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Description */}
+                                {selectedEvent.description && (
+                                    <div className="p-3 rounded-lg bg-muted/30 border">
+                                        <p className="text-xs text-muted-foreground font-medium mb-1">Description</p>
+                                        <p className="text-sm">{selectedEvent.description}</p>
+                                    </div>
+                                )}
+
+                                {/* Details grid */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="p-3 rounded-lg bg-muted/30 border">
+                                        <p className="text-xs text-muted-foreground font-medium mb-1">Date</p>
+                                        <p className="text-sm flex items-center gap-1">
+                                            <Calendar className="w-3 h-3" />
+                                            {formatDate(selectedEvent.date)}
+                                            {selectedEvent.endDate && selectedEvent.endDate !== selectedEvent.date
+                                                ? ` — ${formatDate(selectedEvent.endDate)}`
+                                                : ""}
+                                        </p>
+                                    </div>
+                                    <div className="p-3 rounded-lg bg-muted/30 border">
+                                        <p className="text-xs text-muted-foreground font-medium mb-1">Time</p>
+                                        <p className="text-sm flex items-center gap-1">
+                                            <Clock className="w-3 h-3" />
+                                            {formatTime(selectedEvent.date)}
+                                        </p>
+                                    </div>
+                                    <div className="p-3 rounded-lg bg-muted/30 border">
+                                        <p className="text-xs text-muted-foreground font-medium mb-1">Venue</p>
+                                        <p className="text-sm flex items-center gap-1">
+                                            <MapPin className="w-3 h-3" /> {selectedEvent.venue}
+                                        </p>
+                                    </div>
+                                    <div className="p-3 rounded-lg bg-muted/30 border">
+                                        <p className="text-xs text-muted-foreground font-medium mb-1">Organizer</p>
+                                        <p className="text-sm">{selectedEvent.organizer}</p>
+                                    </div>
+                                    {selectedEvent.prizes && (
+                                        <div className="p-3 rounded-lg bg-muted/30 border">
+                                            <p className="text-xs text-muted-foreground font-medium mb-1">Prizes</p>
+                                            <p className="text-sm flex items-center gap-1">
+                                                <Trophy className="w-3 h-3" /> {selectedEvent.prizes}
+                                            </p>
+                                        </div>
+                                    )}
+                                    {selectedEvent.registrationDeadline && (
+                                        <div className="p-3 rounded-lg bg-muted/30 border">
+                                            <p className="text-xs text-muted-foreground font-medium mb-1">Reg. Deadline</p>
+                                            <p className="text-sm font-medium text-destructive">
+                                                {formatDate(selectedEvent.registrationDeadline)}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Badges & Featured */}
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <Badge variant="outline">{selectedEvent.event_id}</Badge>
+                                    {getCategoryBadge(selectedEvent.category)}
+                                    {getStatusBadge(selectedEvent.status)}
+                                    {selectedEvent.featured && (
+                                        <Badge className="bg-yellow-500">
+                                            <Star className="w-3 h-3 mr-1 fill-current" /> Featured
+                                        </Badge>
+                                    )}
+                                </div>
+
+                                {/* Highlights */}
+                                {selectedEvent.highlights && selectedEvent.highlights.length > 0 && (
+                                    <div className="p-3 rounded-lg bg-muted/30 border">
+                                        <p className="text-xs text-muted-foreground font-medium mb-1.5">Highlights</p>
+                                        <div className="flex flex-wrap gap-1">
+                                            {selectedEvent.highlights.map((h, i) => (
+                                                <Badge key={i} variant="outline" className="text-xs">{h}</Badge>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Contact Info */}
+                                {(selectedEvent.contactEmail || selectedEvent.contactPhone) && (
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {selectedEvent.contactEmail && (
+                                            <div className="p-3 rounded-lg bg-muted/30 border">
+                                                <p className="text-xs text-muted-foreground font-medium mb-1">Contact Email</p>
+                                                <p className="text-sm">{selectedEvent.contactEmail}</p>
+                                            </div>
+                                        )}
+                                        {selectedEvent.contactPhone && (
+                                            <div className="p-3 rounded-lg bg-muted/30 border">
+                                                <p className="text-xs text-muted-foreground font-medium mb-1">Contact Phone</p>
+                                                <p className="text-sm">{selectedEvent.contactPhone}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Registered Students Table */}
+                                <div>
+                                    <h3 className="font-semibold text-sm flex items-center gap-2 mb-3">
+                                        <Users className="w-4 h-4 text-primary" />
+                                        Registered Students ({registrations.length})
+                                    </h3>
+
+                                    {loadingRegistrations ? (
+                                        <div className="py-8 text-center">
+                                            <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
+                                            <p className="text-sm text-muted-foreground">Loading registrations...</p>
+                                        </div>
+                                    ) : registrations.length === 0 ? (
+                                        <div className="py-8 text-center border rounded-lg bg-muted/20">
+                                            <Users className="w-10 h-10 mx-auto mb-2 text-muted-foreground/40" />
+                                            <p className="text-sm text-muted-foreground">No students have registered yet</p>
+                                        </div>
+                                    ) : (
+                                        <div className="border rounded-lg overflow-hidden">
+                                            <table className="w-full text-sm">
+                                                <thead>
+                                                    <tr className="bg-muted/50 border-b">
+                                                        <th className="text-left py-2.5 px-3 font-medium text-muted-foreground">#</th>
+                                                        <th className="text-left py-2.5 px-3 font-medium text-muted-foreground">Student</th>
+                                                        <th className="text-left py-2.5 px-3 font-medium text-muted-foreground">Roll No</th>
+                                                        <th className="text-left py-2.5 px-3 font-medium text-muted-foreground">Branch</th>
+                                                        <th className="text-left py-2.5 px-3 font-medium text-muted-foreground">Payment</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {registrations.map((reg) => (
+                                                        <tr key={reg._id || reg.sno} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                                                            <td className="py-2.5 px-3 text-muted-foreground">{reg.sno}</td>
+                                                            <td className="py-2.5 px-3">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
+                                                                        {reg.name?.charAt(0) || "?"}
+                                                                    </div>
+                                                                    <div>
+                                                                        <span className="font-medium">{reg.name || "Unknown"}</span>
+                                                                        {reg.email && (
+                                                                            <p className="text-xs text-muted-foreground">{reg.email}</p>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td className="py-2.5 px-3 font-mono text-xs">{reg.collegeId}</td>
+                                                            <td className="py-2.5 px-3">{reg.branch || "—"}</td>
+                                                            <td className="py-2.5 px-3">
+                                                                <Badge className={reg.paymentStatus === 'Free' ? 'bg-blue-500' : 'bg-green-500'}>
+                                                                    {reg.paymentStatus === 'Free' ? 'Free' : '✓ Paid'}
+                                                                </Badge>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </DialogContent>
+                </Dialog>
+
+                {/* Edit Event Modal */}
+                <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+                    <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                                <Edit className="w-6 h-6 text-primary" />
+                                Edit Event
+                            </DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-5 py-4">
+                            {/* Event ID (read-only) and Title */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold">Event ID</Label>
+                                    <Input value={editEvent.event_id} disabled className="bg-muted" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold">Event Title <span className="text-destructive">*</span></Label>
+                                    <Input value={editEvent.title} onChange={(e) => setEditEvent({ ...editEvent, title: e.target.value })} />
+                                </div>
+                            </div>
+
+                            {/* Category and Organizer */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold">Category <span className="text-destructive">*</span></Label>
+                                    <Select value={editEvent.category} onValueChange={(value) => setEditEvent({ ...editEvent, category: value })}>
+                                        <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Technical">Technical</SelectItem>
+                                            <SelectItem value="Cultural">Cultural</SelectItem>
+                                            <SelectItem value="Sports">Sports</SelectItem>
+                                            <SelectItem value="Workshop">Workshop</SelectItem>
+                                            <SelectItem value="Seminar">Seminar</SelectItem>
+                                            <SelectItem value="Competition">Competition</SelectItem>
+                                            <SelectItem value="Other">Other</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold">Organizer <span className="text-destructive">*</span></Label>
+                                    <Input value={editEvent.organizer} onChange={(e) => setEditEvent({ ...editEvent, organizer: e.target.value })} />
+                                </div>
+                            </div>
+
+                            {/* Venue */}
+                            <div className="space-y-2">
+                                <Label className="text-sm font-semibold">Venue <span className="text-destructive">*</span></Label>
+                                <Input value={editEvent.venue} onChange={(e) => setEditEvent({ ...editEvent, venue: e.target.value })} />
+                            </div>
+
+                            {/* Dates and Times */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold flex items-center gap-2"><Calendar className="w-4 h-4" /> Start Date & Time <span className="text-destructive">*</span></Label>
+                                    <div className="flex gap-2">
+                                        <Input type="date" value={editEvent.date} onChange={(e) => setEditEvent({ ...editEvent, date: e.target.value })} className="flex-1" />
+                                        <Input type="time" value={editEvent.time} onChange={(e) => setEditEvent({ ...editEvent, time: e.target.value })} className="w-32" />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold flex items-center gap-2"><Clock className="w-4 h-4" /> End Date & Time</Label>
+                                    <div className="flex gap-2">
+                                        <Input type="date" value={editEvent.endDate} onChange={(e) => setEditEvent({ ...editEvent, endDate: e.target.value })} className="flex-1" />
+                                        <Input type="time" value={editEvent.endTime} onChange={(e) => setEditEvent({ ...editEvent, endTime: e.target.value })} className="w-32" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Description */}
+                            <div className="space-y-2">
+                                <Label className="text-sm font-semibold">Description</Label>
+                                <Textarea value={editEvent.description} onChange={(e) => setEditEvent({ ...editEvent, description: e.target.value })} rows={3} />
+                            </div>
+
+                            {/* Entry Fee, Max Participants, Prizes */}
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold">Entry Fee</Label>
+                                    <Input value={editEvent.entryFee} onChange={(e) => setEditEvent({ ...editEvent, entryFee: e.target.value })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold">Max Participants</Label>
+                                    <Input type="number" value={editEvent.maxParticipants} onChange={(e) => setEditEvent({ ...editEvent, maxParticipants: e.target.value })} placeholder="0 = unlimited" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold flex items-center gap-1"><Trophy className="w-4 h-4" /> Prizes</Label>
+                                    <Input value={editEvent.prizes} onChange={(e) => setEditEvent({ ...editEvent, prizes: e.target.value })} />
+                                </div>
+                            </div>
+
+                            {/* Registration Deadline and Highlights */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold">Registration Deadline</Label>
+                                    <Input type="date" value={editEvent.registrationDeadline} onChange={(e) => setEditEvent({ ...editEvent, registrationDeadline: e.target.value })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold">Highlights</Label>
+                                    <Input value={editEvent.highlights} onChange={(e) => setEditEvent({ ...editEvent, highlights: e.target.value })} placeholder="Free Food, Networking, Certificates" />
+                                    <p className="text-xs text-muted-foreground">Separate with commas</p>
+                                </div>
+                            </div>
+
+                            {/* Registration Link */}
+                            {editEvent.registrationDeadline && (
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold flex items-center gap-2"><Link className="w-4 h-4" /> Registration Link</Label>
+                                    <Input value={editEvent.registrationLink} onChange={(e) => setEditEvent({ ...editEvent, registrationLink: e.target.value })} placeholder="https://forms.google.com/..." />
+                                </div>
+                            )}
+
+                            {/* Poster Image */}
+                            <div className="space-y-2">
+                                <Label className="text-sm font-semibold flex items-center gap-2"><Image className="w-4 h-4" /> Event Poster Image</Label>
+                                {editEvent.posterImage ? (
+                                    <div className="relative rounded-lg overflow-hidden border border-border">
+                                        <img src={editEvent.posterImage} alt="Event poster" className="w-full h-48 object-cover" />
+                                        <Button type="button" variant="destructive" size="icon" className="absolute top-2 right-2 w-8 h-8" onClick={() => setEditEvent({ ...editEvent, posterImage: "" })}>
+                                            <X className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors" onClick={() => editImageInputRef.current?.click()}>
+                                        <Image className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
+                                        <p className="text-sm text-muted-foreground">Click to upload event poster</p>
+                                    </div>
+                                )}
+                                <input ref={editImageInputRef} type="file" accept="image/*" className="hidden" onChange={handleEditImageUpload} />
+                            </div>
+
+                            {/* Contact Info */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold">Contact Email</Label>
+                                    <Input type="email" value={editEvent.contactEmail} onChange={(e) => setEditEvent({ ...editEvent, contactEmail: e.target.value })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold">Contact Phone</Label>
+                                    <Input value={editEvent.contactPhone} onChange={(e) => setEditEvent({ ...editEvent, contactPhone: e.target.value })} />
+                                </div>
+                            </div>
+
+                            {/* Featured Toggle */}
+                            <div className="flex items-center justify-between rounded-lg border border-border bg-muted/20 p-3">
+                                <div>
+                                    <p className="text-sm font-medium text-foreground">Featured Event</p>
+                                    <p className="text-xs text-muted-foreground">Featured events are highlighted on the student dashboard</p>
+                                </div>
+                                <Switch checked={editEvent.featured} onCheckedChange={(checked) => setEditEvent({ ...editEvent, featured: checked })} />
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex justify-end gap-3 pt-4 border-t">
+                                <Button variant="outline" onClick={() => setIsEditModalOpen(false)} disabled={isSubmitting}>Cancel</Button>
+                                <Button onClick={handleEditEvent} disabled={isSubmitting} className="min-w-[140px]">
+                                    {isSubmitting ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>) : (<><Edit className="w-4 h-4 mr-2" /> Save Changes</>)}
+                                </Button>
+                            </div>
+                        </div>
+                    </DialogContent>
+                </Dialog>
             </main>
         </AdminLayout>
     );

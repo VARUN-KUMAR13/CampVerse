@@ -23,6 +23,7 @@ export interface Club {
         department: string;
     };
     memberCount: number;
+    joinedStudents?: string[];
     maxMembers: number;
     meetingSchedule?: string;
     venue?: string;

@@ -1,0 +1,718 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   CLUB SHOWCASE — Glassmorphism Community-Style Card Carousel
+   Distinct from the Netflix-style Event Showcase
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Showcase Container ──────────────────────────────────────────────────── */
+.club-showcase {
+    width: 100%;
+    border-radius: 16px;
+    background: linear-gradient(135deg,
+            rgba(15, 23, 42, 0.6) 0%,
+            rgba(30, 41, 59, 0.4) 50%,
+            rgba(15, 23, 42, 0.6) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    padding: 24px 0 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Subtle animated background mesh */
+.club-showcase::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse at 20% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 50%, rgba(56, 189, 248, 0.08) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ─── Header ──────────────────────────────────────────────────────────────── */
+.club-showcase-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.club-showcase-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.club-showcase-header-icon {
+    color: #a78bfa;
+    animation: club-icon-glow 3s ease-in-out infinite;
+}
+
+@keyframes club-icon-glow {
+
+    0%,
+    100% {
+        filter: drop-shadow(0 0 4px rgba(167, 139, 250, 0.4));
+    }
+
+    50% {
+        filter: drop-shadow(0 0 12px rgba(167, 139, 250, 0.7));
+    }
+}
+
+.club-showcase-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: #f1f5f9;
+    letter-spacing: -0.3px;
+}
+
+.club-showcase-count {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.08);
+    padding: 2px 10px;
+    border-radius: 12px;
+}
+
+.club-showcase-arrows {
+    display: flex;
+    gap: 6px;
+}
+
+.club-showcase-arrow {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.club-showcase-arrow:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+/* ─── Loading ──────────────────────────────────────────────────────────────── */
+.club-showcase-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 48px 0;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 14px;
+}
+
+/* ─── Scroll Container ────────────────────────────────────────────────────── */
+.club-showcase-scroll {
+    display: flex;
+    gap: 16px;
+    padding: 8px 28px 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-behavior: smooth;
+    position: relative;
+    z-index: 1;
+}
+
+.club-showcase-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+/* ─── CLUB CARD ───────────────────────────────────────────────────────────── */
+.club-card {
+    flex: 0 0 280px;
+    position: relative;
+    border-radius: 14px;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(8px);
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.club-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.4),
+        0 0 40px var(--glow-color, rgba(139, 92, 246, 0.15));
+}
+
+/* Glow effect behind card */
+.club-card-glow {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    height: 80px;
+    border-radius: 50%;
+    filter: blur(40px);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.club-card:hover .club-card-glow {
+    opacity: 0.6;
+}
+
+/* Accent gradient bar at top */
+.club-card-accent {
+    height: 4px;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+}
+
+/* Card body */
+.club-card-body {
+    padding: 18px 18px 16px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Top row: Icon + Category */
+.club-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.club-card-icon {
+    font-size: 32px;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+}
+
+.club-card-category {
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    padding: 3px 10px !important;
+    border-radius: 20px !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid !important;
+}
+
+/* Club name */
+.club-card-name {
+    font-size: 17px;
+    font-weight: 700;
+    color: #f1f5f9;
+    line-height: 1.25;
+    margin-bottom: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Description */
+.club-card-desc {
+    font-size: 12px;
+    color: rgba(148, 163, 184, 0.85);
+    line-height: 1.5;
+    margin-bottom: 12px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Meta items */
+.club-card-meta {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.club-card-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Capacity bar */
+.club-card-capacity {
+    margin-bottom: 14px;
+}
+
+.club-card-capacity-bar {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+
+.club-card-capacity-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+}
+
+.club-card-capacity-text {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* Footer: Recruitment status + Join button */
+.club-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.club-card-recruitment {
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    padding: 3px 10px !important;
+    border-radius: 20px !important;
+}
+
+/* Recruitment badges */
+.club-badge-open {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #34d399 !important;
+    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+.club-badge-closed {
+    background: rgba(239, 68, 68, 0.15) !important;
+    color: #f87171 !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+.club-badge-coming {
+    background: rgba(245, 158, 11, 0.15) !important;
+    color: #fbbf24 !important;
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+}
+
+/* Join button */
+.club-card-join-btn {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    padding: 4px 14px !important;
+    border-radius: 20px !important;
+    color: white !important;
+    border: none !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+.club-card-join-btn:hover {
+    transform: scale(1.05) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Member badge */
+.club-card-member-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: #34d399;
+    font-weight: 600;
+}
+
+/* Featured star */
+.club-card-featured {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 2;
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+}
+
+.club-card:hover .club-card-featured {
+    opacity: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CLUB DETAIL MODAL
+   ═══════════════════════════════════════════════════════════════════════════ */
+.club-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: club-modal-fade-in 0.3s ease;
+    padding: 20px;
+}
+
+@keyframes club-modal-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.club-modal {
+    background: #0f172a;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 85vh;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.6);
+    animation: club-modal-slide-up 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes club-modal-slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Modal Hero */
+.club-modal-hero {
+    position: relative;
+    padding: 40px 28px 32px;
+    overflow: hidden;
+}
+
+.club-modal-hero-pattern {
+    position: absolute;
+    inset: 0;
+    background:
+        repeating-linear-gradient(45deg,
+            transparent,
+            transparent 30px,
+            rgba(255, 255, 255, 0.03) 30px,
+            rgba(255, 255, 255, 0.03) 60px);
+    z-index: 0;
+}
+
+.club-modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 2;
+    transition: all 0.2s;
+    backdrop-filter: blur(4px);
+}
+
+.club-modal-close:hover {
+    background: rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.club-modal-hero-content {
+    position: relative;
+    z-index: 1;
+}
+
+.club-modal-hero-icon {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 12px;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+}
+
+.club-modal-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: white;
+    line-height: 1.15;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+.club-modal-id {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(0, 0, 0, 0.2);
+    padding: 3px 10px;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+}
+
+/* Modal Body */
+.club-modal-body {
+    padding: 24px 28px 28px;
+}
+
+.club-modal-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.club-badge-category {
+    color: white !important;
+    border: none !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    padding: 4px 12px !important;
+    border-radius: 6px !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.club-badge-featured {
+    background: linear-gradient(135deg, #f59e0b, #ef4444) !important;
+    color: white !important;
+    border: none !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    padding: 4px 12px !important;
+    border-radius: 6px !important;
+    text-transform: uppercase;
+}
+
+.club-badge-status {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    padding: 4px 12px !important;
+    border-radius: 6px !important;
+}
+
+.club-modal-description {
+    font-size: 14px;
+    color: rgba(203, 213, 225, 0.9);
+    line-height: 1.7;
+    margin-bottom: 20px;
+}
+
+/* Details grid */
+.club-modal-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.club-modal-detail {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.club-modal-detail-label {
+    display: block;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.45);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.club-modal-detail-value {
+    display: block;
+    font-size: 13px;
+    color: #e2e8f0;
+    font-weight: 500;
+}
+
+/* People section */
+.club-modal-people {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.club-modal-person {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.club-modal-person-role {
+    display: block;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.club-modal-person-name {
+    display: block;
+    font-size: 13px;
+    color: #e2e8f0;
+    font-weight: 600;
+}
+
+/* Achievements */
+.club-modal-achievements {
+    margin-bottom: 20px;
+}
+
+.club-modal-section-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #cbd5e1;
+    margin-bottom: 10px;
+}
+
+.club-modal-achievements-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.club-modal-achievement-chip {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 4px 12px;
+    border-radius: 20px;
+}
+
+/* Actions */
+.club-modal-actions {
+    display: flex;
+    gap: 10px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.club-btn-join {
+    flex: 1;
+    color: white !important;
+    border: none !important;
+    font-weight: 700 !important;
+    font-size: 14px !important;
+    padding: 10px 24px !important;
+    border-radius: 10px !important;
+    transition: all 0.2s ease !important;
+}
+
+.club-btn-join:hover {
+    transform: scale(1.03) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+.club-btn-joined {
+    flex: 1;
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #34d399 !important;
+    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+    font-weight: 600 !important;
+    border-radius: 10px !important;
+}
+
+.club-btn-closed {
+    flex: 1;
+    background: rgba(100, 116, 139, 0.15) !important;
+    color: #94a3b8 !important;
+    border: 1px solid rgba(100, 116, 139, 0.3) !important;
+    font-weight: 600 !important;
+    border-radius: 10px !important;
+}
+
+.club-btn-close {
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    font-weight: 600 !important;
+    border-radius: 10px !important;
+    transition: all 0.2s ease !important;
+}
+
+.club-btn-close:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+    .club-showcase-header {
+        padding: 0 16px;
+    }
+
+    .club-showcase-scroll {
+        padding: 8px 16px 16px;
+        gap: 12px;
+    }
+
+    .club-card {
+        flex: 0 0 240px;
+    }
+
+    .club-showcase-title {
+        font-size: 16px;
+    }
+
+    .club-modal {
+        max-width: 100%;
+        border-radius: 12px;
+    }
+
+    .club-modal-details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .club-modal-people {
+        flex-direction: column;
+    }
+}

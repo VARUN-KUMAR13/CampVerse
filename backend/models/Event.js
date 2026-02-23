@@ -49,6 +49,9 @@ const eventSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    registeredStudents: [{
+        type: String  // stores collegeId of registered students
+    }],
     status: {
         type: String,
         enum: ['Open', 'Closed', 'Upcoming', 'Ongoing', 'Completed', 'Cancelled'],
@@ -117,7 +120,8 @@ eventSchema.index({ event_id: 1 });
 
 // Method to check if registration is open
 eventSchema.methods.isRegistrationOpen = function () {
-    if (this.status !== 'Open') return false;
+    const allowedStatuses = ['Open', 'Upcoming', 'Ongoing'];
+    if (!allowedStatuses.includes(this.status)) return false;
     if (this.registrationDeadline && new Date() > this.registrationDeadline) return false;
     if (this.maxParticipants > 0 && this.registeredParticipants >= this.maxParticipants) return false;
     return true;

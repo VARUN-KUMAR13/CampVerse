@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { ref, push, onValue, set, remove, query, orderByChild, limitToLast, off } from 'firebase/database';
-import { database, firebaseReady, isDevelopment } from '@/lib/firebase';
+import { auth, database, firebaseReady } from '@/lib/firebase';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -200,8 +200,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setLoading(true);
         setError(null);
 
-        // Try Firebase first
-        if (firebaseReady && database && !isDevelopment) {
+        // Try Firebase first — but only if the user is actually authenticated with Firebase Auth
+        // Admin users bypass Firebase Auth, so auth.currentUser will be null for them
+        if (firebaseReady && database && auth?.currentUser) {
             const notificationsRef = ref(database, 'notifications');
             const recentNotificationsQuery = query(
                 notificationsRef,
@@ -230,7 +231,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 fetchLocalNotifications();
             });
         } else {
-            // Use localStorage
+            // Use localStorage (for admin users or when Firebase is not available)
+            console.log('Using localStorage for notifications (Firebase Auth not available)');
             fetchLocalNotifications();
         }
     }, [processNotifications, fetchLocalNotifications]);
@@ -272,7 +274,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             setError(null);
 
             // Try Firebase first if available and not in dev mode
-            if (firebaseReady && database && !useLocalStorage && !isDevelopment) {
+            if (firebaseReady && database && !useLocalStorage) {
                 try {
                     const notificationsRef = ref(database, 'notifications');
                     const { id, ...notificationWithoutId } = newNotification;

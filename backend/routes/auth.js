@@ -260,9 +260,13 @@ router.post("/provision", async (req, res) => {
 
     // Check if Firebase user already exists
     try {
-      await admin.auth().getUserByEmail(email);
-      // User already exists in Firebase
-      return res.json({ message: "User already exists", provisioned: true });
+      const existingUser = await admin.auth().getUserByEmail(email);
+      // User already exists — reset password back to initial (collegeId)
+      await admin.auth().updateUser(existingUser.uid, {
+        password: upperCollegeId,
+      });
+      console.log(`Reset Firebase password to initial for: ${email}`);
+      return res.json({ message: "User password reset to initial", provisioned: true });
     } catch (err) {
       if (err.code !== "auth/user-not-found") {
         throw err;
@@ -379,9 +383,13 @@ router.post("/reset-password", async (req, res) => {
     }
 
     // Generate password reset link via Firebase Admin SDK
-    const resetLink = await admin.auth().generatePasswordResetLink(email);
+    const actionCodeSettings = {
+      url: 'https://campverse-2004.firebaseapp.com',
+      handleCodeInApp: false,
+    };
+    const resetLink = await admin.auth().generatePasswordResetLink(email, actionCodeSettings);
 
-    // Send the reset email via Nodemailer
+    // Send the branded reset email via Nodemailer
     const nodemailer = require("nodemailer");
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -394,31 +402,128 @@ router.post("/reset-password", async (req, res) => {
     await transporter.sendMail({
       from: `"CampVerse" <${process.env.GMAIL_USER}>`,
       to: email,
-      subject: "🔐 CampVerse — Password Reset",
+      subject: "Reset Your CampVerse Password",
       html: `
-        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f8fafc; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0;">
-          <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); padding: 24px 32px;">
-            <h1 style="color: white; margin: 0; font-size: 22px;">🎓 CampVerse — Password Reset</h1>
-          </div>
-          <div style="padding: 32px;">
-            <p style="color: #1e293b; font-size: 16px; line-height: 1.6;">
-              Hello <strong>${userName}</strong>,
-            </p>
-            <p style="color: #475569; font-size: 15px; line-height: 1.6;">
-              We received a request to reset your password for your CampVerse account 
-              (<strong>${upperCollegeId}</strong>).
-            </p>
-            <div style="text-align: center; margin: 32px 0;">
-              <a href="${resetLink}" 
-                 style="display: inline-block; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-size: 16px; font-weight: 600;">
-                Reset My Password
-              </a>
-            </div>
-            <p style="color: #64748b; font-size: 13px; line-height: 1.6;">
-              If you didn't request this, you can safely ignore this email. This link will expire in 1 hour.
-            </p>
-          </div>
-        </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset Your CampVerse Password</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f1f5f9; padding: 40px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 560px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #1e40af 100%); padding: 40px 32px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">
+                🎓 CampVerse
+              </h1>
+              <p style="margin: 8px 0 0; color: rgba(255,255,255,0.85); font-size: 14px; font-weight: 400; letter-spacing: 0.3px;">
+                Simplifying campus life, one feature at a time
+              </p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding: 40px 32px 32px;">
+              
+              <!-- Greeting -->
+              <p style="margin: 0 0 20px; color: #1e293b; font-size: 18px; font-weight: 600; line-height: 1.4;">
+                Hello ${userName},
+              </p>
+
+              <!-- Message -->
+              <p style="margin: 0 0 24px; color: #475569; font-size: 15px; line-height: 1.7;">
+                We received a request to reset the password for your CampVerse account.
+              </p>
+
+              <!-- Email Info Box -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 28px;">
+                <tr>
+                  <td style="background-color: #f0f7ff; border: 1px solid #dbeafe; border-radius: 10px; padding: 16px 20px;">
+                    <p style="margin: 0; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px;">
+                      Account Email
+                    </p>
+                    <p style="margin: 6px 0 0; color: #1e40af; font-size: 15px; font-weight: 600;">
+                      ${email}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA Text -->
+              <p style="margin: 0 0 24px; color: #475569; font-size: 15px; line-height: 1.7;">
+                Click the button below to reset your password:
+              </p>
+
+              <!-- Button -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 32px;">
+                <tr>
+                  <td align="center">
+                    <a href="${resetLink}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff; padding: 16px 48px; border-radius: 10px; text-decoration: none; font-size: 16px; font-weight: 600; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(37,99,235,0.4);">
+                      Reset Password
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Divider -->
+              <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 0 0 24px;" />
+
+              <!-- Expiry Notice -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 16px;">
+                <tr>
+                  <td style="padding: 0;">
+                    <p style="margin: 0; color: #64748b; font-size: 13px; line-height: 1.6;">
+                      ⏳ This link will expire in <strong style="color: #475569;">1 hour</strong> for security reasons.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Safety Notice -->
+              <p style="margin: 0; color: #94a3b8; font-size: 13px; line-height: 1.6;">
+                If you did not request a password reset, you can safely ignore this email. Your account will remain secure.
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 28px 32px; text-align: center;">
+              <p style="margin: 0 0 4px; color: #475569; font-size: 14px; font-weight: 600;">
+                The CampVerse Team
+              </p>
+              <p style="margin: 0 0 12px; color: #94a3b8; font-size: 13px;">
+                CVR College of Engineering
+              </p>
+              <p style="margin: 0; color: #94a3b8; font-size: 12px;">
+                Need help? Contact us at 
+                <a href="mailto:campverse.app@gmail.com" style="color: #2563eb; text-decoration: none; font-weight: 500;">
+                  campverse.app@gmail.com
+                </a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+
+        <!-- Sub-footer -->
+        <p style="margin: 24px 0 0; color: #94a3b8; font-size: 11px; text-align: center;">
+          © ${new Date().getFullYear()} CampVerse. All rights reserved.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
       `,
     });
 

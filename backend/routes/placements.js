@@ -8,9 +8,15 @@ const multer = require("multer");
 const path = require("path");
 
 // Configure multer for file uploads
+const fs = require("fs");
+const uploadsDir = path.join(__dirname, "..", "uploads", "placements");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/placements/");
+    cb(null, uploadsDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
@@ -36,6 +42,33 @@ const upload = multer({
   },
 });
 
+// @route   POST /api/placements/upload
+// @desc    Upload attachment files for a placement job
+// @access  Admin only
+router.post(
+  "/upload",
+  authenticateToken,
+  authorizeRoles(["admin"]),
+  upload.array("files", 5),
+  (req, res) => {
+    try {
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ message: "No files uploaded" });
+      }
+
+      const uploadedFiles = req.files.map((file) => ({
+        filename: file.originalname,
+        url: `/uploads/placements/${file.filename}`,
+      }));
+
+      res.json({ files: uploadedFiles });
+    } catch (error) {
+      console.error("Error uploading files:", error);
+      res.status(500).json({ message: "File upload failed", error: error.message });
+    }
+  }
+);
+
 // @route   GET /api/placements
 // @desc    Get all placement jobs
 // @access  Public (authenticated users)
@@ -58,7 +91,7 @@ router.get("/", authenticateToken, async (req, res) => {
       }
     }
 
-    // Filter by eligibility for students
+    // Filter by eligibility for students (only if branch is known)
     if (user.role === "student") {
       const branchMap = {
         "05": "CSE",
@@ -74,10 +107,15 @@ router.get("/", authenticateToken, async (req, res) => {
       };
 
       const userBranch = branchMap[user.branch];
-      filter.$or = [
-        { eligibility: "All Branches" },
-        { eligibility: userBranch },
-      ];
+      console.log("Student branch code:", user.branch, "-> mapped:", userBranch);
+
+      if (userBranch) {
+        filter.$or = [
+          { eligibility: "All Branches" },
+          { eligibility: userBranch },
+        ];
+      }
+      // If branch is unknown, show all open jobs (no eligibility filter)
     }
 
     // Additional filters
@@ -286,17 +324,13 @@ router.delete("/:id", authenticateToken, authorizeRoles(["admin"]), async (req, 
       return res.status(404).json({ message: "Job not found" });
     }
 
-    // Check if there are any applications
-    const applicationCount = await JobApplication.countDocuments({ jobId: job._id });
-    if (applicationCount > 0) {
-      return res.status(400).json({
-        message: `Cannot delete job with ${applicationCount} applications. Archive it instead.`,
-      });
-    }
+    // Delete all associated applications first
+    await JobApplication.deleteMany({ jobId: job._id });
 
+    // Then delete the job
     await PlacementJob.findByIdAndDelete(req.params.id);
 
-    res.json({ message: "Job deleted successfully" });
+    res.json({ message: "Job and all associated applications deleted successfully" });
   } catch (error) {
     console.error("Error deleting placement job:", error);
     res.status(500).json({ message: "Server error", error: error.message });

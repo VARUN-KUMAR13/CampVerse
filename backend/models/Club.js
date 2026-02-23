@@ -45,6 +45,9 @@ const clubSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    joinedStudents: [{
+        type: String  // stores collegeId of joined students
+    }],
     maxMembers: {
         type: Number,
         default: 0  // 0 means unlimited

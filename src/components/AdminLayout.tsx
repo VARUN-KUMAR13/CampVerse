@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search, Shield, ChevronLeft, ChevronRight } from "lucide-react";
+import { Shield, ChevronLeft, ChevronRight } from "lucide-react";
 import AdminSidebar from "@/components/AdminSidebar";
 
 interface AdminLayoutProps {
@@ -90,13 +89,6 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                                         System Administration
                                     </p>
                                 </div>
-                            </div>
-                            <div className="relative hidden sm:block">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                                <Input
-                                    placeholder="Search users, courses..."
-                                    className="pl-10 w-64"
-                                />
                             </div>
                         </div>
 

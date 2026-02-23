@@ -183,6 +183,29 @@ router.delete('/:id', authenticateToken, authorizeRoles(['admin', 'faculty']), a
     }
 });
 
+// @route   GET /api/clubs/:id/members
+// @desc    Get list of students who joined the club
+// @access  Admin, Faculty
+router.get('/:id/members', authenticateToken, authorizeRoles(['admin', 'faculty']), async (req, res) => {
+    try {
+        const club = await Club.findById(req.params.id);
+        if (!club) {
+            return res.status(404).json({ message: 'Club not found' });
+        }
+
+        const User = require('../models/User');
+        const members = await User.find(
+            { collegeId: { $in: club.joinedStudents || [] }, role: 'student' },
+            'name collegeId email branch year section'
+        ).sort({ name: 1 });
+
+        res.json({ members, total: members.length });
+    } catch (error) {
+        console.error('Error fetching club members:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
 // @route   POST /api/clubs/:id/join
 // @desc    Join a club
 // @access  Students, Admin
@@ -198,8 +221,19 @@ router.post('/:id/join', authenticateToken, authorizeRoles(['student', 'admin'])
             return res.status(400).json({ message: 'Recruitment is closed for this club' });
         }
 
-        // Increment member count
-        club.memberCount += 1;
+        const studentId = req.user.collegeId;
+
+        // Check if already joined
+        if (club.joinedStudents && club.joinedStudents.includes(studentId)) {
+            return res.status(400).json({ message: 'You have already joined this club' });
+        }
+
+        // Add student to joined list
+        if (!club.joinedStudents) {
+            club.joinedStudents = [];
+        }
+        club.joinedStudents.push(studentId);
+        club.memberCount = club.joinedStudents.length;
         await club.save();
 
         res.json({

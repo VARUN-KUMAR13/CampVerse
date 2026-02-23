@@ -13,6 +13,7 @@ import {
 import StudentLayout from "@/components/StudentLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClubs } from "@/contexts/ClubContext";
+import { useToast } from "@/hooks/use-toast";
 import {
   Search,
   Users,
@@ -28,14 +29,22 @@ import {
   MapPin,
   Star,
   UsersRound,
+  CheckCircle,
 } from "lucide-react";
 
 const StudentClubs = () => {
   const { userData } = useAuth();
   const { clubs, loading, error, fetchClubs, joinClub } = useClubs();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [processingClubId, setProcessingClubId] = useState<string | null>(null);
+
+  const isJoined = (club: any) => {
+    if (!userData?.collegeId || !club.joinedStudents) return false;
+    return club.joinedStudents.includes(userData.collegeId);
+  };
 
   useEffect(() => {
     fetchClubs();
@@ -99,9 +108,21 @@ const StudentClubs = () => {
 
   const handleJoinClub = async (clubId: string) => {
     try {
+      setProcessingClubId(clubId);
       await joinClub(clubId);
-    } catch (err) {
+      toast({
+        title: "Joined!",
+        description: "You have successfully joined the club.",
+      });
+    } catch (err: any) {
       console.error("Error joining club:", err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to join club.",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingClubId(null);
     }
   };
 
@@ -237,13 +258,22 @@ const StudentClubs = () => {
                         </p>
                       </div>
                     </div>
-                    {club.recruitmentStatus === "Open" && (
+                    {isJoined(club) ? (
+                      <Button size="sm" disabled className="bg-primary">
+                        <CheckCircle className="w-4 h-4 mr-1" />
+                        Joined
+                      </Button>
+                    ) : club.recruitmentStatus === "Open" && (
                       <Button
                         size="sm"
                         onClick={() => handleJoinClub(club._id)}
+                        disabled={processingClubId === club._id}
                       >
-                        <UserPlus className="w-4 h-4 mr-1" />
-                        Join
+                        {processingClubId === club._id ? (
+                          <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Joining...</>
+                        ) : (
+                          <><UserPlus className="w-4 h-4 mr-1" /> Join</>
+                        )}
                       </Button>
                     )}
                   </div>

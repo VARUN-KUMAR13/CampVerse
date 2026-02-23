@@ -41,16 +41,6 @@ const AdminSidebar = ({ onClose, isOpen }: AdminSidebarProps) => {
       path: "/admin/attendance",
     },
     {
-      icon: <Users className="w-5 h-5" />,
-      label: "Students",
-      path: "/admin/students",
-    },
-    {
-      icon: <GraduationCap className="w-5 h-5" />,
-      label: "Faculty",
-      path: "/admin/faculty",
-    },
-    {
       icon: <Building2 className="w-5 h-5" />,
       label: "Placement",
       path: "/admin/placement",
@@ -79,16 +69,6 @@ const AdminSidebar = ({ onClose, isOpen }: AdminSidebarProps) => {
       icon: <Bell className="w-5 h-5" />,
       label: "Alerts",
       path: "/admin/alerts",
-    },
-    {
-      icon: <BarChart3 className="w-5 h-5" />,
-      label: "Analytics",
-      path: "/admin/analytics",
-    },
-    {
-      icon: <Settings className="w-5 h-5" />,
-      label: "Settings",
-      path: "/admin/settings",
     },
   ];
 

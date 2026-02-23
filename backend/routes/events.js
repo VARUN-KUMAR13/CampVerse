@@ -202,16 +202,113 @@ router.post('/:id/register', authenticateToken, authorizeRoles(['student']), asy
             return res.status(400).json({ message: 'Registration is closed for this event' });
         }
 
-        // Increment registered participants
-        event.registeredParticipants += 1;
+        const studentId = req.user.collegeId;
+
+        // Check if already registered
+        if (event.registeredStudents && event.registeredStudents.includes(studentId)) {
+            return res.status(400).json({ message: 'You are already registered for this event' });
+        }
+
+        // Check max participants
+        if (event.maxParticipants > 0 && event.registeredParticipants >= event.maxParticipants) {
+            return res.status(400).json({ message: 'Event is full. Registration closed.' });
+        }
+
+        // For paid events, require paymentId
+        const isFree = !event.entryFee || event.entryFee === 'Free' || event.entryFee === '0' || event.entryFee === '₹0';
+        if (!isFree && !req.body.paymentId) {
+            return res.status(400).json({ message: 'Payment is required for this event' });
+        }
+
+        // Register the student
+        if (!event.registeredStudents) {
+            event.registeredStudents = [];
+        }
+        event.registeredStudents.push(studentId);
+        event.registeredParticipants = event.registeredStudents.length;
         await event.save();
 
         res.json({
             message: 'Registration successful',
-            event
+            event,
+            registered: true
         });
     } catch (error) {
         console.error('Error registering for event:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// @route   GET /api/events/:id/check-registration
+// @desc    Check if current user is registered for an event
+// @access  Students
+router.get('/:id/check-registration', authenticateToken, async (req, res) => {
+    try {
+        const event = await Event.findById(req.params.id);
+
+        if (!event) {
+            return res.status(404).json({ message: 'Event not found' });
+        }
+
+        const studentId = req.user.collegeId;
+        const isRegistered = event.registeredStudents && event.registeredStudents.includes(studentId);
+
+        res.json({ registered: isRegistered });
+    } catch (error) {
+        console.error('Error checking registration:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// @route   GET /api/events/:id/registrations
+// @desc    Get list of registered students for an event (admin)
+// @access  Admin, Faculty
+router.get('/:id/registrations', authenticateToken, authorizeRoles(['admin', 'faculty']), async (req, res) => {
+    try {
+        const event = await Event.findById(req.params.id);
+
+        if (!event) {
+            return res.status(404).json({ message: 'Event not found' });
+        }
+
+        const isFree = !event.entryFee || event.entryFee === 'Free' || event.entryFee === '0' || event.entryFee === '₹0';
+
+        const User = require('../models/User');
+        const studentIds = event.registeredStudents || [];
+
+        // Fetch detailed student info from User model
+        const users = await User.find(
+            { collegeId: { $in: studentIds }, role: 'student' },
+            'name collegeId email branch year section'
+        ).sort({ name: 1 });
+
+        // Build a map for quick lookup
+        const userMap = {};
+        users.forEach(u => { userMap[u.collegeId] = u; });
+
+        const registrations = studentIds.map((collegeId, index) => {
+            const user = userMap[collegeId];
+            return {
+                sno: index + 1,
+                _id: user?._id || collegeId,
+                collegeId,
+                name: user?.name || 'Unknown',
+                email: user?.email || '',
+                branch: user?.branch || '',
+                year: user?.year || '',
+                section: user?.section || '',
+                paymentStatus: isFree ? 'Free' : 'Paid',
+            };
+        });
+
+        res.json({
+            total: registrations.length,
+            maxParticipants: event.maxParticipants,
+            entryFee: event.entryFee,
+            registrations,
+        });
+    } catch (error) {
+        console.error('Error fetching registrations:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });

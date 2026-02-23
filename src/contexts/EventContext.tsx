@@ -16,6 +16,7 @@ export interface Event {
     entryFee: string;
     maxParticipants: number;
     registeredParticipants: number;
+    registeredStudents?: string[];
     status: 'Open' | 'Closed' | 'Upcoming' | 'Ongoing' | 'Completed' | 'Cancelled';
     featured: boolean;
     highlights: string[];
@@ -42,7 +43,7 @@ interface EventContextType {
     addEvent: (event: Omit<Event, '_id' | 'registeredParticipants' | 'createdAt' | 'postedBy'>) => Promise<void>;
     updateEvent: (eventId: string, updates: Partial<Event>) => Promise<void>;
     deleteEvent: (eventId: string) => Promise<void>;
-    registerForEvent: (eventId: string) => Promise<void>;
+    registerForEvent: (eventId: string, paymentId?: string) => Promise<void>;
 }
 
 const EventContext = createContext<EventContextType | undefined>(undefined);
@@ -138,10 +139,12 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     // Register for an event
-    const registerForEvent = async (eventId: string) => {
+    const registerForEvent = async (eventId: string, paymentId?: string) => {
         try {
             setError(null);
-            const response = await api.post(`/events/${eventId}/register`, {});
+            const body: any = {};
+            if (paymentId) body.paymentId = paymentId;
+            const response = await api.post(`/events/${eventId}/register`, body);
             console.log('Registered for event:', response);
             await fetchEvents();
         } catch (err: any) {

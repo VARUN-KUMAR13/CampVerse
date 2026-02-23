@@ -88,7 +88,7 @@ export const PlacementProvider: React.FC<{ children: ReactNode }> = ({
       setError(null);
       console.log("Fetching jobs from MongoDB API...");
 
-      const response = await api.get("/placements");
+      const response = await api.get("/placements?limit=100");
       console.log("API Response:", response);
 
       // Handle the response structure from the backend
