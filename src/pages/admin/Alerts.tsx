@@ -135,253 +135,251 @@ const AdminAlerts = () => {
 
     return (
         <AdminLayout>
-            <main className="p-6">
-                <div className="max-w-7xl mx-auto space-y-6">
-                    {/* Header */}
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-                                <Bell className="w-8 h-8 text-primary" />
-                                Notification History
-                            </h1>
-                            <p className="text-muted-foreground mt-1">
-                                View and manage all notifications sent via the system
-                            </p>
-                        </div>
-                        <Button
-                            variant="outline"
-                            onClick={fetchNotifications}
-                            disabled={loading}
-                            className="flex items-center gap-2"
-                        >
-                            {loading ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <RefreshCw className="w-4 h-4" />
-                            )}
-                            Refresh
-                        </Button>
+            <div className="max-w-7xl mx-auto space-y-6">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+                            <Bell className="w-8 h-8 text-primary" />
+                            Notification History
+                        </h1>
+                        <p className="text-muted-foreground mt-1">
+                            View and manage all notifications sent via the system
+                        </p>
                     </div>
+                    <Button
+                        variant="outline"
+                        onClick={fetchNotifications}
+                        disabled={loading}
+                        className="flex items-center gap-2"
+                    >
+                        {loading ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <RefreshCw className="w-4 h-4" />
+                        )}
+                        Refresh
+                    </Button>
+                </div>
 
-                    {/* Stats Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <Card>
-                            <CardContent className="p-4 flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                                    <Bell className="w-6 h-6 text-primary" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Total Alerts</p>
-                                    <p className="text-2xl font-bold">{allNotifications.length}</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardContent className="p-4 flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-lg bg-red-500/10 flex items-center justify-center">
-                                    <AlertTriangle className="w-6 h-6 text-red-500" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Critical</p>
-                                    <p className="text-2xl font-bold">
-                                        {allNotifications.filter((n) => n.urgency === "critical").length}
-                                    </p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardContent className="p-4 flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                                    <AlertTriangle className="w-6 h-6 text-amber-500" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Important</p>
-                                    <p className="text-2xl font-bold">
-                                        {allNotifications.filter((n) => n.urgency === "important").length}
-                                    </p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardContent className="p-4 flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center">
-                                    <CheckCircle className="w-6 h-6 text-green-500" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Normal</p>
-                                    <p className="text-2xl font-bold">
-                                        {allNotifications.filter((n) => n.urgency === "normal").length}
-                                    </p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    {/* Filters */}
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <Card>
-                        <CardContent className="p-4">
-                            <div className="flex flex-col md:flex-row gap-4">
-                                <div className="flex-1">
-                                    <div className="relative">
-                                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                                        <Input
-                                            placeholder="Search notifications..."
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="pl-10"
-                                        />
-                                    </div>
-                                </div>
-                                <Select value={urgencyFilter} onValueChange={setUrgencyFilter}>
-                                    <SelectTrigger className="w-full md:w-[180px]">
-                                        <SelectValue placeholder="Urgency" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Urgency</SelectItem>
-                                        <SelectItem value="normal">Normal</SelectItem>
-                                        <SelectItem value="important">Important</SelectItem>
-                                        <SelectItem value="critical">Critical</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                                    <SelectTrigger className="w-full md:w-[180px]">
-                                        <SelectValue placeholder="Category" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Categories</SelectItem>
-                                        <SelectItem value="general">General</SelectItem>
-                                        <SelectItem value="academic">Academic</SelectItem>
-                                        <SelectItem value="placement">Placement</SelectItem>
-                                        <SelectItem value="event">Event</SelectItem>
-                                        <SelectItem value="emergency">Emergency</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                        <CardContent className="p-4 flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <Bell className="w-6 h-6 text-primary" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">Total Alerts</p>
+                                <p className="text-2xl font-bold">{allNotifications.length}</p>
                             </div>
                         </CardContent>
                     </Card>
-
-                    {/* Error Display */}
-                    {error && (
-                        <Card className="border-destructive bg-destructive/10">
-                            <CardContent className="p-4 text-destructive">
-                                {error}
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {/* Loading State */}
-                    {loading && allNotifications.length === 0 && (
-                        <Card>
-                            <CardContent className="p-12 text-center">
-                                <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
-                                <p className="text-muted-foreground">Loading notifications...</p>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {/* Notifications List */}
-                    {!loading && filteredNotifications.length === 0 ? (
-                        <Card>
-                            <CardContent className="p-12 text-center">
-                                <Bell className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                                <h3 className="text-lg font-medium text-foreground mb-2">
-                                    No notifications found
-                                </h3>
-                                <p className="text-muted-foreground">
-                                    {allNotifications.length === 0
-                                        ? "No notifications have been sent yet. Send one from the Dashboard!"
-                                        : "Try adjusting your search or filters."}
+                    <Card>
+                        <CardContent className="p-4 flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-lg bg-red-500/10 flex items-center justify-center">
+                                <AlertTriangle className="w-6 h-6 text-red-500" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">Critical</p>
+                                <p className="text-2xl font-bold">
+                                    {allNotifications.filter((n) => n.urgency === "critical").length}
                                 </p>
-                            </CardContent>
-                        </Card>
-                    ) : (
-                        <div className="space-y-4">
-                            {filteredNotifications.map((notification) => (
-                                <Card
-                                    key={notification.id}
-                                    className={`hover:shadow-lg transition-shadow ${notification.urgency === "critical"
-                                        ? "border-l-4 border-l-red-500"
-                                        : notification.urgency === "important"
-                                            ? "border-l-4 border-l-amber-500"
-                                            : ""
-                                        }`}
-                                >
-                                    <CardContent className="p-6">
-                                        <div className="flex items-start justify-between gap-4">
-                                            <div className="flex-1 space-y-3">
-                                                {/* Title and Badges */}
-                                                <div className="flex items-start gap-3 flex-wrap">
-                                                    <h3 className="text-lg font-bold text-foreground">
-                                                        {notification.title || "Notification"}
-                                                    </h3>
-                                                    {getUrgencyBadge(notification.urgency)}
-                                                    {getCategoryBadge(notification.category)}
-                                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent className="p-4 flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                                <AlertTriangle className="w-6 h-6 text-amber-500" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">Important</p>
+                                <p className="text-2xl font-bold">
+                                    {allNotifications.filter((n) => n.urgency === "important").length}
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent className="p-4 flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center">
+                                <CheckCircle className="w-6 h-6 text-green-500" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">Normal</p>
+                                <p className="text-2xl font-bold">
+                                    {allNotifications.filter((n) => n.urgency === "normal").length}
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
 
-                                                {/* Message */}
-                                                <p className="text-muted-foreground">
-                                                    {notification.message}
-                                                </p>
+                {/* Filters */}
+                <Card>
+                    <CardContent className="p-4">
+                        <div className="flex flex-col md:flex-row gap-4">
+                            <div className="flex-1">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                                    <Input
+                                        placeholder="Search notifications..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="pl-10"
+                                    />
+                                </div>
+                            </div>
+                            <Select value={urgencyFilter} onValueChange={setUrgencyFilter}>
+                                <SelectTrigger className="w-full md:w-[180px]">
+                                    <SelectValue placeholder="Urgency" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Urgency</SelectItem>
+                                    <SelectItem value="normal">Normal</SelectItem>
+                                    <SelectItem value="important">Important</SelectItem>
+                                    <SelectItem value="critical">Critical</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                                <SelectTrigger className="w-full md:w-[180px]">
+                                    <SelectValue placeholder="Category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Categories</SelectItem>
+                                    <SelectItem value="general">General</SelectItem>
+                                    <SelectItem value="academic">Academic</SelectItem>
+                                    <SelectItem value="placement">Placement</SelectItem>
+                                    <SelectItem value="event">Event</SelectItem>
+                                    <SelectItem value="emergency">Emergency</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </CardContent>
+                </Card>
 
-                                                {/* Meta Info */}
-                                                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                                                    <span className="flex items-center gap-1">
-                                                        <Clock className="w-4 h-4" />
-                                                        {formatDate(notification.createdAt)}
-                                                    </span>
-                                                    <span className="flex items-center gap-1">
-                                                        <User className="w-4 h-4" />
-                                                        {notification.postedBy?.name || "Admin"} ({notification.postedBy?.role || "admin"})
-                                                    </span>
-                                                    <span className="flex items-center gap-1">
-                                                        <Users className="w-4 h-4" />
-                                                        {getTargetAudienceText(notification.targetAudience)}
-                                                    </span>
-                                                </div>
+                {/* Error Display */}
+                {error && (
+                    <Card className="border-destructive bg-destructive/10">
+                        <CardContent className="p-4 text-destructive">
+                            {error}
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Loading State */}
+                {loading && allNotifications.length === 0 && (
+                    <Card>
+                        <CardContent className="py-12 text-center">
+                            <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
+                            <p className="text-muted-foreground">Loading notifications...</p>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Notifications List */}
+                {!loading && filteredNotifications.length === 0 ? (
+                    <Card>
+                        <CardContent className="py-12 text-center">
+                            <Bell className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                            <h3 className="text-lg font-medium text-foreground mb-2">
+                                No notifications found
+                            </h3>
+                            <p className="text-muted-foreground">
+                                {allNotifications.length === 0
+                                    ? "No notifications have been sent yet. Send one from the Dashboard!"
+                                    : "Try adjusting your search or filters."}
+                            </p>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <div className="space-y-4">
+                        {filteredNotifications.map((notification) => (
+                            <Card
+                                key={notification.id}
+                                className={`hover:shadow-lg transition-shadow ${notification.urgency === "critical"
+                                    ? "border-l-4 border-l-red-500"
+                                    : notification.urgency === "important"
+                                        ? "border-l-4 border-l-amber-500"
+                                        : ""
+                                    }`}
+                            >
+                                <CardContent className="p-6">
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div className="flex-1 space-y-3">
+                                            {/* Title and Badges */}
+                                            <div className="flex items-start gap-3 flex-wrap">
+                                                <h3 className="text-lg font-bold text-foreground">
+                                                    {notification.title || "Notification"}
+                                                </h3>
+                                                {getUrgencyBadge(notification.urgency)}
+                                                {getCategoryBadge(notification.category)}
                                             </div>
 
-                                            {/* Delete Button */}
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                        disabled={deletingId === notification.id}
-                                                    >
-                                                        {deletingId === notification.id ? (
-                                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                                        ) : (
-                                                            <Trash2 className="w-4 h-4" />
-                                                        )}
-                                                    </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>Delete Notification?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            Are you sure you want to delete this notification? This action cannot be undone.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction
-                                                            onClick={() => handleDelete(notification.id)}
-                                                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                                        >
-                                                            Delete
-                                                        </AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
+                                            {/* Message */}
+                                            <p className="text-muted-foreground">
+                                                {notification.message}
+                                            </p>
+
+                                            {/* Meta Info */}
+                                            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                                                <span className="flex items-center gap-1">
+                                                    <Clock className="w-4 h-4" />
+                                                    {formatDate(notification.createdAt)}
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <User className="w-4 h-4" />
+                                                    {notification.postedBy?.name || "Admin"} ({notification.postedBy?.role || "admin"})
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <Users className="w-4 h-4" />
+                                                    {getTargetAudienceText(notification.targetAudience)}
+                                                </span>
+                                            </div>
                                         </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </main>
+
+                                        {/* Delete Button */}
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                    disabled={deletingId === notification.id}
+                                                >
+                                                    {deletingId === notification.id ? (
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                    ) : (
+                                                        <Trash2 className="w-4 h-4" />
+                                                    )}
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Delete Notification?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Are you sure you want to delete this notification? This action cannot be undone.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction
+                                                        onClick={() => handleDelete(notification.id)}
+                                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                    >
+                                                        Delete
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )}
+            </div>
         </AdminLayout>
     );
 };

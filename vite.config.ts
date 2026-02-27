@@ -5,9 +5,10 @@ import path from "path";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "::",
+    host: '127.0.0.1', // Ensure IPv4 binding for HMR
     port: 8080,
-    open: false, // Don't auto-open browser
+    strictPort: true,
+    open: false,
   },
   plugins: [react()],
   resolve: {

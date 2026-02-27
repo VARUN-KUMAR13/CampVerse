@@ -850,104 +850,26 @@ export const getStudentsForSection = async (
     branch: string,
     section: string
 ): Promise<AttendanceStudent[]> => {
-    if (!firebaseReady || !database) {
-        // Return mock students for development - include actual student
-        console.log('Firebase not ready, returning mock students for section', section);
-        return [
-            { rollNumber: '22B81A05C3', name: 'KATAKAM VARUN KUMAR', section, branch, year },
-            { rollNumber: `22B81A05C1`, name: 'Student 1', section, branch, year },
-            { rollNumber: `22B81A05C2`, name: 'Student 2', section, branch, year },
-        ];
-    }
-
+    console.log(`Fetching students for section ${section} via backend API to save Firebase bandwidth...`);
     try {
-        const students: AttendanceStudent[] = [];
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+        const response = await fetch(`${apiBaseUrl}/students/section/${year}/${branch}/${section}`);
 
-        // Primary path: Root level with numeric keys (0, 1, 2...)
-        // This is the actual structure used in your Firebase
-        const rootRef = ref(database);
-        const rootSnapshot = await get(rootRef);
-
-        if (rootSnapshot.exists()) {
-            const allData = rootSnapshot.val();
-
-            // Iterate through all root-level entries
-            for (const key in allData) {
-                const student = allData[key];
-
-                // Skip non-student entries (like 'attendance', 'records', 'slotLocks', etc.)
-                if (!student || typeof student !== 'object') continue;
-                if (key === 'attendance' || key === 'records' || key === 'slotLocks' ||
-                    key === 'studentSummary' || key === 'notifications' || key === 'users' ||
-                    key === 'schedules' || key === 'clubs' || key === 'exams') continue;
-
-                // Check if this is a student record (has ROLL NO field)
-                const rollNo = student['ROLL NO'] || student.rollNumber || student.collegeId;
-                if (!rollNo) continue;
-
-                // For Section B: Include all students with roll numbers 22B81A0565 to 22B81A05C8
-                // These roll numbers have pattern: 22B81A05 + (65-C8)
-                if (section === 'B') {
-                    // Check if roll number matches the pattern for Section B students
-                    if (rollNo.startsWith('22B81A05') || rollNo.startsWith(`${year}B81A${branch}`)) {
-                        students.push({
-                            rollNumber: rollNo,
-                            name: student['Name of the student'] || student.name || student.studentName || 'Unknown',
-                            section,
-                            branch,
-                            year,
-                        });
-                    }
-                } else {
-                    // For other sections, try to match section letter in roll number
-                    // This handles cases where roll numbers might contain section letter
-                    const lastTwoChars = rollNo.slice(-2);
-                    const firstCharOfLastTwo = lastTwoChars[0];
-                    if (firstCharOfLastTwo === section) {
-                        students.push({
-                            rollNumber: rollNo,
-                            name: student['Name of the student'] || student.name || student.studentName || 'Unknown',
-                            section,
-                            branch,
-                            year,
-                        });
-                    }
-                }
+        if (response.ok) {
+            const data = await response.json();
+            if (data.students && data.students.length > 0) {
+                console.log(`Found ${data.students.length} students from backend API for section ${section}`);
+                return data.students;
             }
-
-            if (students.length > 0) {
-                console.log(`Found ${students.length} students for section ${section} from root path`);
-                return students.sort((a, b) => a.rollNumber.localeCompare(b.rollNumber));
-            }
+        } else {
+            console.error("Backend API returned an error:", response.status);
         }
-
-        // Fallback: Try students/section_{section} path
-        const sectionPath = `students/section_${section}`;
-        const sectionRef = ref(database, sectionPath);
-        const sectionSnapshot = await get(sectionRef);
-
-        if (sectionSnapshot.exists()) {
-            const data = sectionSnapshot.val();
-            for (const key in data) {
-                const student = data[key];
-                students.push({
-                    rollNumber: student.rollNumber || student.collegeId || student['ROLL NO'] || key,
-                    name: student.name || student.studentName || student['Name of the student'] || 'Unknown',
-                    section,
-                    branch,
-                    year,
-                });
-            }
-            console.log(`Found ${students.length} students at path: ${sectionPath}`);
-            return students.sort((a, b) => a.rollNumber.localeCompare(b.rollNumber));
-        }
-
-        console.log(`No students found for section ${section} in Firebase`);
-        return [];
-    } catch (error) {
-        console.error('Error fetching students from Firebase:', error);
-        return [];
+    } catch (apiError) {
+        console.error("API fallback failed:", apiError);
     }
+
+    console.log(`No students found for section ${section} in Backend`);
+    return [];
 };
 
 /**

@@ -36,6 +36,7 @@ import {
   Users,
   Loader2,
   X,
+  ClipboardList,
 } from "lucide-react";
 import {
   getFacultyAssignments,
@@ -226,11 +227,21 @@ const FacultyAssignments = () => {
 
   return (
     <FacultyLayout>
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <h1 className="text-2xl font-bold text-foreground">
-          Assignment Management
-        </h1>
-        <div className="flex flex-col gap-3 w-full md:w-auto md:flex-row md:items-center">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+              <ClipboardList className="w-8 h-8 text-primary" />
+              Assignment Management
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Streamline assignment distribution and evaluate student performance.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="relative w-full md:w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
@@ -418,152 +429,152 @@ const FacultyAssignments = () => {
             </DialogContent>
           </Dialog>
         </div>
-      </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-      ) : filteredAssignments.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium text-foreground mb-2">
-              No Assignments Found
-            </h3>
-            <p className="text-muted-foreground">
-              {searchQuery
-                ? "No assignments match your search."
-                : "Click 'Create Assignment' to add your first assignment."}
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="p-0">
-            <div className="space-y-1">
-              <div className="grid grid-cols-6 gap-4 p-4 border-b text-sm font-medium text-muted-foreground bg-muted/30">
-                <div>Assignment</div>
-                <div>Due Date</div>
-                <div>Submissions</div>
-                <div>Status</div>
-                <div className="col-span-2">Actions</div>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : filteredAssignments.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">
+                No Assignments Found
+              </h3>
+              <p className="text-muted-foreground">
+                {searchQuery
+                  ? "No assignments match your search."
+                  : "Click 'Create Assignment' to add your first assignment."}
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardContent className="p-0">
+              <div className="space-y-1">
+                <div className="grid grid-cols-6 gap-4 p-4 border-b text-sm font-medium text-muted-foreground bg-muted/30">
+                  <div>Assignment</div>
+                  <div>Due Date</div>
+                  <div>Submissions</div>
+                  <div>Status</div>
+                  <div className="col-span-2">Actions</div>
+                </div>
+
+                {filteredAssignments.map((assignment) => (
+                  <div
+                    key={assignment._id}
+                    className="grid grid-cols-6 gap-4 p-4 items-center hover:bg-muted/20 transition-colors"
+                  >
+                    <div>
+                      <div className="font-medium text-foreground">
+                        {assignment.title}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {assignment.course}
+                      </div>
+                    </div>
+                    <div className="text-muted-foreground">
+                      {formatDate(assignment.dueDate)}
+                    </div>
+                    <div className="text-muted-foreground">
+                      <span className="font-medium text-foreground">
+                        {assignment.submissionCount}
+                      </span>{" "}
+                      submissions
+                    </div>
+                    <div>{getStatusBadge(assignment)}</div>
+                    <div className="col-span-2 flex items-center space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleViewSubmissions(assignment)}
+                        title="View Submissions"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" title="Edit">
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500"
+                        onClick={() => handleDeleteAssignment(assignment._id)}
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
+            </CardContent>
+          </Card>
+        )}
 
-              {filteredAssignments.map((assignment) => (
-                <div
-                  key={assignment._id}
-                  className="grid grid-cols-6 gap-4 p-4 items-center hover:bg-muted/20 transition-colors"
-                >
-                  <div>
-                    <div className="font-medium text-foreground">
-                      {assignment.title}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {assignment.course}
-                    </div>
-                  </div>
-                  <div className="text-muted-foreground">
-                    {formatDate(assignment.dueDate)}
-                  </div>
-                  <div className="text-muted-foreground">
-                    <span className="font-medium text-foreground">
-                      {assignment.submissionCount}
-                    </span>{" "}
-                    submissions
-                  </div>
-                  <div>{getStatusBadge(assignment)}</div>
-                  <div className="col-span-2 flex items-center space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleViewSubmissions(assignment)}
-                      title="View Submissions"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" title="Edit">
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-red-500"
-                      onClick={() => handleDeleteAssignment(assignment._id)}
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        {/* Submissions Dialog */}
+        <Dialog open={isSubmissionsDialogOpen} onOpenChange={setIsSubmissionsDialogOpen}>
+          <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                Submissions - {selectedAssignment?.title}
+              </DialogTitle>
+              <DialogDescription>
+                View and download student submissions for this assignment.
+              </DialogDescription>
+            </DialogHeader>
 
-      {/* Submissions Dialog */}
-      <Dialog open={isSubmissionsDialogOpen} onOpenChange={setIsSubmissionsDialogOpen}>
-        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              Submissions - {selectedAssignment?.title}
-            </DialogTitle>
-            <DialogDescription>
-              View and download student submissions for this assignment.
-            </DialogDescription>
-          </DialogHeader>
-
-          {submissionsLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
-            </div>
-          ) : submissions.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No submissions yet.
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {submissions.map((sub) => (
-                <div
-                  key={sub._id}
-                  className="flex items-center justify-between p-4 border rounded-lg bg-muted/20"
-                >
-                  <div className="flex-1">
-                    <div className="font-medium text-foreground">
-                      {sub.studentName}
+            {submissionsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : submissions.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No submissions yet.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {submissions.map((sub) => (
+                  <div
+                    key={sub._id}
+                    className="flex items-center justify-between p-4 border rounded-lg bg-muted/20"
+                  >
+                    <div className="flex-1">
+                      <div className="font-medium text-foreground">
+                        {sub.studentName}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {sub.studentId}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Submitted: {formatDate(sub.submittedAt)}
+                      </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {sub.studentId}
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Submitted: {formatDate(sub.submittedAt)}
+                    <div className="flex items-center gap-2">
+                      <div className="text-sm text-muted-foreground mr-4">
+                        {formatFileSize(sub.fileSize)}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleViewPdf(sub._id, sub.fileName)}
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        View PDF
+                      </Button>
+                      {sub.grade !== null && (
+                        <Badge className="bg-green-500 text-white">
+                          Grade: {sub.grade}
+                        </Badge>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="text-sm text-muted-foreground mr-4">
-                      {formatFileSize(sub.fileSize)}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleViewPdf(sub._id, sub.fileName)}
-                    >
-                      <Eye className="w-4 h-4 mr-1" />
-                      View PDF
-                    </Button>
-                    {sub.grade !== null && (
-                      <Badge className="bg-green-500 text-white">
-                        Grade: {sub.grade}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+                ))}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
     </FacultyLayout>
   );
 };

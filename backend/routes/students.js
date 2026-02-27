@@ -3,6 +3,101 @@ const router = express.Router();
 const admin = require("firebase-admin");
 const User = require("../models/User");
 
+// GET /api/students/section/:year/:branch/:section - Fetch a whole section of students
+router.get("/section/:year/:branch/:section", async (req, res) => {
+    try {
+        const { year, branch, section } = req.params;
+        const targetSection = section.toUpperCase();
+        console.log(`[Students API] Fetching section: Year ${year}, Branch ${branch}, Section ${targetSection}`);
+
+        let students = [];
+
+        // First add students from MongoDB
+        const mongoUsers = await User.find({
+            role: "student",
+            year: { $regex: new RegExp(`^${year}$`, "i") },
+            branch: { $regex: new RegExp(`^${branch}$`, "i") },
+            section: { $regex: new RegExp(`^${targetSection}$`, "i") }
+        });
+
+        const mongoMapped = mongoUsers.map(u => ({
+            rollNumber: u.collegeId,
+            name: u.name !== u.collegeId ? u.name : 'Unknown',
+            section: u.section,
+            branch: u.branch,
+            year: u.year
+        }));
+
+        students = [...mongoMapped];
+
+        // Then look up in Firebase Realtime Database using Admin SDK
+        if (admin.apps.length > 0) {
+            const db = admin.database();
+
+            try {
+                // Try 'students' node first
+                let snapshot = await db.ref("students").once("value");
+                let allData = snapshot.val();
+
+                // If not in 'students', try root node
+                if (!allData || Object.keys(allData).length === 0) {
+                    snapshot = await db.ref("/").once("value");
+                    allData = snapshot.val();
+                }
+
+                if (allData) {
+                    for (const key in allData) {
+                        // Skip system paths
+                        if (["attendance", "notifications", "schedules", "clubs", "exams", "jobs", "users", "students"].includes(key) || key.startsWith("section_")) continue;
+
+                        const student = allData[key];
+                        if (student && typeof student === "object") {
+                            const rollNo = student["ROLL NO"] || student.rollNumber || student.collegeId;
+                            if (!rollNo) continue;
+
+                            let match = false;
+
+                            if (targetSection === 'B') {
+                                if (rollNo.startsWith('22B81A05') || rollNo.startsWith(`${year}B81A${branch}`)) {
+                                    match = true;
+                                }
+                            } else {
+                                const lastTwoChars = rollNo.slice(-2);
+                                const firstCharOfLastTwo = lastTwoChars[0];
+                                if (firstCharOfLastTwo === targetSection) {
+                                    match = true;
+                                }
+                            }
+
+                            if (match) {
+                                // Check if we already have this student from Mongo
+                                if (!students.some(s => s.rollNumber.toUpperCase() === rollNo.toUpperCase())) {
+                                    const name = student["Name of the student"] || student.name || student.studentName || 'Unknown';
+                                    students.push({
+                                        rollNumber: rollNo.toUpperCase(),
+                                        name: name,
+                                        section: targetSection,
+                                        branch: branch,
+                                        year: year,
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn("[Students API] Section Firebase search failed:", e.message);
+            }
+        }
+
+        return res.json({ students: students.sort((a, b) => a.rollNumber.localeCompare(b.rollNumber)) });
+
+    } catch (error) {
+        console.error("[Students API] Section Error:", error);
+        res.status(500).json({ error: "Failed to fetch section data" });
+    }
+});
+
 // GET /api/students/:rollNumber - Fetch student data from Firebase RTDB via Admin SDK
 router.get("/:rollNumber", async (req, res) => {
     try {

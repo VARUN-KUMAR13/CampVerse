@@ -54,6 +54,7 @@ router.post("/", async (req, res) => {
             section,
             semester,
             academicYear,
+            degree,
             facultyId,
             facultyName,
             students, // Array of { studentId, studentName }
@@ -80,6 +81,7 @@ router.post("/", async (req, res) => {
             section,
             semester,
             academicYear,
+            degree: degree || "Major",
             facultyId,
             facultyName,
             studentGrades,
@@ -89,8 +91,8 @@ router.post("/", async (req, res) => {
         await gradeSheet.save();
         res.status(201).json(gradeSheet);
     } catch (error) {
-        console.error("Error creating grade sheet:", error);
-        res.status(500).json({ error: "Failed to create grade sheet" });
+        console.error("Error creating grade sheet:", error.message);
+        res.status(500).json({ error: error.message || "Failed to create grade sheet" });
     }
 });
 
@@ -268,6 +270,8 @@ router.get("/student/:studentId", async (req, res) => {
                 subjectCode: sheet.subjectCode,
                 subjectName: sheet.subjectName,
                 credits: sheet.credits,
+                degree: sheet.degree || "Major",
+                year: sheet.year,
                 semester: sheet.semester,
                 academicYear: sheet.academicYear,
                 facultyName: sheet.facultyName,

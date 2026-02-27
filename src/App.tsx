@@ -57,7 +57,6 @@ import FacultyCourses from "./pages/faculty/Courses";
 import FacultyStudents from "./pages/faculty/Students";
 import FacultyAssignments from "./pages/faculty/Assignments";
 import FacultyGrades from "./pages/faculty/Grades";
-import FacultySchedule from "./pages/faculty/Schedule";
 import FacultyProfile from "./pages/faculty/Profile";
 import FacultySettings from "./pages/faculty/Settings";
 
@@ -227,7 +226,7 @@ const AppContent = () => {
           }
         />
         <Route
-          path="/faculty/students"
+          path="/faculty/attendence"
           element={
             <ProtectedRoute requiredRole="faculty">
               <FacultyStudents />
@@ -247,14 +246,6 @@ const AppContent = () => {
           element={
             <ProtectedRoute requiredRole="faculty">
               <FacultyGrades />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/faculty/schedule"
-          element={
-            <ProtectedRoute requiredRole="faculty">
-              <FacultySchedule />
             </ProtectedRoute>
           }
         />

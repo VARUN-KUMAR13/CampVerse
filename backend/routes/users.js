@@ -221,10 +221,17 @@ router.put("/:uid", verifyToken, async (req, res) => {
       let section = "B"; // Default section
       let rollNumber = collegeId;
 
+      // Attempt to intelligently infer the role from the incoming collegeID or request data.
+      let role = "student";
+      // We look for 'Z' pattern often used for faculty (e.g., 22B81Z05C3), or if designation/availability is sent
+      if (collegeId.includes("Z") || updates.designation || updates.availability) {
+        role = "faculty";
+        section = "Z";
+      }
+
       if (collegeId.match(/^[0-9]{2}[A-Z0-9]{3}[A-Z][0-9]{2}[A-Z0-9]{1,2}$/)) {
         year = collegeId.substring(0, 2);
         branch = collegeId.substring(6, 8);
-        // Section can be derived from the last 2 chars (roll number within section)
       }
 
       // Create minimal user with required fields
@@ -232,7 +239,7 @@ router.put("/:uid", verifyToken, async (req, res) => {
         uid: req.params.uid,
         collegeId: collegeId,
         email: `${collegeId.toLowerCase()}@cvr.ac.in`,
-        role: "student",
+        role: updates.role || role,
         year: year,
         branch: updates.branch || branch,
         section: updates.section || section,

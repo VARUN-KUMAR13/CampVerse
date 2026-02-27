@@ -50,7 +50,7 @@ export const collegeIdToEmail = (id: string): string => {
 
 // API base URL
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:5000/api";
 
 // Create user account — provisions Firebase Auth user via backend
 export const createUserAccount = async (collegeId: string, name: string) => {
@@ -172,9 +172,17 @@ export const signInUser = async (
   collegeId: string,
   password: string,
 ): Promise<CollegeUser> => {
-  // Admin login — bypass Firebase Auth entirely
+  // Admin login — authenticate with backend, then attempt Firebase Auth
   if (collegeId === "admin") {
-    return await backendLogin(collegeId, password);
+    const user = await backendLogin(collegeId, password);
+    if (firebaseReady && auth) {
+      try {
+        await signInWithEmailAndPassword(auth, "admin@cvr.ac.in", password);
+      } catch (err: any) {
+        console.warn("Firebase Auth Admin fallback failed", err.message);
+      }
+    }
+    return user;
   }
 
   // Validate college ID

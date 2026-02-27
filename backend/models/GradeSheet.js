@@ -102,6 +102,12 @@ const gradeSheetSchema = new mongoose.Schema({
         type: Number,
         default: 3,
     },
+    // Meta details
+    degree: {
+        type: String,
+        default: "Major",
+        required: false,
+    },
     // Class details
     year: {
         type: String,
@@ -121,7 +127,8 @@ const gradeSheetSchema = new mongoose.Schema({
     },
     academicYear: {
         type: String,
-        required: true,
+        required: false,
+        default: "",
     },
     // Faculty who created/manages this
     facultyId: {
@@ -192,7 +199,7 @@ gradeSheetSchema.pre("save", function (next) {
             student.project !== null
         ) {
             const average = (student.mid1Total + student.mid2Total) / 2;
-            student.internalMarks = Math.round(average + student.project * 100) / 100;
+            student.internalMarks = Math.round((average + student.project) * 100) / 100;
         }
 
         // Total = Internal + External

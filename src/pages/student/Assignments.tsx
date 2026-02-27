@@ -241,151 +241,161 @@ const StudentAssignments = () => {
 
   return (
     <StudentLayout>
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-foreground">My Assignments</h1>
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+              <FileText className="w-8 h-8 text-primary" />
+              Assignments
+            </h1>
             <p className="text-muted-foreground mt-1">
               Submit your assignments and track your progress
             </p>
           </div>
+        </div>
 
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
-          ) : assignments.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium text-foreground mb-2">
-                  No Assignments Yet
-                </h3>
-                <p className="text-muted-foreground">
-                  You don't have any assignments assigned to you yet.
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {assignments.map((assignment) => (
-                <Card
-                  key={assignment._id}
-                  className="hover:shadow-md transition-shadow border-border/50"
-                >
-                  <CardContent className="p-6">
-                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                      {/* Assignment Info */}
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-2">
-                          <h3 className="text-lg font-semibold text-foreground">
-                            {assignment.title}
-                          </h3>
-                          {getStatusBadge(assignment)}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : assignments.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">
+                No Assignments Yet
+              </h3>
+              <p className="text-muted-foreground">
+                You don't have any assignments assigned to you yet.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {assignments.map((assignment) => (
+              <Card
+                key={assignment._id}
+                className="hover:shadow-md transition-shadow border-border/50"
+              >
+                <CardContent className="p-6">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    {/* Assignment Info */}
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="text-lg font-semibold text-foreground">
+                          {assignment.title}
+                        </h3>
+                        {getStatusBadge(assignment)}
+                      </div>
+
+                      <p className="text-sm text-primary mb-3">
+                        {assignment.course}
+                        {assignment.courseCode && ` (${assignment.courseCode})`}
+                      </p>
+
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {assignment.description || "No description provided."}
+                      </p>
+
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-4 h-4" />
+                          <span>Due: {formatDate(assignment.dueDate)}</span>
                         </div>
-
-                        <p className="text-sm text-primary mb-3">
-                          {assignment.course}
-                          {assignment.courseCode && ` (${assignment.courseCode})`}
-                        </p>
-
-                        <p className="text-sm text-muted-foreground mb-4">
-                          {assignment.description || "No description provided."}
-                        </p>
-
-                        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            <span>Due: {formatDate(assignment.dueDate)}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <FileText className="w-4 h-4" />
-                            <span>Max Marks: {assignment.maxMarks}</span>
-                          </div>
-                          {assignment.hasSubmitted && assignment.submittedAt && (
-                            <div className="flex items-center gap-1 text-green-500">
-                              <CheckCircle2 className="w-4 h-4" />
-                              <span>Submitted: {formatDate(assignment.submittedAt)}</span>
-                            </div>
-                          )}
+                        <div className="flex items-center gap-1">
+                          <FileText className="w-4 h-4" />
+                          <span>Max Marks: {assignment.maxMarks}</span>
                         </div>
-
-                        {/* Feedback */}
-                        {assignment.feedback && (
-                          <div className="mt-4 p-3 bg-muted/30 rounded-lg">
-                            <p className="text-sm font-medium text-foreground mb-1">
-                              Faculty Feedback:
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {assignment.feedback}
-                            </p>
+                        {assignment.hasSubmitted && assignment.submittedAt && (
+                          <div className="flex items-center gap-1 text-green-500">
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>Submitted: {formatDate(assignment.submittedAt)}</span>
                           </div>
                         )}
                       </div>
 
-                      {/* Actions */}
-                      <div className="flex flex-col items-stretch space-y-2 md:w-48">
-                        {/* Hidden file input */}
-                        <input
-                          ref={(el) => (fileInputRefs.current[assignment._id] = el)}
-                          type="file"
-                          accept=".pdf"
-                          className="hidden"
-                          onChange={(e) => handleFileSelection(assignment._id, e)}
-                        />
+                      {/* Feedback */}
+                      {assignment.feedback && (
+                        <div className="mt-4 p-3 bg-muted/30 rounded-lg">
+                          <p className="text-sm font-medium text-foreground mb-1">
+                            Faculty Feedback:
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {assignment.feedback}
+                          </p>
+                        </div>
+                      )}
+                    </div>
 
-                        {/* Submit/Resubmit Button */}
+                    {/* Actions */}
+                    <div className="flex flex-col items-stretch space-y-2 md:w-48">
+                      {/* Hidden file input */}
+                      <input
+                        ref={(el) => (fileInputRefs.current[assignment._id] = el)}
+                        type="file"
+                        accept=".pdf"
+                        className="hidden"
+                        onChange={(e) => handleFileSelection(assignment._id, e)}
+                      />
+
+                      {/* Submit/Resubmit Button */}
+                      <Button
+                        size="sm"
+                        onClick={() => fileInputRefs.current[assignment._id]?.click()}
+                        disabled={uploading === assignment._id}
+                        className={
+                          assignment.hasSubmitted
+                            ? "bg-blue-600 hover:bg-blue-700"
+                            : "bg-primary hover:bg-primary/90"
+                        }
+                      >
+                        {uploading === assignment._id ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4 mr-2" />
+                            {assignment.hasSubmitted ? "Resubmit" : "Submit PDF"}
+                          </>
+                        )}
+                      </Button>
+
+                      {/* View Submission Button (if submitted) */}
+                      {assignment.hasSubmitted && (
                         <Button
+                          variant="outline"
                           size="sm"
-                          onClick={() => fileInputRefs.current[assignment._id]?.click()}
-                          disabled={uploading === assignment._id}
-                          className={
-                            assignment.hasSubmitted
-                              ? "bg-blue-600 hover:bg-blue-700"
-                              : "bg-primary hover:bg-primary/90"
+                          onClick={() =>
+                            handleViewSubmission(assignment._id, assignment.title)
                           }
+                          disabled={viewingSubmission === assignment._id}
                         >
-                          {uploading === assignment._id ? (
+                          {viewingSubmission === assignment._id ? (
                             <>
                               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Uploading...
+                              Loading...
                             </>
                           ) : (
                             <>
-                              <Upload className="w-4 h-4 mr-2" />
-                              {assignment.hasSubmitted ? "Resubmit" : "Submit PDF"}
+                              <Eye className="w-4 h-4 mr-2" />
+                              View My Submission
                             </>
                           )}
                         </Button>
-
-                        {/* View Submission Button (if submitted) */}
-                        {assignment.hasSubmitted && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              handleViewSubmission(assignment._id, assignment.title)
-                            }
-                            disabled={viewingSubmission === assignment._id}
-                          >
-                            {viewingSubmission === assignment._id ? (
-                              <>
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                Loading...
-                              </>
-                            ) : (
-                              <>
-                                <Eye className="w-4 h-4 mr-2" />
-                                View My Submission
-                              </>
-                            )}
-                          </Button>
-                        )}
-                      </div>
+                      )}
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}    </StudentLayout>  );
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </StudentLayout>
+  );
 };
 
 export default StudentAssignments;

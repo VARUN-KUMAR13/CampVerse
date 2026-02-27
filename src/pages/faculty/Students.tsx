@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import FacultyLayout from "@/components/FacultyLayout";
 import {
+  UsersRound,
   CheckCircle2,
   XCircle,
   Clock,
@@ -505,7 +506,20 @@ const FacultyStudents = () => {
 
   return (
     <FacultyLayout>
-      <div className="space-y-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+              <UsersRound className="w-8 h-8 text-primary" />
+              Attendance Management
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Maintain accurate attendance records for your classes.
+            </p>
+          </div>
+        </div>
+
         {/* Time & Permission Alert */}
         {permission && !permission.canMark && (
           <Alert variant="destructive" className="border-red-500/50 bg-red-500/10">

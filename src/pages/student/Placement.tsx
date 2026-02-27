@@ -203,189 +203,192 @@ const StudentPlacement = () => {
         </Card>
 
         {/* Job Listings */}
-        <div className="grid gap-6">
-          {loading ? (
-            // Loading skeleton
-            <Card>
-              <CardContent className="py-12 text-center">
-                <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
-                <h3 className="text-lg font-medium text-foreground mb-2">
-                  Loading job opportunities...
-                </h3>
-                <p className="text-muted-foreground">
-                  Fetching jobs from database
-                </p>
-              </CardContent>
-            </Card>
-          ) : filteredJobs.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-foreground mb-2">
-                  No opportunities found
-                </h3>
-                <p className="text-muted-foreground">
-                  {placementData.length === 0
-                    ? "No jobs have been posted yet. Check back later!"
-                    : "Try adjusting your filters to see more results."}
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            filteredJobs.map((job) => (
-              <Card
-                key={job.job_id}
-                className="hover:shadow-lg transition-shadow"
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                          <Building2 className="w-6 h-6 text-primary" />
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-semibold text-foreground">
-                            {job.title}
-                          </h3>
-                          <p className="text-lg text-primary font-medium">
-                            {job.company}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Badge variant="outline">{job.type}</Badge>
-                        {getStatusBadge(job)}
-                        <Badge variant="secondary">ID: {job.job_id}</Badge>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-muted-foreground">
-                        Deadline
-                      </p>
-                      <p className="font-medium text-red-500 flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        {formatDeadline(job.deadline)}
-                      </p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-muted-foreground">{job.description}</p>
-
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="w-4 h-4 text-green-500" />
-                        <span className="font-medium">CTC:</span>
-                        <span>{job.ctc}</span>
-                      </div>
-                      {job.stipend !== "N/A" && (
-                        <div className="flex items-center gap-2">
-                          <DollarSign className="w-4 h-4 text-blue-500" />
-                          <span className="font-medium">Stipend:</span>
-                          <span>{job.stipend}</span>
-                        </div>
-                      )}
-                      {job.location && (
-                        <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-orange-500" />
-                          <span className="font-medium">Location:</span>
-                          <span>{job.location}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">Bond:</span>
-                        <span>{job.bond}</span>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div>
-                        <span className="font-medium">Eligibility:</span>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {job.eligibility.map((branch) => (
-                            <Badge
-                              key={branch}
-                              variant="outline"
-                              className="text-xs"
-                            >
-                              {branch}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <span className="font-medium">
-                          Selection Rounds:
-                        </span>
-                        <ul className="text-sm text-muted-foreground mt-1">
-                          {Array.isArray(job.rounds)
-                            ? job.rounds.map((round, index) => (
-                              <li key={index}>• {round}</li>
-                            ))
-                            : job.rounds && <li>• {job.rounds}</li>}
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-4 border-t">
-                    <div className="flex gap-2 flex-wrap">
-                      {job.attachments && job.attachments.length > 0 && job.attachments.map((file: any, index: number) => {
-                        let fileUrl = typeof file === 'string' ? file : file.url;
-                        const fileName = typeof file === 'string' ? file : file.filename || 'Attachment';
-                        // For server-hosted files (like /uploads/...), prepend the backend host
-                        if (fileUrl && fileUrl.startsWith('/uploads')) {
-                          fileUrl = `${API_HOST}${fileUrl}`;
-                        }
-                        return (
-                          <Button
-                            key={fileName + index}
-                            variant="outline"
-                            size="sm"
-                            onClick={() => fileUrl && window.open(fileUrl, '_blank')}
-                            className={!fileUrl ? 'opacity-50 cursor-not-allowed' : ''}
-                          >
-                            <FileText className="w-4 h-4 mr-2" />
-                            {fileName}
-                            <ExternalLink className="w-3 h-3 ml-1" />
-                          </Button>
-                        );
-                      })}
-                    </div>
-                    <div className="flex gap-2">
-                      {job.applied ? (
-                        <Button disabled className="bg-green-600 opacity-90 cursor-not-allowed">
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          Applied
-                        </Button>
-                      ) : job.status === "Closed" || (job.deadline && new Date(job.deadline) < new Date()) ? (
-                        <Button disabled className="bg-red-600 opacity-90 cursor-not-allowed">
-                          <XCircle className="w-4 h-4 mr-2" />
-                          Not Applied
-                        </Button>
-                      ) : job.eligible ? (
-                        <Button
-                          className="bg-green-600 hover:bg-green-700"
-                          onClick={() => handleApply(job.job_id)}
-                          disabled={isApplying === job.job_id}
-                        >
-                          {isApplying === job.job_id ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Applying...
-                            </>
-                          ) : (
-                            "Apply Now"
-                          )}
-                        </Button>
-                      ) : null}
-                    </div>
-                  </div>
+        <div>
+          <h2 className="text-xl font-semibold mb-4">All Opportunities</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            {loading ? (
+              // Loading skeleton
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">
+                    Loading job opportunities...
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Fetching jobs from database
+                  </p>
                 </CardContent>
               </Card>
-            ))
-          )}
+            ) : filteredJobs.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">
+                    No opportunities found
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {placementData.length === 0
+                      ? "No jobs have been posted yet. Check back later!"
+                      : "Try adjusting your filters to see more results."}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              filteredJobs.map((job) => (
+                <Card
+                  key={job.job_id}
+                  className="hover:shadow-lg transition-shadow"
+                >
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <Building2 className="w-6 h-6 text-primary" />
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-semibold text-foreground">
+                              {job.title}
+                            </h3>
+                            <p className="text-lg text-primary font-medium">
+                              {job.company}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant="outline">{job.type}</Badge>
+                          {getStatusBadge(job)}
+                          <Badge variant="secondary">ID: {job.job_id}</Badge>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-muted-foreground">
+                          Deadline
+                        </p>
+                        <p className="font-medium text-red-500 flex items-center gap-1">
+                          <Calendar className="w-4 h-4" />
+                          {formatDeadline(job.deadline)}
+                        </p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-muted-foreground">{job.description}</p>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="w-4 h-4 text-green-500" />
+                          <span className="font-medium">CTC:</span>
+                          <span>{job.ctc}</span>
+                        </div>
+                        {job.stipend !== "N/A" && (
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="w-4 h-4 text-blue-500" />
+                            <span className="font-medium">Stipend:</span>
+                            <span>{job.stipend}</span>
+                          </div>
+                        )}
+                        {job.location && (
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-orange-500" />
+                            <span className="font-medium">Location:</span>
+                            <span>{job.location}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">Bond:</span>
+                          <span>{job.bond}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div>
+                          <span className="font-medium">Eligibility:</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {job.eligibility.map((branch) => (
+                              <Badge
+                                key={branch}
+                                variant="outline"
+                                className="text-xs"
+                              >
+                                {branch}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="font-medium">
+                            Selection Rounds:
+                          </span>
+                          <ul className="text-sm text-muted-foreground mt-1">
+                            {Array.isArray(job.rounds)
+                              ? job.rounds.map((round, index) => (
+                                <li key={index}>• {round}</li>
+                              ))
+                              : job.rounds && <li>• {job.rounds}</li>}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4 border-t">
+                      <div className="flex gap-2 flex-wrap">
+                        {job.attachments && job.attachments.length > 0 && job.attachments.map((file: any, index: number) => {
+                          let fileUrl = typeof file === 'string' ? file : file.url;
+                          const fileName = typeof file === 'string' ? file : file.filename || 'Attachment';
+                          // For server-hosted files (like /uploads/...), prepend the backend host
+                          if (fileUrl && fileUrl.startsWith('/uploads')) {
+                            fileUrl = `${API_HOST}${fileUrl}`;
+                          }
+                          return (
+                            <Button
+                              key={fileName + index}
+                              variant="outline"
+                              size="sm"
+                              onClick={() => fileUrl && window.open(fileUrl, '_blank')}
+                              className={!fileUrl ? 'opacity-50 cursor-not-allowed' : ''}
+                            >
+                              <FileText className="w-4 h-4 mr-2" />
+                              {fileName}
+                              <ExternalLink className="w-3 h-3 ml-1" />
+                            </Button>
+                          );
+                        })}
+                      </div>
+                      <div className="flex gap-2">
+                        {job.applied ? (
+                          <Button disabled className="bg-green-600 opacity-90 cursor-not-allowed">
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Applied
+                          </Button>
+                        ) : job.status === "Closed" || (job.deadline && new Date(job.deadline) < new Date()) ? (
+                          <Button disabled className="bg-red-600 opacity-90 cursor-not-allowed">
+                            <XCircle className="w-4 h-4 mr-2" />
+                            Not Applied
+                          </Button>
+                        ) : job.eligible ? (
+                          <Button
+                            className="bg-green-600 hover:bg-green-700"
+                            onClick={() => handleApply(job.job_id)}
+                            disabled={isApplying === job.job_id}
+                          >
+                            {isApplying === job.job_id ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Applying...
+                              </>
+                            ) : (
+                              "Apply Now"
+                            )}
+                          </Button>
+                        ) : null}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </StudentLayout>

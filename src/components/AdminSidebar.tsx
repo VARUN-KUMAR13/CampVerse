@@ -36,7 +36,7 @@ const AdminSidebar = ({ onClose, isOpen }: AdminSidebarProps) => {
       path: "/admin/dashboard",
     },
     {
-      icon: <Shield className="w-5 h-5" />,
+      icon: <UsersRound className="w-5 h-5" />,
       label: "Attendance",
       path: "/admin/attendance",
     },
@@ -61,7 +61,7 @@ const AdminSidebar = ({ onClose, isOpen }: AdminSidebarProps) => {
       path: "/admin/scheduler",
     },
     {
-      icon: <BarChart3 className="w-5 h-5" />,
+      icon: <img src="/results-icon.png" className="w-5 h-5 object-contain" alt="Results" />,
       label: "Results",
       path: "/admin/results",
     },
@@ -93,9 +93,9 @@ const AdminSidebar = ({ onClose, isOpen }: AdminSidebarProps) => {
   };
 
   return (
-    <div className="w-64 bg-sidebar border-r border-sidebar-border h-full flex flex-col">
+    <div className="w-full bg-sidebar border-r border-sidebar-border h-full flex flex-col justify-start">
       {/* Menu Items - No header, just navigation */}
-      <nav className="p-4 pt-6 space-y-1 flex-1 overflow-y-auto">
+      <nav className="p-4 pt-0 space-y-1 flex-1 flex flex-col justify-start overflow-y-auto">
         {menuItems.map((item) => (
           <Link
             key={item.path}

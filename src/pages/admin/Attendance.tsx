@@ -61,6 +61,7 @@ import {
     UserX,
     Pencil,
     Trash2,
+    UsersRound,
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -315,21 +316,18 @@ const AdminAttendance = () => {
 
     return (
         <AdminLayout>
-            <main className="p-6 space-y-6">
+            <div className="max-w-7xl mx-auto space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-                            <Shield className="w-6 h-6 text-primary" />
+                        <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+                            <UsersRound className="w-8 h-8 text-primary" />
                             Attendance Management
                         </h1>
                         <p className="text-muted-foreground mt-1">
                             Override attendance, track statistics, and manage exceptions
                         </p>
                     </div>
-                    <Badge variant="outline" className="text-sm py-1.5 px-3">
-                        Server Time: {serverTime.toLocaleTimeString()}
-                    </Badge>
                 </div>
 
                 {/* Statistics Cards */}
@@ -1064,7 +1062,7 @@ const AdminAttendance = () => {
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
-            </main>
+            </div>
         </AdminLayout>
     );
 };

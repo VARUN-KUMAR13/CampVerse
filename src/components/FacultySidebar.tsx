@@ -4,8 +4,7 @@ import {
   BookOpen,
   Users,
   FileText,
-  Star,
-  Clock,
+  Award,
   LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,7 +34,7 @@ const FacultySidebar = ({ onNavigate }: FacultySidebarProps) => {
     {
       icon: <Users className="w-5 h-5" />,
       label: "Attendence",
-      path: "/faculty/students",
+      path: "/faculty/attendence",
     },
     {
       icon: <FileText className="w-5 h-5" />,
@@ -43,14 +42,9 @@ const FacultySidebar = ({ onNavigate }: FacultySidebarProps) => {
       path: "/faculty/assignments",
     },
     {
-      icon: <Star className="w-5 h-5" />,
+      icon: <Award className="w-5 h-5" />,
       label: "Grades",
       path: "/faculty/grades",
-    },
-    {
-      icon: <Clock className="w-5 h-5" />,
-      label: "Schedule",
-      path: "/faculty/schedule",
     },
   ];
 
@@ -73,9 +67,9 @@ const FacultySidebar = ({ onNavigate }: FacultySidebarProps) => {
   };
 
   return (
-    <div className="w-64 bg-sidebar border-r border-sidebar-border h-full flex flex-col">
+    <div className="w-full bg-sidebar border-r border-sidebar-border h-full flex flex-col justify-start">
       {/* Menu Items */}
-      <nav className="px-4 space-y-1 flex-1">
+      <nav className="px-4 pt-0 space-y-1 flex-1 flex flex-col justify-start overflow-y-auto">
         {menuItems.map((item) => (
           <Link
             key={item.path}

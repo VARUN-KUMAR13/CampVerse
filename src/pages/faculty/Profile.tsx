@@ -13,10 +13,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { api } from "@/lib/api";
 import { toast } from "sonner";
-import { Pencil, Save, X, Plus, User } from "lucide-react";
+import { Pencil, Save, X, Plus, User, Briefcase, Mail, Phone, MapPin, Clock, Calendar, FileText } from "lucide-react";
 
 const branchNames: Record<string, string> = {
   "01": "Civil Engineering",
@@ -92,14 +92,56 @@ const FacultyProfile = () => {
     }));
   };
 
+  useEffect(() => {
+    if (!userData?.uid) return;
+
+    const fetchProfile = async () => {
+      try {
+        const studentProfile = await api.get(`/users/${userData.uid}`);
+        if (studentProfile) {
+          setFormData(prev => ({
+            ...prev,
+            firstName: studentProfile.name?.split(' ')[0] || prev.firstName,
+            lastName: studentProfile.name?.split(' ').slice(1).join(' ') || prev.lastName,
+            phone: studentProfile.phone || prev.phone,
+            officeLocation: studentProfile.address || prev.officeLocation,
+            designation: studentProfile.designation || prev.designation,
+            specializations: studentProfile.skills?.length ? studentProfile.skills : prev.specializations,
+            availability: studentProfile.availability || prev.availability,
+            bio: studentProfile.bio || prev.bio,
+          }));
+        }
+      } catch (error: any) {
+        if (!error.message?.includes('404')) {
+          console.error("Error fetching profile:", error);
+        }
+      }
+    };
+
+    fetchProfile();
+  }, [userData?.uid]);
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // TODO: Implement API call to save profile data
-      // await updateFacultyProfile(facultyId, formData);
+      if (!userData?.uid) {
+        toast.error("User error: UID not found");
+        return;
+      }
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const dataToSave = {
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
+        phone: formData.phone,
+        address: formData.officeLocation,
+        designation: formData.designation,
+        availability: formData.availability,
+        bio: formData.bio,
+        skills: formData.specializations,
+        role: "faculty",
+        section: "Z" // Faculty require Section Z validation on backend
+      };
+
+      await api.put(`/users/${userData.uid}`, dataToSave);
 
       toast.success("Profile updated successfully!");
       setIsEditing(false);
@@ -128,241 +170,26 @@ const FacultyProfile = () => {
 
   return (
     <FacultyLayout>
-      <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
-        <Card>
-          <CardHeader className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16">
-                <AvatarFallback className="text-lg">
-                  {(formData.firstName[0] || "") + (formData.lastName[0] || "")}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <CardTitle className="text-2xl">{facultyId}</CardTitle>
-                <CardDescription className="text-base text-muted-foreground">
-                  {department}
-                </CardDescription>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="text-sm">
-                Faculty ID: {facultyId}
-              </Badge>
-              {isEditing && (
-                <Badge variant="outline" className="text-sm text-blue-500 border-blue-500">
-                  <Pencil className="w-3 h-3 mr-1" />
-                  Editing
-                </Badge>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Profile Information Section */}
-            <div>
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-                <User className="w-4 h-4" />
-                Profile Information
-              </h3>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  {isEditing ? (
-                    <Input
-                      id="firstName"
-                      value={formData.firstName}
-                      onChange={(e) => handleInputChange("firstName", e.target.value)}
-                      placeholder="Enter first name"
-                    />
-                  ) : (
-                    <p className="font-medium text-foreground">{formData.firstName || "-"}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  {isEditing ? (
-                    <Input
-                      id="lastName"
-                      value={formData.lastName}
-                      onChange={(e) => handleInputChange("lastName", e.target.value)}
-                      placeholder="Enter last name"
-                    />
-                  ) : (
-                    <p className="font-medium text-foreground">{formData.lastName || "-"}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>Department</Label>
-                  <p className="font-medium text-foreground">{department}</p>
-                  {isEditing && (
-                    <p className="text-xs text-muted-foreground italic">Department cannot be changed</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="designation">Designation</Label>
-                  {isEditing ? (
-                    <Input
-                      id="designation"
-                      value={formData.designation}
-                      onChange={(e) => handleInputChange("designation", e.target.value)}
-                      placeholder="e.g., Assistant Professor"
-                    />
-                  ) : (
-                    <p className="font-medium text-foreground">{formData.designation || "-"}</p>
-                  )}
-                </div>
-              </div>
-              <div className="mt-4 space-y-2">
-                <Label htmlFor="bio">Bio</Label>
-                {isEditing ? (
-                  <Textarea
-                    id="bio"
-                    value={formData.bio}
-                    onChange={(e) => handleInputChange("bio", e.target.value)}
-                    placeholder="Enter your professional bio..."
-                    rows={3}
-                  />
-                ) : (
-                  <p className="font-medium text-foreground">{formData.bio || "-"}</p>
-                )}
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Contact Information Section */}
-            <div>
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                Contact Information
-              </h3>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-medium text-foreground">{facultyEmail}</p>
-                  {isEditing && (
-                    <p className="text-xs text-muted-foreground italic">Email cannot be changed</p>
-                  )}
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Phone</p>
-                  {isEditing ? (
-                    <Input
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange("phone", e.target.value)}
-                      placeholder="+91 98765 43210"
-                    />
-                  ) : (
-                    <p className="font-medium text-foreground">{formData.phone}</p>
-                  )}
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Office Location</p>
-                  {isEditing ? (
-                    <Input
-                      value={formData.officeLocation}
-                      onChange={(e) => handleInputChange("officeLocation", e.target.value)}
-                      placeholder="Block C, Room 308"
-                    />
-                  ) : (
-                    <p className="font-medium text-foreground">{formData.officeLocation}</p>
-                  )}
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Availability</p>
-                  {isEditing ? (
-                    <Input
-                      value={formData.availability}
-                      onChange={(e) => handleInputChange("availability", e.target.value)}
-                      placeholder="Mon - Fri, 9:00 AM to 5:00 PM"
-                    />
-                  ) : (
-                    <p className="font-medium text-foreground">{formData.availability}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            <div>
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                Professional Overview
-              </h3>
-              <div className="mt-4 grid gap-6 md:grid-cols-2">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Designation</p>
-                  {isEditing ? (
-                    <Input
-                      value={formData.designation}
-                      onChange={(e) => handleInputChange("designation", e.target.value)}
-                      placeholder="Assistant Professor"
-                    />
-                  ) : (
-                    <p className="font-medium text-foreground">{formData.designation}</p>
-                  )}
-                  <p className="text-sm text-muted-foreground">
-                    Primary responsibility for teaching core subjects and guiding student projects.
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Expertise Areas</p>
-                  <div className="flex flex-wrap gap-2">
-                    {formData.specializations.map((area, index) => (
-                      <Badge key={index} variant="outline" className="gap-1">
-                        {area}
-                        {isEditing && (
-                          <button
-                            onClick={() => handleRemoveSpecialization(index)}
-                            className="ml-1 hover:text-red-500 transition-colors"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        )}
-                      </Badge>
-                    ))}
-                  </div>
-                  {isEditing && (
-                    <div className="flex gap-2 mt-2">
-                      <Input
-                        value={newSpecialization}
-                        onChange={(e) => setNewSpecialization(e.target.value)}
-                        placeholder="Add new expertise..."
-                        className="flex-1"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            handleAddSpecialization();
-                          }
-                        }}
-                      />
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={handleAddSpecialization}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Manage visibility and export reports</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header Section */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+              <User className="w-8 h-8 text-primary" />
+              My Profile
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Manage your professional information and preferences
+            </p>
+          </div>
+          <div className="flex gap-2">
             {isEditing ? (
               <>
-                <Button
-                  className="w-full bg-green-600 hover:bg-green-700"
-                  onClick={handleSave}
-                  disabled={isSaving}
-                >
+                <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
+                  <X className="w-4 h-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button className="bg-green-600 hover:bg-green-700" onClick={handleSave} disabled={isSaving}>
                   {isSaving ? (
                     <>
                       <Save className="w-4 h-4 mr-2 animate-spin" />
@@ -371,32 +198,273 @@ const FacultyProfile = () => {
                   ) : (
                     <>
                       <Save className="w-4 h-4 mr-2" />
-                      Save Changes
+                      Save
                     </>
                   )}
                 </Button>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleCancel}
-                  disabled={isSaving}
-                >
-                  <X className="w-4 h-4 mr-2" />
-                  Cancel
-                </Button>
               </>
             ) : (
-              <Button className="w-full" onClick={() => setIsEditing(true)}>
+              <Button onClick={() => setIsEditing(true)}>
                 <Pencil className="w-4 h-4 mr-2" />
-                Update Profile Details
+                Edit Profile
               </Button>
             )}
-            <Button variant="outline" className="w-full" disabled={isEditing}>
-              Download Teaching Portfolio
-            </Button>
-            <Button variant="outline" className="w-full" disabled={isEditing}>
-              Share Availability Calendar
-            </Button>
+          </div>
+        </div>
+
+        {/* Profile Header Card */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="relative">
+                <Avatar className="w-24 h-24">
+                  <AvatarFallback className="text-2xl bg-primary/10 text-primary font-bold">
+                    {(formData.firstName[0] || "") + (formData.lastName[0] || "")}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+              <div className="text-center md:text-left flex-1">
+                <h2 className="text-2xl font-bold text-primary">
+                  {formData.firstName} {formData.lastName}
+                </h2>
+                <p className="text-lg text-foreground font-medium flex items-center justify-center md:justify-start gap-2">
+                  <Briefcase className="w-4 h-4" />
+                  {formData.designation || "Faculty Member"}
+                </p>
+                <div className="flex flex-wrap gap-2 mt-3 justify-center md:justify-start">
+                  <Badge variant="outline" className="text-sm">
+                    Faculty ID: {facultyId}
+                  </Badge>
+                  <Badge variant="secondary" className="text-sm border-primary/20 bg-primary/5 text-primary">
+                    {department}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Profile Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="w-5 h-5 text-primary" />
+              Profile Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
+                  id="firstName"
+                  value={formData.firstName}
+                  onChange={(e) => handleInputChange("firstName", e.target.value)}
+                  disabled={!isEditing}
+                  className={!isEditing ? "bg-muted/50 text-foreground" : ""}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
+                  id="lastName"
+                  value={formData.lastName}
+                  onChange={(e) => handleInputChange("lastName", e.target.value)}
+                  disabled={!isEditing}
+                  className={!isEditing ? "bg-muted/50 text-foreground" : ""}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Department</Label>
+                <Input
+                  value={department}
+                  disabled
+                  readOnly
+                  title="Locked by admin"
+                  className="bg-muted text-muted-foreground"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="designation">Designation</Label>
+                <Input
+                  id="designation"
+                  value={formData.designation}
+                  onChange={(e) => handleInputChange("designation", e.target.value)}
+                  disabled={!isEditing}
+                  className={!isEditing ? "bg-muted/50 text-foreground" : ""}
+                  placeholder="e.g., Assistant Professor"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bio">Bio</Label>
+              <Textarea
+                id="bio"
+                value={formData.bio}
+                onChange={(e) => handleInputChange("bio", e.target.value)}
+                disabled={!isEditing}
+                className={`resize-none ${!isEditing ? "bg-muted/50 text-foreground" : ""}`}
+                placeholder="Enter your professional bio..."
+                rows={4}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Contact Information Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Phone className="w-5 h-5 text-green-500" />
+              Contact Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-muted-foreground" />
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  value={facultyEmail}
+                  disabled
+                  readOnly
+                  title="Locked by admin"
+                  className="bg-muted text-muted-foreground"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-muted-foreground" />
+                  Phone Number
+                </Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                  disabled={!isEditing}
+                  className={!isEditing ? "bg-muted/50 text-foreground" : ""}
+                  placeholder="+91 XXXXX XXXXX"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="officeLocation" className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-muted-foreground" />
+                  Office Location
+                </Label>
+                <Input
+                  id="officeLocation"
+                  value={formData.officeLocation}
+                  onChange={(e) => handleInputChange("officeLocation", e.target.value)}
+                  disabled={!isEditing}
+                  className={!isEditing ? "bg-muted/50 text-foreground" : ""}
+                  placeholder="Block C, Room 308"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="availability" className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  Availability
+                </Label>
+                <Input
+                  id="availability"
+                  value={formData.availability}
+                  onChange={(e) => handleInputChange("availability", e.target.value)}
+                  disabled={!isEditing}
+                  className={!isEditing ? "bg-muted/50 text-foreground" : ""}
+                  placeholder="Mon - Fri, 9:00 AM to 5:00 PM"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Professional Overview */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Briefcase className="w-5 h-5 text-blue-500" />
+              Professional Overview
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-3">
+              <Label>Expertise Areas</Label>
+              <div className="flex flex-wrap gap-2 min-h-12 p-3 border rounded-md bg-muted/20 items-center">
+                {formData.specializations.length === 0 ? (
+                  <span className="text-muted-foreground text-sm italic">No expertise areas added yet.</span>
+                ) : (
+                  formData.specializations.map((area, index) => (
+                    <Badge key={index} variant="secondary" className="px-3 py-1 text-sm bg-primary/10 text-primary border-primary/20">
+                      {area}
+                      {isEditing && (
+                        <button
+                          onClick={() => handleRemoveSpecialization(index)}
+                          className="ml-2 hover:text-red-500 text-muted-foreground transition-colors focus:outline-none"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </Badge>
+                  ))
+                )}
+              </div>
+
+              {isEditing && (
+                <div className="flex gap-2">
+                  <Input
+                    value={newSpecialization}
+                    onChange={(e) => setNewSpecialization(e.target.value)}
+                    placeholder="Add new expertise area..."
+                    className="flex-1"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddSpecialization();
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleAddSpecialization}
+                  >
+                    <Plus className="w-4 h-4 mr-1" /> Add
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Plus className="w-5 h-5 text-purple-500" />
+              Quick Actions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button variant="outline" className="flex-1 bg-background" disabled={isEditing}>
+                <FileText className="w-4 h-4 mr-2" />
+                Download Teaching Portfolio
+              </Button>
+              <Button variant="outline" className="flex-1 bg-background" disabled={isEditing}>
+                <Calendar className="w-4 h-4 mr-2" />
+                Share Availability Calendar
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -405,4 +473,3 @@ const FacultyProfile = () => {
 };
 
 export default FacultyProfile;
-

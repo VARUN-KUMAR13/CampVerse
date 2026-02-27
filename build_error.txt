@@ -1,0 +1,43 @@
+
+> campverse@1.0.0 build
+> vite build
+
+[36mvite v6.3.5 [32mbuilding for production...[36m[39m
+transforming...
+Browserslist: caniuse-lite is outdated. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[32mΓ£ô[39m 52 modules transformed.
+Γ£ù Build failed in 1.34s
+error during build:
+[vite:esbuild] Transform failed with 2 errors:
+C:/Users/Katakam Varun Kumar/Major Project/CampVerse/src/pages/admin/Events.tsx:1366:10: ERROR: Unexpected closing "div" tag does not match opening "AdminLayout" tag
+C:/Users/Katakam Varun Kumar/Major Project/CampVerse/src/pages/admin/Events.tsx:1367:23: ERROR: Unterminated regular expression
+file: C:/Users/Katakam Varun Kumar/Major Project/CampVerse/src/pages/admin/Events.tsx:1366:10
+
+Unexpected closing "div" tag does not match opening "AdminLayout" tag
+1364|                  </DialogContent>
+1365|              </Dialog>
+1366|          </div>
+   |            ^
+1367|          </AdminLayout >
+1368|      );
+
+Unterminated regular expression
+1365|              </Dialog>
+1366|          </div>
+1367|          </AdminLayout >
+   |                         ^
+1368|      );
+1369|  };
+
+    at failureErrorWithLog (C:\Users\Katakam Varun Kumar\Major Project\CampVerse\node_modules\esbuild\lib\main.js:1463:15)
+    at C:\Users\Katakam Varun Kumar\Major Project\CampVerse\node_modules\esbuild\lib\main.js:734:50
+    at responseCallbacks.<computed> (C:\Users\Katakam Varun Kumar\Major Project\CampVerse\node_modules\esbuild\lib\main.js:601:9)
+    at handleIncomingPacket (C:\Users\Katakam Varun Kumar\Major Project\CampVerse\node_modules\esbuild\lib\main.js:656:12)
+    at Socket.readFromStdout (C:\Users\Katakam Varun Kumar\Major Project\CampVerse\node_modules\esbuild\lib\main.js:579:7)
+    at Socket.emit (node:events:507:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)

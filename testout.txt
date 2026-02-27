@@ -1,0 +1,1 @@
+[2026-02-24T05:22:05.607Z]  @firebase/database: FIREBASE WARNING: Firebase error. Please ensure that you have the URL of your Firebase Realtime Database instance configured correctly. (https://campverse-default-rtdb.firebaseio.com/) 

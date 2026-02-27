@@ -12,7 +12,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import NotificationBell from "@/components/NotificationBell";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut, Menu, Settings, User, GraduationCap } from "lucide-react";
+import { LogOut, Menu, Settings, User } from "lucide-react";
+
+const EducatorIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 100 100" fill="currentColor" className={className} xmlns="http://www.w3.org/2000/svg">
+    {/* Head */}
+    <circle cx="50" cy="24" r="17" />
+    {/* Body & Arms */}
+    <path d="M 50 54 L 60 44 C 74 44 82 52 82 63 L 82 85 C 82 92 72 92 72 85 L 72 63 L 68 63 L 68 95 L 32 95 L 32 63 L 12 82 C 7 87 0 80 5 75 L 21 57 C 27 49 33 44 40 44 Z" />
+  </svg>
+);
 
 const FacultyTopbar = () => {
   const { userData, logout } = useAuth();
@@ -40,36 +49,39 @@ const FacultyTopbar = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-background border-b border-border px-6 py-4">
+    <header className="sticky top-0 z-50 w-full bg-background border-b border-border px-6 py-2.5">
       <div className="flex items-center justify-between">
         {/* Left side - CampVerse branding */}
         <div className="flex items-center space-x-2.5">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <GraduationCap className="w-5 h-5 text-primary-foreground" />
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center p-1.5">
+            <EducatorIcon className="w-full h-full text-primary-foreground" />
           </div>
           <span className="font-bold text-foreground text-lg">CampVerse</span>
         </div>
 
+        {/* Right side */}
         <div className="flex items-center space-x-4">
-          <div className="hidden sm:flex items-center gap-3">
-            <div>
-              <div className="text-sm font-medium text-foreground">
-                {format(currentDateTime, "MMM dd, yyyy")}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {format(currentDateTime, "EEEE")}
-              </div>
-            </div>
+          <div className="flex items-center gap-6">
             <div className="text-lg font-semibold text-foreground">
               {format(currentDateTime, "h:mm a")}
+            </div>
+            <div className="text-center">
+              <div className="text-base font-medium text-foreground">
+                {format(currentDateTime, "MMM dd, yyyy")}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {format(currentDateTime, "EEEE")}
+              </div>
             </div>
           </div>
 
           <NotificationBell />
 
-          <div className="text-right">
-            <div className="text-sm font-medium text-foreground">
-              User ID : {facultyId}
+          <div className="flex items-center space-x-2">
+            <div className="text-right">
+              <div className="text-sm font-medium text-foreground">
+                User ID : {facultyId}
+              </div>
             </div>
           </div>
 

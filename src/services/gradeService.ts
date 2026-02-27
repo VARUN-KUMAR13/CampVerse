@@ -27,11 +27,12 @@ export type GradeSheet = {
     subjectCode: string;
     subjectName: string;
     credits: number;
+    degree?: string;
     year: string;
     branch: string;
     section: string;
     semester: string;
-    academicYear: string;
+    academicYear?: string;
     facultyId: string;
     facultyName: string;
     studentGrades: StudentGrade[];
@@ -47,6 +48,8 @@ export type StudentResult = {
     subjectCode: string;
     subjectName: string;
     credits: number;
+    degree: string;
+    year: string;
     semester: string;
     academicYear: string;
     facultyName: string;
@@ -96,7 +99,8 @@ export const createGradeSheet = async (data: {
     branch: string;
     section: string;
     semester: string;
-    academicYear: string;
+    academicYear?: string;
+    degree?: string;
     facultyId: string;
     facultyName?: string;
     students: { studentId: string; studentName: string }[];
@@ -106,7 +110,16 @@ export const createGradeSheet = async (data: {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error("Failed to create grade sheet");
+    if (!response.ok) {
+        let errMsg = "Failed to create grade sheet";
+        try {
+            const errData = await response.json();
+            errMsg = errData.error || errMsg;
+        } catch (e) {
+            console.error("Unparseable API error:", e);
+        }
+        throw new Error(errMsg);
+    }
     return response.json();
 };
 
@@ -247,27 +260,75 @@ export const calculateGrade = (
     return { grade: "F", gradePoints: 0 };
 };
 
-// Generate sample students for a section
+// Generate sample students for a section using strict college roll sequences
 export const generateStudentsForSection = (
+    year: string,
+    branch: string,
     section: string,
     count: number = 64
 ): { studentId: string; studentName: string }[] => {
-    const students: { studentId: string; studentName: string }[] = [];
-    const sectionOffsets: Record<string, number> = {
-        A: 0x01,
-        B: 0x65,
-        C: 0xc9,
-        D: 0x12d,
-        E: 0x191,
-        F: 0x1f5,
-        G: 0x259,
+    // 1. Generate the standard suffix sequence dynamically
+    const suffixes: string[] = [];
+
+    // 01 to 99
+    for (let i = 1; i <= 99; i++) {
+        suffixes.push(i.toString().padStart(2, "0"));
+    }
+    // A0 to Z9
+    for (let i = 65; i <= 90; i++) {
+        const char = String.fromCharCode(i);
+        for (let j = 0; j <= 9; j++) {
+            suffixes.push(`${char}${j}`);
+        }
+    }
+    // AA to ZZ
+    for (let i = 65; i <= 90; i++) {
+        const char1 = String.fromCharCode(i);
+        for (let j = 65; j <= 90; j++) {
+            const char2 = String.fromCharCode(j);
+            suffixes.push(`${char1}${char2}`);
+        }
+    }
+
+    // 2. Map branches to their standard codes
+    const getBranchCode = (b: string) => {
+        switch (b.toUpperCase()) {
+            case "CSE": return "05";
+            case "ECE": return "04";
+            case "EEE": return "02";
+            case "MECH": return "03";
+            case "IT": return "12";
+            case "AI": return "54";
+            default: return "05";
+        }
     };
 
-    const startOffset = sectionOffsets[section] || 0x01;
+    const getYearSuffix = (y: string) => {
+        if (y.includes("20")) return y.slice(-2); // Fallback for old forms
+        switch (y) {
+            case "I Year": return "25";
+            case "II Year": return "24";
+            case "III Year": return "23";
+            case "IV Year": return "22";
+            default: return "22";
+        }
+    };
+
+    const shortYear = getYearSuffix(year);
+    const branchCode = getBranchCode(branch);
+    const prefix = `${shortYear}B81A${branchCode}`;
+
+    // 3. Calculate sequence bounds for this specific section
+    const sectionIndex = section.charCodeAt(0) - 65; // 'A' -> 0, 'B' -> 1
+    const startIndex = Math.max(0, sectionIndex) * count;
+
+    // 4. Construct final array
+    const students: { studentId: string; studentName: string }[] = [];
     for (let i = 0; i < count; i++) {
-        const hexNum = (startOffset + i).toString(16).toUpperCase().padStart(2, "0");
+        const suffix = suffixes[startIndex + i];
+        if (!suffix) break; // Defensive bound check
         students.push({
-            studentId: `22B81A05${hexNum}`,
+            studentId: `${prefix}${suffix}`,
             studentName: "", // Will be filled from Firebase/database
         });
     }

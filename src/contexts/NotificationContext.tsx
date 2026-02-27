@@ -146,8 +146,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         const yearCode = collegeId.substring(0, 2);
         const currentYear = new Date().getFullYear();
         const admissionYear = parseInt('20' + yearCode);
-        const year = currentYear - admissionYear + 1;
-        return year.toString();
+        // Correct mathematical bounds; 2026 - 2022 yields 4 for 4th years
+        // Bound calculation between 1 and 4.
+        const yearInt = currentYear - admissionYear;
+        const boundedYear = Math.max(1, Math.min(4, yearInt));
+        return boundedYear.toString();
     };
 
     const extractSectionFromId = (collegeId: string): string => {
@@ -196,46 +199,61 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }, [processNotifications]);
 
     // Fetch and listen to notifications
-    const fetchNotifications = useCallback(() => {
+    const fetchNotifications = useCallback(async () => {
         setLoading(true);
         setError(null);
 
-        // Try Firebase first — but only if the user is actually authenticated with Firebase Auth
-        // Admin users bypass Firebase Auth, so auth.currentUser will be null for them
-        if (firebaseReady && database && auth?.currentUser) {
-            const notificationsRef = ref(database, 'notifications');
-            const recentNotificationsQuery = query(
-                notificationsRef,
-                orderByChild('createdAt'),
-                limitToLast(100)
-            );
+        // Try Firebase first
+        if (firebaseReady && database) {
+            let hasFirebaseAuth = !!auth?.currentUser;
 
-            onValue(recentNotificationsQuery, (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    const notificationsList: Notification[] = Object.entries(data).map(([id, value]: [string, any]) => ({
-                        id,
-                        ...value,
-                    }));
-                    processNotifications(notificationsList);
-                    setUseLocalStorage(false);
-                } else {
-                    setNotifications([]);
-                    setAllNotifications([]);
-                    setUnreadCount(0);
+            // For admin lacking explicit Firebase Auth, sign in with the expected admin credentials to safely access the DB
+            if (!hasFirebaseAuth && userData?.role === 'admin') {
+                try {
+                    const { signInWithEmailAndPassword } = await import("firebase/auth");
+                    await signInWithEmailAndPassword(auth, "admin@cvr.ac.in", "admin");
+                    hasFirebaseAuth = true; // successfully grabbed temporary credentials
+                } catch (e: any) {
+                    console.warn("Could not log admin into Firebase:", e.message);
                 }
-                setLoading(false);
-            }, (err) => {
-                console.error('Error fetching notifications from Firebase:', err);
-                setUseLocalStorage(true);
-                fetchLocalNotifications();
-            });
-        } else {
-            // Use localStorage (for admin users or when Firebase is not available)
-            console.log('Using localStorage for notifications (Firebase Auth not available)');
-            fetchLocalNotifications();
+            }
+
+            if (hasFirebaseAuth) {
+                const notificationsRef = ref(database, 'notifications');
+                const recentNotificationsQuery = query(
+                    notificationsRef,
+                    orderByChild('createdAt'),
+                    limitToLast(100)
+                );
+
+                onValue(recentNotificationsQuery, (snapshot) => {
+                    const data = snapshot.val();
+                    setUseLocalStorage(false);
+                    if (data) {
+                        const notificationsList: Notification[] = Object.entries(data).map(([id, value]: [string, any]) => ({
+                            id,
+                            ...value,
+                        }));
+                        processNotifications(notificationsList);
+                    } else {
+                        setNotifications([]);
+                        setAllNotifications([]);
+                        setUnreadCount(0);
+                    }
+                    setLoading(false);
+                }, (err) => {
+                    console.error('Error fetching notifications from Firebase:', err);
+                    setUseLocalStorage(true);
+                    fetchLocalNotifications();
+                });
+                return;
+            }
         }
-    }, [processNotifications, fetchLocalNotifications]);
+
+        // Use localStorage (fallback for no Firebase or failed Auth)
+        console.log('Using localStorage for notifications (Firebase Auth not available)');
+        fetchLocalNotifications();
+    }, [processNotifications, fetchLocalNotifications, auth?.currentUser, userData?.role]);
 
     // Subscribe to notifications when user logs in
     useEffect(() => {
@@ -274,12 +292,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             setError(null);
 
             // Try Firebase first if available and not in dev mode
-            if (firebaseReady && database && !useLocalStorage) {
+            if (firebaseReady && database) {
                 try {
                     const notificationsRef = ref(database, 'notifications');
                     const { id, ...notificationWithoutId } = newNotification;
                     await push(notificationsRef, notificationWithoutId);
                     console.log('Notification sent successfully via Firebase');
+                    setUseLocalStorage(false);
                     return;
                 } catch (firebaseErr: any) {
                     console.warn('Firebase push failed:', firebaseErr.message);

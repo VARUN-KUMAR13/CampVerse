@@ -395,446 +395,444 @@ const AdminScheduler = () => {
 
     return (
         <AdminLayout>
-            <main className="p-6">
-                <div className="max-w-7xl mx-auto space-y-6">
-                    {/* Header */}
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-                                <Calendar className="w-8 h-8 text-primary" />
-                                Schedule Management
-                            </h1>
-                            <p className="text-muted-foreground mt-1">
-                                Manage class timetables for all sections
-                            </p>
-                        </div>
-                        <div className="flex gap-2">
-                            <Button variant="outline" onClick={loadSchedules} disabled={loading}>
-                                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                                <span className="ml-2">Refresh</span>
-                            </Button>
-                            <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-                                <DialogTrigger asChild>
-                                    <Button>
-                                        <Plus className="w-4 h-4 mr-2" />
-                                        Create Schedule
-                                    </Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-w-md">
-                                    <DialogHeader>
-                                        <DialogTitle className="flex items-center gap-2 text-xl">
-                                            <Calendar className="w-6 h-6 text-primary" />
-                                            Create New Schedule
-                                        </DialogTitle>
-                                    </DialogHeader>
-                                    <div className="space-y-4 py-4">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <Label>Year</Label>
-                                                <Select
-                                                    value={scheduleForm.year}
-                                                    onValueChange={(value) => setScheduleForm({ ...scheduleForm, year: value })}
-                                                >
-                                                    <SelectTrigger>
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="22">2022 Batch</SelectItem>
-                                                        <SelectItem value="23">2023 Batch</SelectItem>
-                                                        <SelectItem value="24">2024 Batch</SelectItem>
-                                                        <SelectItem value="25">2025 Batch</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>Branch</Label>
-                                                <Select
-                                                    value={scheduleForm.branch}
-                                                    onValueChange={(value) => setScheduleForm({ ...scheduleForm, branch: value })}
-                                                >
-                                                    <SelectTrigger>
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="05">CSE</SelectItem>
-                                                        <SelectItem value="04">ECE</SelectItem>
-                                                        <SelectItem value="02">EEE</SelectItem>
-                                                        <SelectItem value="01">Civil</SelectItem>
-                                                        <SelectItem value="03">Mech</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
+            <div className="max-w-7xl mx-auto space-y-6">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+                            <Calendar className="w-8 h-8 text-primary" />
+                            Schedule Management
+                        </h1>
+                        <p className="text-muted-foreground mt-1">
+                            Manage class timetables for all sections
+                        </p>
+                    </div>
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={loadSchedules} disabled={loading}>
+                            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                            <span className="ml-2">Refresh</span>
+                        </Button>
+                        <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+                            <DialogTrigger asChild>
+                                <Button>
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Create Schedule
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-md">
+                                <DialogHeader>
+                                    <DialogTitle className="flex items-center gap-2 text-xl">
+                                        <Calendar className="w-6 h-6 text-primary" />
+                                        Create New Schedule
+                                    </DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label>Year</Label>
+                                            <Select
+                                                value={scheduleForm.year}
+                                                onValueChange={(value) => setScheduleForm({ ...scheduleForm, year: value })}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="22">2022 Batch</SelectItem>
+                                                    <SelectItem value="23">2023 Batch</SelectItem>
+                                                    <SelectItem value="24">2024 Batch</SelectItem>
+                                                    <SelectItem value="25">2025 Batch</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <Label>Section</Label>
-                                                <Select
-                                                    value={scheduleForm.section}
-                                                    onValueChange={(value) => setScheduleForm({ ...scheduleForm, section: value })}
-                                                >
-                                                    <SelectTrigger>
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="A">Section A</SelectItem>
-                                                        <SelectItem value="B">Section B</SelectItem>
-                                                        <SelectItem value="C">Section C</SelectItem>
-                                                        <SelectItem value="D">Section D</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>Semester</Label>
-                                                <Select
-                                                    value={scheduleForm.semester}
-                                                    onValueChange={(value) => setScheduleForm({ ...scheduleForm, semester: value })}
-                                                >
-                                                    <SelectTrigger>
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="I">Semester I</SelectItem>
-                                                        <SelectItem value="II">Semester II</SelectItem>
-                                                        <SelectItem value="III">Semester III</SelectItem>
-                                                        <SelectItem value="IV">Semester IV</SelectItem>
-                                                        <SelectItem value="V">Semester V</SelectItem>
-                                                        <SelectItem value="VI">Semester VI</SelectItem>
-                                                        <SelectItem value="VII">Semester VII</SelectItem>
-                                                        <SelectItem value="VIII">Semester VIII</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                        </div>
-                                        <div className="flex justify-end gap-3 pt-4 border-t">
-                                            <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
-                                                Cancel
-                                            </Button>
-                                            <Button onClick={handleCreateSchedule}>
-                                                Create & Edit
-                                            </Button>
+                                        <div className="space-y-2">
+                                            <Label>Branch</Label>
+                                            <Select
+                                                value={scheduleForm.branch}
+                                                onValueChange={(value) => setScheduleForm({ ...scheduleForm, branch: value })}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="05">CSE</SelectItem>
+                                                    <SelectItem value="04">ECE</SelectItem>
+                                                    <SelectItem value="02">EEE</SelectItem>
+                                                    <SelectItem value="01">Civil</SelectItem>
+                                                    <SelectItem value="03">Mech</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                     </div>
-                                </DialogContent>
-                            </Dialog>
-                        </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label>Section</Label>
+                                            <Select
+                                                value={scheduleForm.section}
+                                                onValueChange={(value) => setScheduleForm({ ...scheduleForm, section: value })}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="A">Section A</SelectItem>
+                                                    <SelectItem value="B">Section B</SelectItem>
+                                                    <SelectItem value="C">Section C</SelectItem>
+                                                    <SelectItem value="D">Section D</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Semester</Label>
+                                            <Select
+                                                value={scheduleForm.semester}
+                                                onValueChange={(value) => setScheduleForm({ ...scheduleForm, semester: value })}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="I">Semester I</SelectItem>
+                                                    <SelectItem value="II">Semester II</SelectItem>
+                                                    <SelectItem value="III">Semester III</SelectItem>
+                                                    <SelectItem value="IV">Semester IV</SelectItem>
+                                                    <SelectItem value="V">Semester V</SelectItem>
+                                                    <SelectItem value="VI">Semester VI</SelectItem>
+                                                    <SelectItem value="VII">Semester VII</SelectItem>
+                                                    <SelectItem value="VIII">Semester VIII</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-end gap-3 pt-4 border-t">
+                                        <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
+                                            Cancel
+                                        </Button>
+                                        <Button onClick={handleCreateSchedule}>
+                                            Create & Edit
+                                        </Button>
+                                    </div>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
                     </div>
+                </div>
 
-                    {/* Stats */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <Card>
-                            <CardContent className="p-4 flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                                    <Calendar className="w-6 h-6 text-primary" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Total Schedules</p>
-                                    <p className="text-2xl font-bold">{schedules.length}</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardContent className="p-4 flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                                    <GraduationCap className="w-6 h-6 text-blue-500" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Sections Covered</p>
-                                    <p className="text-2xl font-bold">{new Set(schedules.map(s => s.section)).size}</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardContent className="p-4 flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center">
-                                    <BookOpen className="w-6 h-6 text-green-500" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Daily Slots</p>
-                                    <p className="text-2xl font-bold">4</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    {/* Search */}
+                {/* Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Card>
-                        <CardContent className="p-4">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                                <Input
-                                    placeholder="Search schedules by section, branch..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pl-10"
-                                />
+                        <CardContent className="p-4 flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <Calendar className="w-6 h-6 text-primary" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">Total Schedules</p>
+                                <p className="text-2xl font-bold">{schedules.length}</p>
                             </div>
                         </CardContent>
                     </Card>
+                    <Card>
+                        <CardContent className="p-4 flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                                <GraduationCap className="w-6 h-6 text-blue-500" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">Sections Covered</p>
+                                <p className="text-2xl font-bold">{new Set(schedules.map(s => s.section)).size}</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent className="p-4 flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center">
+                                <BookOpen className="w-6 h-6 text-green-500" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">Daily Slots</p>
+                                <p className="text-2xl font-bold">4</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
 
-                    {/* Loading */}
-                    {loading && schedules.length === 0 && (
-                        <Card>
-                            <CardContent className="p-12 text-center">
-                                <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
-                                <p className="text-muted-foreground">Loading schedules...</p>
-                            </CardContent>
-                        </Card>
-                    )}
+                {/* Search */}
+                <Card>
+                    <CardContent className="p-4">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                            <Input
+                                placeholder="Search schedules by section, branch..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-10"
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
 
-                    {/* Schedules List */}
-                    {!loading && filteredSchedules.length === 0 ? (
-                        <Card>
-                            <CardContent className="p-12 text-center">
-                                <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                                <h3 className="text-lg font-medium text-foreground mb-2">No schedules found</h3>
-                                <p className="text-muted-foreground">
-                                    {schedules.length === 0
-                                        ? "No schedules created yet. Click 'Create Schedule' to add one."
-                                        : "Try adjusting your search."}
-                                </p>
-                            </CardContent>
-                        </Card>
-                    ) : (
-                        <div className="space-y-4">
-                            {filteredSchedules.map((schedule) => (
-                                <Card key={schedule.id} className="hover:shadow-lg transition-shadow">
-                                    <CardContent className="p-6">
-                                        <div className="flex items-start justify-between gap-4">
-                                            <div className="flex-1 space-y-2">
-                                                <div className="flex items-start gap-3 flex-wrap">
-                                                    <h3 className="text-lg font-bold text-foreground">
-                                                        {getBranchName(schedule.branch)} - Section {schedule.section}
-                                                    </h3>
-                                                    <Badge className="bg-blue-500">20{schedule.year} Batch</Badge>
-                                                    <Badge variant="secondary">Semester {schedule.semester}</Badge>
-                                                </div>
+                {/* Loading */}
+                {loading && schedules.length === 0 && (
+                    <Card>
+                        <CardContent className="p-12 text-center">
+                            <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
+                            <p className="text-muted-foreground">Loading schedules...</p>
+                        </CardContent>
+                    </Card>
+                )}
 
-                                                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                                                    <span className="flex items-center gap-1">
-                                                        <Clock className="w-4 h-4" />
-                                                        {schedule.schedule[0]?.slots.length || 0} slots/day
-                                                    </span>
-                                                    <span className="flex items-center gap-1">
-                                                        <Calendar className="w-4 h-4" />
-                                                        6 days/week
-                                                    </span>
-                                                    <span className="text-xs">
-                                                        Updated: {new Date(schedule.updatedAt).toLocaleDateString()}
-                                                    </span>
-                                                </div>
-
-                                                {/* Preview of today's schedule */}
-                                                <div className="mt-3 p-3 bg-muted/50 rounded-lg">
-                                                    <p className="text-xs text-muted-foreground mb-2">Today's Preview (Monday):</p>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {schedule.schedule.find(d => d.day === "Monday")?.slots.slice(0, 3).map((slot, idx) => (
-                                                            <Badge key={idx} variant="outline" className="text-xs">
-                                                                {slot.subjectName || "Empty Slot"}
-                                                            </Badge>
-                                                        ))}
-                                                        {schedule.schedule.find(d => d.day === "Monday")?.slots.length > 3 && (
-                                                            <Badge variant="outline" className="text-xs">
-                                                                +{schedule.schedule.find(d => d.day === "Monday")!.slots.length - 3} more
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                </div>
+                {/* Schedules List */}
+                {!loading && filteredSchedules.length === 0 ? (
+                    <Card>
+                        <CardContent className="p-12 text-center">
+                            <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                            <h3 className="text-lg font-medium text-foreground mb-2">No schedules found</h3>
+                            <p className="text-muted-foreground">
+                                {schedules.length === 0
+                                    ? "No schedules created yet. Click 'Create Schedule' to add one."
+                                    : "Try adjusting your search."}
+                            </p>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <div className="space-y-4">
+                        {filteredSchedules.map((schedule) => (
+                            <Card key={schedule.id} className="hover:shadow-lg transition-shadow">
+                                <CardContent className="p-6">
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div className="flex-1 space-y-2">
+                                            <div className="flex items-start gap-3 flex-wrap">
+                                                <h3 className="text-lg font-bold text-foreground">
+                                                    {getBranchName(schedule.branch)} - Section {schedule.section}
+                                                </h3>
+                                                <Badge className="bg-blue-500">20{schedule.year} Batch</Badge>
+                                                <Badge variant="secondary">Semester {schedule.semester}</Badge>
                                             </div>
 
-                                            <div className="flex items-center gap-2">
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => handleEditSchedule(schedule)}
-                                                >
-                                                    <Edit className="w-4 h-4 mr-2" />
-                                                    Edit
-                                                </Button>
+                                            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                                                <span className="flex items-center gap-1">
+                                                    <Clock className="w-4 h-4" />
+                                                    {schedule.schedule[0]?.slots.length || 0} slots/day
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <Calendar className="w-4 h-4" />
+                                                    6 days/week
+                                                </span>
+                                                <span className="text-xs">
+                                                    Updated: {new Date(schedule.updatedAt).toLocaleDateString()}
+                                                </span>
+                                            </div>
 
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                            disabled={deletingId === schedule.id}
-                                                        >
-                                                            {deletingId === schedule.id ? (
-                                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                                            ) : (
-                                                                <Trash2 className="w-4 h-4" />
-                                                            )}
-                                                        </Button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Delete Schedule?</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                Are you sure you want to delete the schedule for {getBranchName(schedule.branch)} Section {schedule.section}? This action cannot be undone.
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction
-                                                                onClick={() => handleDeleteSchedule(schedule.id)}
-                                                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                                            >
-                                                                Delete
-                                                            </AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
+                                            {/* Preview of today's schedule */}
+                                            <div className="mt-3 p-3 bg-muted/50 rounded-lg">
+                                                <p className="text-xs text-muted-foreground mb-2">Today's Preview (Monday):</p>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {schedule.schedule.find(d => d.day === "Monday")?.slots.slice(0, 3).map((slot, idx) => (
+                                                        <Badge key={idx} variant="outline" className="text-xs">
+                                                            {slot.subjectName || "Empty Slot"}
+                                                        </Badge>
+                                                    ))}
+                                                    {schedule.schedule.find(d => d.day === "Monday")?.slots.length > 3 && (
+                                                        <Badge variant="outline" className="text-xs">
+                                                            +{schedule.schedule.find(d => d.day === "Monday")!.slots.length - 3} more
+                                                        </Badge>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-                    )}
 
-                    {/* Edit Schedule Modal */}
-                    <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-                        <DialogContent className="max-w-[95vw] w-full max-h-[90vh] overflow-y-auto">
-                            <DialogHeader>
-                                <DialogTitle className="flex items-center gap-2 text-xl">
-                                    <Calendar className="w-6 h-6 text-primary" />
-                                    Edit Schedule
-                                </DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                                {/* Day Selector */}
-                                <div className="flex gap-2 flex-wrap">
-                                    {DAYS.map(day => (
-                                        <Button
-                                            key={day}
-                                            variant={selectedDay === day ? "default" : "outline"}
-                                            size="sm"
-                                            onClick={() => setSelectedDay(day)}
-                                        >
-                                            {day}
-                                        </Button>
-                                    ))}
-                                </div>
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleEditSchedule(schedule)}
+                                            >
+                                                <Edit className="w-4 h-4 mr-2" />
+                                                Edit
+                                            </Button>
 
-                                {/* Slots Table */}
-                                {currentDayData && (
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead className="w-14">Slot</TableHead>
-                                                <TableHead className="min-w-[140px]">Subject Code</TableHead>
-                                                <TableHead className="min-w-[280px]">Subject Name</TableHead>
-                                                <TableHead className="min-w-[140px]">Start Time</TableHead>
-                                                <TableHead className="min-w-[140px]">End Time</TableHead>
-                                                <TableHead className="min-w-[180px]">Faculty</TableHead>
-                                                <TableHead className="min-w-[120px]">Room</TableHead>
-                                                <TableHead className="w-14">Action</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {currentDayData.slots.map((slot, idx) => (
-                                                <TableRow key={slot.id}>
-                                                    <TableCell className="font-medium">{slot.slotNumber}</TableCell>
-                                                    <TableCell>
-                                                        <Input
-                                                            value={slot.subjectCode}
-                                                            onChange={(e) => handleSlotChange(selectedDay, idx, "subjectCode", e.target.value)}
-                                                            placeholder="22CS401"
-                                                            className="h-9 min-w-[120px]"
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Input
-                                                            value={slot.subjectName}
-                                                            onChange={(e) => handleSlotChange(selectedDay, idx, "subjectName", e.target.value)}
-                                                            placeholder="Linux Programming"
-                                                            className="h-9 min-w-[250px]"
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Input
-                                                            type="time"
-                                                            value={slot.startTime}
-                                                            onChange={(e) => handleSlotChange(selectedDay, idx, "startTime", e.target.value)}
-                                                            className="h-9 w-32"
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Input
-                                                            type="time"
-                                                            value={slot.endTime}
-                                                            onChange={(e) => handleSlotChange(selectedDay, idx, "endTime", e.target.value)}
-                                                            className="h-9 w-32"
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Input
-                                                            value={slot.faculty || ""}
-                                                            onChange={(e) => handleSlotChange(selectedDay, idx, "faculty", e.target.value)}
-                                                            placeholder="Dr. Smith"
-                                                            className="h-9 min-w-[160px]"
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Input
-                                                            value={slot.room || ""}
-                                                            onChange={(e) => handleSlotChange(selectedDay, idx, "room", e.target.value)}
-                                                            placeholder="Lab 101"
-                                                            className="h-9 min-w-[100px]"
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                            onClick={() => handleDeleteSlot(idx)}
-                                                            disabled={currentDayData!.slots.length <= 1}
-                                                        >
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                        disabled={deletingId === schedule.id}
+                                                    >
+                                                        {deletingId === schedule.id ? (
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                        ) : (
                                                             <Trash2 className="w-4 h-4" />
-                                                        </Button>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                )}
+                                                        )}
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Delete Schedule?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            Are you sure you want to delete the schedule for {getBranchName(schedule.branch)} Section {schedule.section}? This action cannot be undone.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction
+                                                            onClick={() => handleDeleteSchedule(schedule.id)}
+                                                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                        >
+                                                            Delete
+                                                        </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )}
 
-                                {/* Add Slot Button */}
-                                <div className="flex justify-center">
+                {/* Edit Schedule Modal */}
+                <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+                    <DialogContent className="max-w-[95vw] w-full max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2 text-xl">
+                                <Calendar className="w-6 h-6 text-primary" />
+                                Edit Schedule
+                            </DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                            {/* Day Selector */}
+                            <div className="flex gap-2 flex-wrap">
+                                {DAYS.map(day => (
                                     <Button
-                                        variant="outline"
-                                        onClick={handleAddSlot}
-                                        className="border-dashed"
+                                        key={day}
+                                        variant={selectedDay === day ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => setSelectedDay(day)}
                                     >
-                                        <Plus className="w-4 h-4 mr-2" />
-                                        Add New Slot
+                                        {day}
                                     </Button>
-                                </div>
-
-                                <div className="flex justify-end gap-3 pt-4 border-t">
-                                    <Button variant="outline" onClick={() => setIsEditModalOpen(false)} disabled={isSubmitting}>
-                                        Cancel
-                                    </Button>
-                                    <Button onClick={handleSaveSchedule} disabled={isSubmitting}>
-                                        {isSubmitting ? (
-                                            <>
-                                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                Saving...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Save className="w-4 h-4 mr-2" />
-                                                Save Schedule
-                                            </>
-                                        )}
-                                    </Button>
-                                </div>
+                                ))}
                             </div>
-                        </DialogContent>
-                    </Dialog>
-                </div>
-            </main>
+
+                            {/* Slots Table */}
+                            {currentDayData && (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="w-14">Slot</TableHead>
+                                            <TableHead className="min-w-[140px]">Subject Code</TableHead>
+                                            <TableHead className="min-w-[280px]">Subject Name</TableHead>
+                                            <TableHead className="min-w-[140px]">Start Time</TableHead>
+                                            <TableHead className="min-w-[140px]">End Time</TableHead>
+                                            <TableHead className="min-w-[180px]">Faculty</TableHead>
+                                            <TableHead className="min-w-[120px]">Room</TableHead>
+                                            <TableHead className="w-14">Action</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {currentDayData.slots.map((slot, idx) => (
+                                            <TableRow key={slot.id}>
+                                                <TableCell className="font-medium">{slot.slotNumber}</TableCell>
+                                                <TableCell>
+                                                    <Input
+                                                        value={slot.subjectCode}
+                                                        onChange={(e) => handleSlotChange(selectedDay, idx, "subjectCode", e.target.value)}
+                                                        placeholder="22CS401"
+                                                        className="h-9 min-w-[120px]"
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Input
+                                                        value={slot.subjectName}
+                                                        onChange={(e) => handleSlotChange(selectedDay, idx, "subjectName", e.target.value)}
+                                                        placeholder="Linux Programming"
+                                                        className="h-9 min-w-[250px]"
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Input
+                                                        type="time"
+                                                        value={slot.startTime}
+                                                        onChange={(e) => handleSlotChange(selectedDay, idx, "startTime", e.target.value)}
+                                                        className="h-9 w-32"
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Input
+                                                        type="time"
+                                                        value={slot.endTime}
+                                                        onChange={(e) => handleSlotChange(selectedDay, idx, "endTime", e.target.value)}
+                                                        className="h-9 w-32"
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Input
+                                                        value={slot.faculty || ""}
+                                                        onChange={(e) => handleSlotChange(selectedDay, idx, "faculty", e.target.value)}
+                                                        placeholder="Dr. Smith"
+                                                        className="h-9 min-w-[160px]"
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Input
+                                                        value={slot.room || ""}
+                                                        onChange={(e) => handleSlotChange(selectedDay, idx, "room", e.target.value)}
+                                                        placeholder="Lab 101"
+                                                        className="h-9 min-w-[100px]"
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                        onClick={() => handleDeleteSlot(idx)}
+                                                        disabled={currentDayData!.slots.length <= 1}
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            )}
+
+                            {/* Add Slot Button */}
+                            <div className="flex justify-center">
+                                <Button
+                                    variant="outline"
+                                    onClick={handleAddSlot}
+                                    className="border-dashed"
+                                >
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Add New Slot
+                                </Button>
+                            </div>
+
+                            <div className="flex justify-end gap-3 pt-4 border-t">
+                                <Button variant="outline" onClick={() => setIsEditModalOpen(false)} disabled={isSubmitting}>
+                                    Cancel
+                                </Button>
+                                <Button onClick={handleSaveSchedule} disabled={isSubmitting}>
+                                    {isSubmitting ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Save className="w-4 h-4 mr-2" />
+                                            Save Schedule
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            </div>
         </AdminLayout>
     );
 };

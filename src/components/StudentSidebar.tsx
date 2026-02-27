@@ -87,9 +87,9 @@ const StudentSidebar = ({ onNavigate }: StudentSidebarProps) => {
   };
 
   return (
-    <div className="w-64 bg-sidebar border-r border-sidebar-border h-full flex flex-col">
+    <div className="w-full bg-sidebar border-r border-sidebar-border h-full flex flex-col justify-start">
       {/* Menu Items */}
-      <nav className="px-4 space-y-1 flex-1">
+      <nav className="px-4 pt-0 space-y-1 flex-1 flex flex-col justify-start overflow-y-auto">
         {menuItems.map((item) => (
           <Link
             key={item.path}

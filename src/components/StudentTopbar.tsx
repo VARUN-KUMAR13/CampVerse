@@ -40,7 +40,7 @@ const StudentTopbar = ({ studentId }: StudentTopbarProps) => {
     }
   };
   return (
-    <header className="sticky top-0 z-50 w-full bg-background border-b border-border px-6 py-4">
+    <header className="sticky top-0 z-50 w-full bg-background border-b border-border px-6 py-2.5">
       <div className="flex items-center justify-between">
         {/* Left side - CampVerse branding */}
         <div className="flex items-center space-x-2.5">

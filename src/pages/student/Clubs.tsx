@@ -215,156 +215,159 @@ const StudentClubs = () => {
         )}
 
         {/* Clubs Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {!loading && filteredClubs.length === 0 ? (
-            <div className="col-span-full">
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <UsersRound className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-foreground mb-2">
-                    No clubs found
-                  </h3>
-                  <p className="text-muted-foreground">
-                    {clubs.length === 0
-                      ? "No clubs have been registered yet."
-                      : "Try adjusting your filters to discover more clubs."}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            filteredClubs.map((club) => (
-              <Card
-                key={club._id}
-                className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center text-white">
-                        <UsersRound className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-bold text-foreground">
-                            {club.name}
-                          </h3>
-                          {club.featured && (
-                            <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                          )}
+        <div>
+          <h2 className="text-xl font-semibold mb-4">All Clubs</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {!loading && filteredClubs.length === 0 ? (
+              <div className="col-span-full">
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <UsersRound className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">
+                      No clubs found
+                    </h3>
+                    <p className="text-muted-foreground">
+                      {clubs.length === 0
+                        ? "No clubs have been registered yet."
+                        : "Try adjusting your filters to discover more clubs."}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              filteredClubs.map((club) => (
+                <Card
+                  key={club._id}
+                  className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center text-white">
+                          <UsersRound className="w-6 h-6" />
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          {club.foundedYear ? `Est. ${club.foundedYear}` : club.club_id}
-                        </p>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-bold text-foreground">
+                              {club.name}
+                            </h3>
+                            {club.featured && (
+                              <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {club.foundedYear ? `Est. ${club.foundedYear}` : club.club_id}
+                          </p>
+                        </div>
+                      </div>
+                      {isJoined(club) ? (
+                        <Button size="sm" disabled className="bg-primary">
+                          <CheckCircle className="w-4 h-4 mr-1" />
+                          Joined
+                        </Button>
+                      ) : club.recruitmentStatus === "Open" && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleJoinClub(club._id)}
+                          disabled={processingClubId === club._id}
+                        >
+                          {processingClubId === club._id ? (
+                            <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Joining...</>
+                          ) : (
+                            <><UserPlus className="w-4 h-4 mr-1" /> Join</>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {getCategoryBadge(club.category)}
+                      {getRecruitmentBadge(club.recruitmentStatus)}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground line-clamp-3">
+                      {club.description}
+                    </p>
+
+                    {/* Stats */}
+                    <div className="grid grid-cols-3 gap-4 py-3 border-y">
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-foreground">
+                          {club.memberCount || 0}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Members
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-foreground">
+                          {club.maxMembers || "∞"}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Max
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-foreground">
+                          {club.membershipFee || "Free"}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Fee
+                        </div>
                       </div>
                     </div>
-                    {isJoined(club) ? (
-                      <Button size="sm" disabled className="bg-primary">
-                        <CheckCircle className="w-4 h-4 mr-1" />
-                        Joined
+
+                    {/* Details */}
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      {club.venue && (
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4" />
+                          <span>{club.venue}</span>
+                        </div>
+                      )}
+                      {club.meetingSchedule && (
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4" />
+                          <span>{club.meetingSchedule}</span>
+                        </div>
+                      )}
+                      {club.president?.name && (
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4" />
+                          <span>President: {club.president.name}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Achievements */}
+                    {club.achievements && club.achievements.length > 0 && (
+                      <div>
+                        <h4 className="font-medium text-sm mb-2 flex items-center gap-1">
+                          <Trophy className="w-4 h-4" />
+                          Achievements
+                        </h4>
+                        <div className="flex flex-wrap gap-1">
+                          {club.achievements.slice(0, 2).map((achievement, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              {achievement}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex gap-2 pt-2">
+                      <Button size="sm" className="flex-1">
+                        View Details
+                        <ExternalLink className="w-3 h-3 ml-1" />
                       </Button>
-                    ) : club.recruitmentStatus === "Open" && (
-                      <Button
-                        size="sm"
-                        onClick={() => handleJoinClub(club._id)}
-                        disabled={processingClubId === club._id}
-                      >
-                        {processingClubId === club._id ? (
-                          <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Joining...</>
-                        ) : (
-                          <><UserPlus className="w-4 h-4 mr-1" /> Join</>
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {getCategoryBadge(club.category)}
-                    {getRecruitmentBadge(club.recruitmentStatus)}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground line-clamp-3">
-                    {club.description}
-                  </p>
-
-                  {/* Stats */}
-                  <div className="grid grid-cols-3 gap-4 py-3 border-y">
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-foreground">
-                        {club.memberCount || 0}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Members
-                      </div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-foreground">
-                        {club.maxMembers || "∞"}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Max
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-foreground">
-                        {club.membershipFee || "Free"}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Fee
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Details */}
-                  <div className="space-y-2 text-sm text-muted-foreground">
-                    {club.venue && (
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4" />
-                        <span>{club.venue}</span>
-                      </div>
-                    )}
-                    {club.meetingSchedule && (
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        <span>{club.meetingSchedule}</span>
-                      </div>
-                    )}
-                    {club.president?.name && (
-                      <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4" />
-                        <span>President: {club.president.name}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Achievements */}
-                  {club.achievements && club.achievements.length > 0 && (
-                    <div>
-                      <h4 className="font-medium text-sm mb-2 flex items-center gap-1">
-                        <Trophy className="w-4 h-4" />
-                        Achievements
-                      </h4>
-                      <div className="flex flex-wrap gap-1">
-                        {club.achievements.slice(0, 2).map((achievement, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
-                            {achievement}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex gap-2 pt-2">
-                    <Button size="sm" className="flex-1">
-                      View Details
-                      <ExternalLink className="w-3 h-3 ml-1" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </StudentLayout>
