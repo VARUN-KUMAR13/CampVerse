@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  requiredRole?: "student" | "faculty" | "admin";
+  requiredRole?: "student" | "faculty" | "admin" | "sub-admin";
 }
 
 const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
@@ -25,17 +25,25 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (requiredRole && userData.role !== requiredRole) {
-    // Redirect to appropriate dashboard based on user role
-    switch (userData.role) {
-      case "student":
-        return <Navigate to="/student/dashboard" replace />;
-      case "faculty":
-        return <Navigate to="/faculty/dashboard" replace />;
-      case "admin":
-        return <Navigate to="/admin/dashboard" replace />;
-      default:
-        return <Navigate to="/login" replace />;
+  if (requiredRole) {
+    // sub-admins can access admin routes
+    const isAllowed =
+      userData.role === requiredRole ||
+      (requiredRole === "admin" && userData.role === "sub-admin");
+
+    if (!isAllowed) {
+      // Redirect to appropriate dashboard based on user role
+      switch (userData.role) {
+        case "student":
+          return <Navigate to="/student/dashboard" replace />;
+        case "faculty":
+          return <Navigate to="/faculty/dashboard" replace />;
+        case "admin":
+        case "sub-admin":
+          return <Navigate to="/admin/dashboard" replace />;
+        default:
+          return <Navigate to="/login" replace />;
+      }
     }
   }
 

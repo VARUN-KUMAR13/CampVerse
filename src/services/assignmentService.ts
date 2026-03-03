@@ -27,9 +27,11 @@ export const createAssignment = async (data: {
     dueDate: string;
     createdBy: string;
     createdByName?: string;
+    degree?: string;
+    year?: string;
+    semester?: string;
     section?: string;
     branch?: string;
-    year?: string;
     maxMarks?: number;
 }) => {
     const response = await fetch(API_BASE, {
@@ -106,9 +108,19 @@ export const gradeSubmission = async (
 
 // ==================== STUDENT API ====================
 
-// Get assignments for a student (by section)
-export const getStudentAssignments = async (section: string, studentId: string) => {
-    const response = await fetch(`${API_BASE}/student/${section}/${studentId}`);
+// Get assignments for a student (by section), with optional filters
+export const getStudentAssignments = async (
+    section: string,
+    studentId: string,
+    filters?: { degree?: string; semester?: string; year?: string }
+) => {
+    const params = new URLSearchParams();
+    if (filters?.degree) params.set("degree", filters.degree);
+    if (filters?.semester) params.set("semester", filters.semester);
+    if (filters?.year) params.set("year", filters.year);
+    const qs = params.toString();
+    const url = `${API_BASE}/student/${section}/${studentId}${qs ? `?${qs}` : ""}`;
+    const response = await fetch(url);
     if (!response.ok) throw new Error("Failed to fetch assignments");
     return response.json();
 };

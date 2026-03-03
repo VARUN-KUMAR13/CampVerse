@@ -1,17 +1,11 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
-  Users,
-  GraduationCap,
   Building2,
   CalendarDays,
   UsersRound,
-  Settings,
-  BarChart3,
   LogOut,
   Bell,
-  FileText,
-  Shield,
   ChevronLeft,
   Calendar,
 } from "lucide-react";
@@ -61,7 +55,7 @@ const AdminSidebar = ({ onClose, isOpen }: AdminSidebarProps) => {
       path: "/admin/scheduler",
     },
     {
-      icon: <img src="/results-icon.png" className="w-5 h-5 object-contain" alt="Results" />,
+      icon: <img src="/new-results-logo.png" className="w-5 h-5 object-contain" alt="Results" />,
       label: "Results",
       path: "/admin/results",
     },

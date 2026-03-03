@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar";
 import StudentLayout from "@/components/StudentLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -49,6 +50,8 @@ const StudentDashboard = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [studentName, setStudentName] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoadingSchedule, setIsLoadingSchedule] = useState(true);
+  const [isLoadingMetrics, setIsLoadingMetrics] = useState(true);
   const [serverTime, setServerTime] = useState<Date>(new Date());
 
   // Attendance State
@@ -181,6 +184,13 @@ const StudentDashboard = () => {
     // Try to load schedule from localStorage (set by admin scheduler)
     let scheduleData: { subjectCode: string; subjectName: string; startTime: string; endTime: string }[] | null = null;
 
+    // Abort loading schedule if backend call failed and we don't have a section
+    if (!studentSection) {
+      setTodaySchedule([]);
+      setIsLoadingSchedule(false);
+      return;
+    }
+
     try {
       const scheduleConfig = localStorage.getItem("campverse_schedule_config");
       console.log("[Schedule] Checking localStorage for schedule config...");
@@ -300,6 +310,11 @@ const StudentDashboard = () => {
       initialSchedule.map(s => s.subjectName).join(", "));
 
     setTodaySchedule(initialSchedule);
+
+    // Simulate real-time fetch delay to show loading animation momentarily
+    setTimeout(() => {
+      setIsLoadingSchedule(false);
+    }, 800);
   }, [serverTime, studentSection]);
 
   // Real-time attendance subscription + localStorage check
@@ -503,6 +518,13 @@ const StudentDashboard = () => {
   useEffect(() => {
     if (!userData?.collegeId || !isEligibleForAttendance) return;
 
+    // Require studentSection from backend to run performance metrics
+    if (!studentSection) {
+      setPerformanceMetrics([]);
+      setIsLoadingMetrics(false);
+      return;
+    }
+
     const loadHistoricalMetrics = async () => {
       const subjects = [
         { subjectCode: "22CS401", subjectName: "Linux programming" },
@@ -520,7 +542,8 @@ const StudentDashboard = () => {
           subjects
         );
 
-        setPerformanceMetrics(metrics);
+        const validMetrics = (metrics || []).filter(m => m.totalClasses > 0);
+        setPerformanceMetrics(validMetrics);
 
         // Calculate overall attendance
         const totalClasses = metrics.reduce((sum, m) => sum + m.totalClasses, 0);
@@ -538,6 +561,8 @@ const StudentDashboard = () => {
         console.log('[PerformanceMetrics] Loaded historical:', { totalClasses, totalAttended, overallPercentage });
       } catch (error) {
         console.error('[PerformanceMetrics] Error loading historical data:', error);
+      } finally {
+        setIsLoadingMetrics(false);
       }
     };
 
@@ -789,7 +814,32 @@ const StudentDashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {todaySchedule.map((item) => {
+            {isLoadingSchedule ? (
+              // Loading animation
+              <>
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex items-center justify-between p-4 rounded-lg bg-muted/30">
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-5 w-3/4 rounded-md bg-muted/50" />
+                      <Skeleton className="h-4 w-1/4 rounded-md bg-muted/50" />
+                    </div>
+                    <div className="text-center mx-4">
+                      <Skeleton className="h-4 w-24 rounded-md bg-muted/50" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-6 w-20 rounded-full bg-muted/50" />
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : todaySchedule.length === 0 ? (
+              // Empty Schedule State
+              <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+                <CalendarIcon className="w-12 h-12 mb-4 text-muted-foreground/30" />
+                <h3 className="text-lg font-medium text-foreground">No Schedule Found</h3>
+                <p>No classes scheduled for today.</p>
+              </div>
+            ) : todaySchedule.map((item) => {
               // Determine background color based on who marked attendance
               const markedByRole = attendanceMarkedBy[item.slotId] || (item as any).markedByRole;
 
@@ -957,7 +1007,31 @@ const StudentDashboard = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              {performanceMetrics.map((metric, index) => (
+              {isLoadingMetrics ? (
+                // Performance Metrics Loading Animation
+                <>
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="space-y-2">
+                      <div className="flex justify-between mb-2">
+                        <Skeleton className="h-4 w-1/2 rounded-md bg-muted/50" />
+                        <Skeleton className="h-4 w-12 rounded-md bg-muted/50" />
+                      </div>
+                      <Skeleton className="h-2 w-full rounded-full bg-muted/50" />
+                      <div className="flex justify-between mt-1">
+                        <Skeleton className="h-3 w-1/4 rounded-md bg-muted/50" />
+                        <Skeleton className="h-3 w-20 rounded-md bg-muted/50" />
+                      </div>
+                    </div>
+                  ))}
+                </>
+              ) : performanceMetrics.length === 0 ? (
+                // Empty Performance Metrics State
+                <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+                  <BarChart3 className="w-12 h-12 mb-4 text-muted-foreground/30" />
+                  <h3 className="text-lg font-medium text-foreground">No Performance Metrics</h3>
+                  <p>Performance data is not available yet.</p>
+                </div>
+              ) : performanceMetrics.map((metric, index) => (
                 <div key={index}>
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-foreground">{metric.subjectName}</span>
@@ -996,72 +1070,16 @@ const StudentDashboard = () => {
         {/* Calendar & Events */}
         <div className="space-y-6">
           <Card className="border-border/50 shadow-lg">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-4">
-                {/* Calendar on left */}
-                <div className="flex-shrink-0">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    className="rounded-md"
-                    modifiers={{
-                      fullAttendance: (day) => {
-                        const dateStr = formatDate(day);
-                        return calendarAttendance[dateStr] === 'full';
-                      },
-                      partialAttendance: (day) => {
-                        const dateStr = formatDate(day);
-                        return calendarAttendance[dateStr] === 'partial';
-                      },
-                      absentFull: (day) => {
-                        const dateStr = formatDate(day);
-                        return calendarAttendance[dateStr] === 'absent';
-                      },
-                      sunday: (day) => day.getDay() === 0,
-                    }}
-                    modifiersStyles={{
-                      fullAttendance: {
-                        backgroundColor: 'rgb(34, 197, 94)',
-                        color: 'white',
-                        borderRadius: '50%',
-                      },
-                      partialAttendance: {
-                        backgroundColor: 'rgb(249, 115, 22)',
-                        color: 'white',
-                        borderRadius: '50%',
-                      },
-                      absentFull: {
-                        backgroundColor: 'rgb(239, 68, 68)',
-                        color: 'white',
-                        borderRadius: '50%',
-                      },
-                      sunday: {
-                        color: 'rgb(156, 163, 175)',
-                      },
-                    }}
-                    disabled={(day) => day.getDay() === 0}
-                  />
-                </div>
-
-                {/* Attendance Legend on right */}
-                <div className="flex-1 flex items-center justify-center border-l border-border/50 pl-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-4 h-4 rounded-full bg-green-500"></div>
-                      <span className="text-sm text-foreground">Present</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-4 h-4 rounded-full bg-orange-500"></div>
-                      <span className="text-sm text-foreground">Partially Present</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-4 h-4 rounded-full bg-red-500"></div>
-                      <span className="text-sm text-foreground">Absent</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <CardContent className="p-4 flex justify-center">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                className="rounded-md border border-border/10"
+                modifiers={{ sunday: (day) => day.getDay() === 0 }}
+                modifiersStyles={{ sunday: { color: 'rgb(156, 163, 175)' } }}
+                disabled={(day) => day.getDay() === 0}
+              />
             </CardContent>
           </Card>
 

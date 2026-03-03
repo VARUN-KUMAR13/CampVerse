@@ -111,140 +111,6 @@ const CLUB_CATEGORY_ICONS: Record<string, string> = {
 
 
 
-// ─── Demo events for fallback when no real events exist ──────────────────────
-const DEMO_EVENTS: ShowcaseEvent[] = [
-    {
-        _id: "demo-1",
-        event_id: "VIBRANCE2026",
-        title: "Vibrance 2026",
-        description:
-            "The grandest cultural fest of the year! Experience mesmerizing performances, art exhibitions, celebrity concerts, and a breathtaking carnival atmosphere. Three days of non-stop entertainment, food stalls, and unforgettable memories.",
-        category: "Cultural",
-        date: "2026-03-15T10:00:00",
-        endDate: "2026-03-17T22:00:00",
-        venue: "Main Auditorium & Campus Grounds",
-        organizer: "Student Cultural Committee",
-        entryFee: "Free",
-        maxParticipants: 5000,
-        registeredParticipants: 3200,
-        status: "Open",
-        featured: true,
-        highlights: ["Celebrity Night", "Dance Battle", "Art Exhibition", "DJ Night"],
-        prizes: "₹5,00,000",
-        posterGradient: CATEGORY_GRADIENTS["Cultural"],
-        posterIcon: "🎭",
-        tagline: "Where Creativity Meets Passion",
-    },
-    {
-        _id: "demo-2",
-        event_id: "TECHNOVA2026",
-        title: "TechNova Summit",
-        description:
-            "48-hour hackathon featuring AI, Blockchain, and IoT challenges. Industry mentors from Google, Microsoft, and Amazon. Build the next big thing and win amazing prizes!",
-        category: "Technical",
-        date: "2026-02-28T09:00:00",
-        endDate: "2026-03-02T18:00:00",
-        venue: "Innovation Hub, Block-C",
-        organizer: "IEEE Student Branch",
-        entryFee: "₹200",
-        maxParticipants: 500,
-        registeredParticipants: 420,
-        status: "Open",
-        featured: true,
-        highlights: ["Hackathon", "AI Workshop", "Startup Pitch", "Networking"],
-        prizes: "₹2,50,000",
-        posterGradient: CATEGORY_GRADIENTS["Technical"],
-        posterIcon: "🖥️",
-        tagline: "Code. Create. Conquer.",
-    },
-    {
-        _id: "demo-3",
-        event_id: "ARENACLASH2026",
-        title: "Arena Clash 2026",
-        description:
-            "Inter-college sports tournament with cricket, football, basketball, badminton, and athletics. Compete with the best athletes across the state!",
-        category: "Sports",
-        date: "2026-03-05T07:00:00",
-        endDate: "2026-03-08T18:00:00",
-        venue: "University Stadium & Sports Complex",
-        organizer: "Sports Committee",
-        entryFee: "Free",
-        maxParticipants: 2000,
-        registeredParticipants: 1500,
-        status: "Open",
-        featured: true,
-        highlights: ["Cricket", "Football", "Esports", "Athletics"],
-        prizes: "₹3,00,000",
-        posterGradient: CATEGORY_GRADIENTS["Sports"],
-        posterIcon: "⚽",
-        tagline: "Unleash the Champion Within",
-    },
-    {
-        _id: "demo-4",
-        event_id: "DESIGNSPRINT2026",
-        title: "Design Sprint Workshop",
-        description:
-            "A 2-day intensive workshop on UI/UX design, Figma mastery, and design thinking. Learn from senior designers at top tech companies.",
-        category: "Workshop",
-        date: "2026-02-20T10:00:00",
-        endDate: "2026-02-21T17:00:00",
-        venue: "Seminar Hall, Block-A",
-        organizer: "Google DSC",
-        entryFee: "₹100",
-        maxParticipants: 150,
-        registeredParticipants: 130,
-        status: "Open",
-        featured: false,
-        highlights: ["Figma", "Design Thinking", "Portfolio Review", "Certification"],
-        prizes: "Goodies & Certificates",
-        posterGradient: CATEGORY_GRADIENTS["Workshop"],
-        posterIcon: "🔧",
-        tagline: "Design the Future",
-    },
-    {
-        _id: "demo-5",
-        event_id: "ROBOTWAR2026",
-        title: "RoboWars Championship",
-        description:
-            "Build your robot and battle it out in the arena! Featuring weight categories, autonomous bots, and the legendary heavyweight showdown.",
-        category: "Competition",
-        date: "2026-03-10T09:00:00",
-        endDate: "2026-03-10T20:00:00",
-        venue: "Engineering Block Courtyard",
-        organizer: "Robotics Club",
-        entryFee: "₹500 per team",
-        maxParticipants: 50,
-        registeredParticipants: 42,
-        status: "Open",
-        featured: true,
-        highlights: ["Bot Battle", "Autonomous Challenge", "Best Design Award"],
-        prizes: "₹1,50,000",
-        posterGradient: CATEGORY_GRADIENTS["Competition"],
-        posterIcon: "🏆",
-        tagline: "Machines at War",
-    },
-    {
-        _id: "demo-6",
-        event_id: "AICONF2026",
-        title: "AI & Future Tech Conference",
-        description:
-            "A premier seminar featuring keynotes from industry leaders on AI, ML, Quantum Computing and the future of technology.",
-        category: "Seminar",
-        date: "2026-03-20T10:00:00",
-        endDate: "2026-03-20T17:00:00",
-        venue: "Convention Center",
-        organizer: "CSE Department",
-        entryFee: "Free",
-        maxParticipants: 800,
-        registeredParticipants: 650,
-        status: "Upcoming",
-        featured: true,
-        highlights: ["Keynote Speakers", "Panel Discussion", "Networking Lunch"],
-        posterGradient: CATEGORY_GRADIENTS["Seminar"],
-        posterIcon: "📚",
-        tagline: "Shaping Tomorrow's Technology",
-    },
-];
 
 // ─── Helper ──────────────────────────────────────────────────────────────────
 function formatShowcaseDate(dateStr: string) {
@@ -445,7 +311,7 @@ const HeroBanner = ({
                     return (
                         <div className="event-hero-actions">
                             {isRegistered(ev) ? (
-                                <Button className="event-hero-btn-primary" disabled>
+                                <Button className="event-hero-btn-primary bg-green-600 hover:bg-green-700 opacity-100 disabled:opacity-100 cursor-default text-white" disabled>
                                     <CheckCircle className="w-4 h-4 mr-2" />
                                     Registered
                                 </Button>
@@ -480,9 +346,9 @@ const HeroBanner = ({
                     return (
                         <div className="event-hero-actions">
                             {isClubMember(cl) ? (
-                                <Button className="event-hero-btn-primary" disabled>
+                                <Button className="event-hero-btn-primary bg-green-600 hover:bg-green-700 opacity-100 disabled:opacity-100 cursor-default text-white" disabled>
                                     <CheckCircle className="w-4 h-4 mr-2" />
-                                    Member
+                                    Joined
                                 </Button>
                             ) : cl.recruitmentStatus === 'Open' ? (
                                 <Button
@@ -672,7 +538,7 @@ const EventDetailModal = ({
                     {/* Actions */}
                     <div className="event-modal-actions">
                         {isRegistered(event) ? (
-                            <Button className="event-hero-btn-primary" disabled>
+                            <Button className="event-hero-btn-primary bg-green-600 hover:bg-green-700 opacity-100 disabled:opacity-100 cursor-default text-white" disabled>
                                 <CheckCircle className="w-4 h-4 mr-2" />
                                 Registered
                             </Button>
@@ -834,9 +700,9 @@ const ClubDetailModal = ({
                     {/* Actions */}
                     <div className="event-modal-actions">
                         {isMember ? (
-                            <Button className="event-hero-btn-primary" disabled>
+                            <Button className="event-hero-btn-primary bg-green-600 hover:bg-green-700 opacity-100 disabled:opacity-100 cursor-default text-white" disabled>
                                 <CheckCircle className="w-4 h-4 mr-2" />
-                                Already a Member
+                                Joined
                             </Button>
                         ) : club.recruitmentStatus === 'Open' ? (
                             <Button
@@ -882,15 +748,13 @@ const EventShowcase = () => {
 
     // ── Build showcase events ──
     const showcaseEvents: ShowcaseEvent[] =
-        rawEvents.length > 0
-            ? rawEvents.map((e) => ({
-                ...e,
-                posterGradient:
-                    CATEGORY_GRADIENTS[e.category] || CATEGORY_GRADIENTS["Other"],
-                posterIcon: CATEGORY_ICONS[e.category] || "🎪",
-                tagline: e.featured ? "Don't Miss This!" : undefined,
-            }))
-            : DEMO_EVENTS;
+        rawEvents.map((e) => ({
+            ...e,
+            posterGradient:
+                CATEGORY_GRADIENTS[e.category] || CATEGORY_GRADIENTS["Other"],
+            posterIcon: CATEGORY_ICONS[e.category] || "🎪",
+            tagline: e.featured ? "Don't Miss This!" : undefined,
+        }));
 
     // ── Build unified hero items (featured events + featured clubs) ──
     const heroItems: HeroItem[] = [
@@ -920,14 +784,18 @@ const EventShowcase = () => {
         : showcaseEvents.slice(0, 3).map((e): HeroEventItem => ({ ...e, _type: 'event' }));
 
     // ── Event helpers ──
+    // ── Event helpers ──
     const isRegistered = (event: ShowcaseEvent) => {
-        if (!userData?.collegeId || !event.registeredStudents) return false;
-        return event.registeredStudents.includes(userData.collegeId);
+        if (!userData?.collegeId) return false;
+        // Dynamically reference the absolute latest real-time context data instead of static modal props
+        const liveEvent = rawEvents.find(e => e._id === event._id) || event;
+        return liveEvent.registeredStudents?.includes(userData.collegeId) || false;
     };
 
     const isClubMember = (club: Club) => {
-        if (!userData?.collegeId || !club.joinedStudents) return false;
-        return club.joinedStudents.includes(userData.collegeId);
+        if (!userData?.collegeId) return false;
+        const liveClub = clubs.find(c => c._id === club._id) || club;
+        return liveClub.joinedStudents?.includes(userData.collegeId) || false;
     };
 
     const isFreeEvent = (event: ShowcaseEvent) => {

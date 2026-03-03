@@ -6,8 +6,8 @@ const Payment = require('../models/Payment');
 
 // Initialize Razorpay instance
 const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET
+    key_id: process.env.RAZORPAY_KEY_ID || 'dummy_key_id',
+    key_secret: process.env.RAZORPAY_KEY_SECRET || 'dummy_key_secret'
 });
 
 // Create a new order
@@ -139,7 +139,15 @@ router.get('/history/:studentId', async (req, res) => {
         const query = { studentId };
         if (status) query.status = status;
         if (feeType) query.feeType = feeType;
-        if (year) query.academicYear = year;
+        if (year) {
+            query.$or = [
+                { academicYear: year },
+                { feeType: 'Event Registration' },
+                { academicYear: { $exists: false } },
+                { academicYear: null },
+                { academicYear: "" }
+            ];
+        }
 
         const payments = await Payment.find(query)
             .sort({ createdAt: -1 })

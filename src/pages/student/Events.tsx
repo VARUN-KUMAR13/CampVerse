@@ -33,6 +33,7 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle,
+  XCircle,
   Trophy,
   Eye,
 } from "lucide-react";
@@ -49,6 +50,12 @@ const StudentEvents = () => {
   const [processingEventId, setProcessingEventId] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
+
+  const toggleExpand = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedCards(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const handleOpenView = (event: Event) => {
     setSelectedEvent(event);
@@ -243,6 +250,22 @@ const StudentEvents = () => {
     });
   };
 
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const isPastDeadline = (deadline?: string) => {
+    if (!deadline) return false;
+    return new Date(deadline) < new Date();
+  };
+
   const formatTime = (dateString: string) => {
     return new Date(dateString).toLocaleTimeString("en-IN", {
       hour: "2-digit",
@@ -268,15 +291,7 @@ const StudentEvents = () => {
           </div>
         </div>
 
-        {/* Error Alert */}
-        {error && (
-          <Card className="border-destructive bg-destructive/10">
-            <CardContent className="py-4 flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-destructive" />
-              <span className="text-destructive">{error}</span>
-            </CardContent>
-          </Card>
-        )}
+
 
         {/* Filters */}
         <Card>
@@ -297,6 +312,7 @@ const StudentEvents = () => {
                 </div>
               </div>
               <Select
+                name="category"
                 value={categoryFilter}
                 onValueChange={setCategoryFilter}
               >
@@ -313,7 +329,7 @@ const StudentEvents = () => {
                   <SelectItem value="competition">Competition</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select name="eventStatus" value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full md:w-[200px]">
                   <SelectValue placeholder="Filter" />
                 </SelectTrigger>
@@ -346,24 +362,26 @@ const StudentEvents = () => {
           <h2 className="text-xl font-semibold mb-4">All Events</h2>
           <div className="grid md:grid-cols-2 gap-6">
             {!loading && filteredEvents.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-foreground mb-2">
-                    No events found
-                  </h3>
-                  <p className="text-muted-foreground">
-                    {events.length === 0
-                      ? "No events have been posted yet. Check back later!"
-                      : "Try adjusting your filters to see more events."}
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="col-span-full">
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">
+                      No events found
+                    </h3>
+                    <p className="text-muted-foreground">
+                      {events.length === 0
+                        ? "No events have been posted yet. Check back later!"
+                        : "Try adjusting your filters to see more events."}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
             ) : (
               filteredEvents.map((event) => (
                 <Card
                   key={event._id}
-                  className="hover:shadow-lg transition-shadow overflow-hidden"
+                  className="flex flex-col h-full hover:shadow-lg transition-shadow overflow-hidden"
                 >
                   {/* Poster image banner (if available) */}
                   {event.posterImage && (
@@ -425,63 +443,57 @@ const StudentEvents = () => {
                             Registration Deadline
                           </p>
                           <p className="font-medium text-destructive">
-                            {formatDate(event.registrationDeadline)}
+                            {formatDateTime(event.registrationDeadline)}
                           </p>
                         </div>
                       )}
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-muted-foreground">
-                      {event.description}
-                    </p>
+                  <CardContent className="space-y-3 flex-1 flex flex-col">
+                    <div>
+                      <p className={`text-muted-foreground ${expandedCards[event._id] ? '' : 'line-clamp-2'}`}>
+                        {event.description}
+                      </p>
+                      {event.description && event.description.length > 100 && (
+                        <button
+                          onClick={(e) => toggleExpand(event._id, e)}
+                          className="text-primary text-sm hover:underline mt-1 bg-transparent border-none p-0 cursor-pointer"
+                        >
+                          {expandedCards[event._id] ? 'Show less' : 'Read more'}
+                        </button>
+                      )}
+                    </div>
 
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
+                    <div className="flex flex-col gap-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-primary" />
+                        <span className="font-medium">Date:</span>
+                        <span>
+                          {formatDate(event.date)}
+                          {event.endDate && event.endDate !== event.date && (
+                            <> - {formatDate(event.endDate)}</>
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-primary" />
+                        <span className="font-medium">Time:</span>
+                        <span>{formatTime(event.date)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-primary" />
+                        <span className="font-medium">Venue:</span>
+                        <span>{event.venue}</span>
+                      </div>
+                      {event.maxParticipants > 0 && (
                         <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-primary" />
-                          <span className="font-medium">Date:</span>
+                          <Users className="w-4 h-4 text-primary" />
+                          <span className="font-medium">Registered:</span>
                           <span>
-                            {formatDate(event.date)}
-                            {event.endDate && event.endDate !== event.date && (
-                              <> - {formatDate(event.endDate)}</>
-                            )}
+                            {event.registeredParticipants}/{event.maxParticipants}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-primary" />
-                          <span className="font-medium">Time:</span>
-                          <span>{formatTime(event.date)}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-primary" />
-                          <span className="font-medium">Venue:</span>
-                          <span>{event.venue}</span>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <DollarSign className="w-4 h-4 text-green-500" />
-                          <span className="font-medium">Entry Fee:</span>
-                          <span>{event.entryFee}</span>
-                        </div>
-                        {event.maxParticipants > 0 && (
-                          <div className="flex items-center gap-2">
-                            <Users className="w-4 h-4 text-blue-500" />
-                            <span className="font-medium">Registered:</span>
-                            <span>
-                              {event.registeredParticipants}/{event.maxParticipants}
-                            </span>
-                          </div>
-                        )}
-                        {event.prizes && (
-                          <div className="flex items-center gap-2">
-                            <Star className="w-4 h-4 text-yellow-500" />
-                            <span className="font-medium">Prizes:</span>
-                            <span>{event.prizes}</span>
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
 
                     {event.highlights && event.highlights.length > 0 && (
@@ -501,7 +513,7 @@ const StudentEvents = () => {
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between pt-4 border-t">
+                    <div className="flex items-center justify-between pt-3 border-t mt-auto">
                       <div className="text-sm text-muted-foreground">
                         Organized by{" "}
                         <span className="font-medium">
@@ -510,21 +522,25 @@ const StudentEvents = () => {
                       </div>
                       <div className="flex gap-2">
                         {isRegistered(event) ? (
-                          <Button className="bg-primary" disabled>
+                          <Button className="bg-green-600 hover:bg-green-700 opacity-100 disabled:opacity-100 cursor-default text-white" disabled>
                             <CheckCircle className="w-4 h-4 mr-1" /> Registered
+                          </Button>
+                        ) : isPastDeadline(event.registrationDeadline) ? (
+                          <Button className="bg-destructive hover:bg-destructive opacity-100 disabled:opacity-100 cursor-default text-destructive-foreground" disabled>
+                            <XCircle className="w-4 h-4 mr-1" /> Registration Closed
                           </Button>
                         ) : event.status === "Open" &&
                         (event.maxParticipants === 0 ||
                           event.registeredParticipants < event.maxParticipants) && (
                           <Button
-                            className="bg-green-600 hover:bg-green-700"
+                            className="bg-green-600 hover:bg-green-700 text-white"
                             onClick={() => handleRegister(event)}
                             disabled={processingEventId === event._id}
                           >
                             {processingEventId === event._id ? (
                               <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Processing...</>
                             ) : (
-                              <>Register{!isFreeEvent(event) ? ` (${event.entryFee})` : ""}</>
+                              <>Register</>
                             )}
                           </Button>
                         )}
@@ -660,7 +676,7 @@ const StudentEvents = () => {
                   <div>
                     <Label className="text-xs text-muted-foreground">Registration Deadline</Label>
                     <p className="font-medium text-destructive mt-1">
-                      {formatDate(selectedEvent.registrationDeadline)}
+                      {formatDateTime(selectedEvent.registrationDeadline)}
                     </p>
                   </div>
                 )}
@@ -687,21 +703,25 @@ const StudentEvents = () => {
                 <div className="flex justify-between items-center pt-4 border-t">
                   <div>
                     {isRegistered(selectedEvent) ? (
-                      <Button className="bg-primary" disabled>
+                      <Button className="bg-green-600 hover:bg-green-700 opacity-100 disabled:opacity-100 cursor-default text-white" disabled>
                         <CheckCircle className="w-4 h-4 mr-1" /> Registered
+                      </Button>
+                    ) : isPastDeadline(selectedEvent.registrationDeadline) ? (
+                      <Button className="bg-destructive hover:bg-destructive opacity-100 disabled:opacity-100 cursor-default text-destructive-foreground" disabled>
+                        <XCircle className="w-4 h-4 mr-1" /> Registration Closed
                       </Button>
                     ) : selectedEvent.status === "Open" &&
                       (selectedEvent.maxParticipants === 0 ||
                         selectedEvent.registeredParticipants < selectedEvent.maxParticipants) ? (
                       <Button
-                        className="bg-green-600 hover:bg-green-700"
+                        className="bg-green-600 hover:bg-green-700 text-white"
                         onClick={() => handleRegister(selectedEvent)}
                         disabled={processingEventId === selectedEvent._id}
                       >
                         {processingEventId === selectedEvent._id ? (
                           <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Processing...</>
                         ) : (
-                          <>Register{!isFreeEvent(selectedEvent) ? ` (${selectedEvent.entryFee})` : ""}</>
+                          <>Register</>
                         )}
                       </Button>
                     ) : null}

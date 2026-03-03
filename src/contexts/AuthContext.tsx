@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, onAuthStateChanged } from "firebase/auth";
 import { auth, isDevelopment, firebaseReady } from "@/lib/firebase";
 import { CollegeUser, getCurrentUserData } from "@/lib/auth";
+import { clearAuthToken, getStoredToken } from "@/lib/api";
 
 interface AuthContextType {
   currentUser: User | null;
@@ -32,6 +33,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     // Helper to restore user from localStorage (for JWT-based sessions)
     const restoreFromStorage = (): boolean => {
+      const storedToken = getStoredToken();
+      if (!storedToken) {
+        // No auth token means any stored user data is invalid
+        localStorage.removeItem("dev-user");
+        return false;
+      }
+
       const storedUser = localStorage.getItem("dev-user");
       if (storedUser && storedUser !== "undefined" && storedUser !== "null") {
         try {
@@ -116,7 +124,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const logout = async (): Promise<void> => {
+    // Always clear both auth token and user data
+    clearAuthToken();
     localStorage.removeItem("dev-user");
+    sessionStorage.removeItem("campverse_notif_toast_shown");
     setUserData(null);
     setCurrentUser(null);
 

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { ref, push, onValue, set, remove, query, orderByChild, limitToLast, off } from 'firebase/database';
+import { signInAnonymously } from 'firebase/auth';
 import { auth, database, firebaseReady } from '@/lib/firebase';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -83,7 +84,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [useLocalStorage, setUseLocalStorage] = useState(true); // Default to localStorage
-    const hasShownLoginToast = useRef(false);
     const previousUnreadCount = useRef(0);
 
     // Check if notification is relevant to current user
@@ -177,9 +177,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             const unread = relevantNotifications.filter(n => !n.isRead).length;
             setUnreadCount(unread);
 
-            // Show toast on login if there are new notifications
-            if (!hasShownLoginToast.current && unread > 0) {
-                hasShownLoginToast.current = true;
+            // Show toast on login if there are new notifications (only once per session)
+            const toastShown = sessionStorage.getItem('campverse_notif_toast_shown');
+            if (!toastShown && unread > 0) {
+                sessionStorage.setItem('campverse_notif_toast_shown', 'true');
                 toast({
                     title: `🔔 You have ${unread} new notification${unread > 1 ? 's' : ''}!`,
                     description: "Click the bell icon to view your notifications.",
@@ -203,22 +204,20 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setLoading(true);
         setError(null);
 
-        // Try Firebase first
-        if (firebaseReady && database) {
-            let hasFirebaseAuth = !!auth?.currentUser;
-
-            // For admin lacking explicit Firebase Auth, sign in with the expected admin credentials to safely access the DB
-            if (!hasFirebaseAuth && userData?.role === 'admin') {
-                try {
-                    const { signInWithEmailAndPassword } = await import("firebase/auth");
-                    await signInWithEmailAndPassword(auth, "admin@cvr.ac.in", "admin");
-                    hasFirebaseAuth = true; // successfully grabbed temporary credentials
-                } catch (e: any) {
-                    console.warn("Could not log admin into Firebase:", e.message);
+        // Try Firebase RTDB
+        if (firebaseReady && database && auth) {
+            try {
+                // Ensure we have some Firebase Auth (anonymous if needed)
+                // so we satisfy "auth != null" RTDB rules
+                if (!auth.currentUser) {
+                    try {
+                        await signInAnonymously(auth);
+                        console.log('[Notifications] Anonymous sign-in successful for reading');
+                    } catch (anonErr) {
+                        console.warn('[Notifications] Anonymous sign-in failed, trying direct read:', anonErr);
+                    }
                 }
-            }
 
-            if (hasFirebaseAuth) {
                 const notificationsRef = ref(database, 'notifications');
                 const recentNotificationsQuery = query(
                     notificationsRef,
@@ -247,18 +246,19 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                     fetchLocalNotifications();
                 });
                 return;
+            } catch (firebaseErr) {
+                console.warn('[Notifications] Firebase RTDB read failed:', firebaseErr);
+                // Fall through to localStorage
             }
         }
 
-        // Use localStorage (fallback for no Firebase or failed Auth)
-        console.log('Using localStorage for notifications (Firebase Auth not available)');
+        // Use localStorage (fallback when Firebase is not available)
         fetchLocalNotifications();
-    }, [processNotifications, fetchLocalNotifications, auth?.currentUser, userData?.role]);
+    }, [processNotifications, fetchLocalNotifications, userData?.role]);
 
     // Subscribe to notifications when user logs in
     useEffect(() => {
         if (currentUser && userData) {
-            hasShownLoginToast.current = false; // Reset toast flag on login
             fetchNotifications();
 
             return () => {
@@ -291,9 +291,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         try {
             setError(null);
 
-            // Try Firebase first if available and not in dev mode
+            // Try Firebase first if available
             if (firebaseReady && database) {
                 try {
+                    // Ensure Firebase Auth for write operations
+                    if (!auth?.currentUser && auth) {
+                        try {
+                            await signInAnonymously(auth);
+                        } catch { /* ignore, push might still fail */ }
+                    }
                     const notificationsRef = ref(database, 'notifications');
                     const { id, ...notificationWithoutId } = newNotification;
                     await push(notificationsRef, notificationWithoutId);

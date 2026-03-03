@@ -71,6 +71,12 @@ import AdminAttendance from "./pages/admin/Attendance";
 import StudentDataManagement from "./pages/admin/StudentDataManagement";
 import AdminResults from "./pages/admin/Results";
 
+// New Admin Pages
+import UserManagement from "./pages/admin/UserManagement";
+import Reports from "./pages/admin/Reports";
+import SystemSettings from "./pages/admin/SystemSettings";
+import BackupDatabase from "./pages/admin/BackupDatabase";
+
 const queryClient = new QueryClient();
 
 // App content component
@@ -344,6 +350,38 @@ const AppContent = () => {
           element={
             <ProtectedRoute requiredRole="admin">
               <AdminResults />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <UserManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/reports"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <Reports />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/settings"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <SystemSettings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/backup"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <BackupDatabase />
             </ProtectedRoute>
           }
         />

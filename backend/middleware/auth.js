@@ -130,11 +130,38 @@ const adminOnly = (req, res, next) => {
     return res.status(401).json({ message: "Authentication required" });
   }
 
-  if (req.user.role !== "admin") {
+  if (req.user.role !== "admin" && req.user.role !== "sub-admin") {
     return res.status(403).json({ message: "Admin access required" });
   }
 
   next();
+};
+
+/**
+ * Middleware for generic permission check (especially sub-admin)
+ */
+const authorizePermission = (permissionKey) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    if (req.user.role === "admin") {
+      return next(); // Main admin has all permissions
+    }
+
+    if (req.user.role === "sub-admin") {
+      if (req.user.permissions && req.user.permissions[permissionKey]) {
+        return next();
+      } else {
+        return res.status(403).json({
+          message: `Access denied. Sub-admin lacks permission: ${permissionKey}`,
+        });
+      }
+    }
+
+    return res.status(403).json({ message: "Admin or sub-admin access required" });
+  };
 };
 
 /**
@@ -145,8 +172,8 @@ const facultyOrAdmin = (req, res, next) => {
     return res.status(401).json({ message: "Authentication required" });
   }
 
-  if (!["faculty", "admin"].includes(req.user.role)) {
-    return res.status(403).json({ message: "Faculty or admin access required" });
+  if (!["faculty", "admin", "sub-admin"].includes(req.user.role)) {
+    return res.status(403).json({ message: "Faculty, admin or sub-admin access required" });
   }
 
   next();
@@ -184,10 +211,10 @@ const validateBranchAccess = async (req, res, next) => {
   // For faculty, check if they're accessing their own branch
   if (req.user.role === "faculty") {
     const targetUserId = req.params.userId || req.params.studentId;
-    
+
     if (targetUserId) {
       const targetUser = await User.findById(targetUserId);
-      
+
       if (targetUser && targetUser.branch !== req.user.branch) {
         return res.status(403).json({
           message: "Access denied. You can only access students from your branch.",
@@ -241,7 +268,7 @@ const logActivity = (action) => {
   return (req, res, next) => {
     if (req.user) {
       console.log(`[${new Date().toISOString()}] User ${req.user.collegeId} (${req.user.role}) performed: ${action}`);
-      
+
       // Here you could save to an activity log in database
       // const ActivityLog = require('../models/ActivityLog');
       // new ActivityLog({
@@ -262,13 +289,13 @@ const logActivity = (action) => {
 const validateApiVersion = (supportedVersions = ['v1']) => {
   return (req, res, next) => {
     const version = req.headers['api-version'] || 'v1';
-    
+
     if (!supportedVersions.includes(version)) {
       return res.status(400).json({
         message: `Unsupported API version. Supported versions: ${supportedVersions.join(', ')}`,
       });
     }
-    
+
     req.apiVersion = version;
     next();
   };
@@ -280,19 +307,19 @@ const validateApiVersion = (supportedVersions = ['v1']) => {
 const corsHandler = (origins = ['http://localhost:3000']) => {
   return (req, res, next) => {
     const origin = req.headers.origin;
-    
+
     if (origins.includes(origin)) {
       res.setHeader('Access-Control-Allow-Origin', origin);
     }
-    
+
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, api-version');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
-    
+
     if (req.method === 'OPTIONS') {
       return res.sendStatus(200);
     }
-    
+
     next();
   };
 };
@@ -311,4 +338,5 @@ module.exports = {
   logActivity,
   validateApiVersion,
   corsHandler,
+  authorizePermission,
 };

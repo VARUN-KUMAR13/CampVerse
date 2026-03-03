@@ -55,9 +55,11 @@ router.post("/", async (req, res) => {
             dueDate,
             createdBy,
             createdByName,
+            degree,
             section,
             branch,
             year,
+            semester,
             maxMarks,
         } = req.body;
 
@@ -69,9 +71,11 @@ router.post("/", async (req, res) => {
             dueDate,
             createdBy,
             createdByName,
+            degree: degree || "Major",
             section: section || "B",
             branch: branch || "CSE",
-            year: year || "2022",
+            year: year || "IV Year",
+            semester: semester || "Semester-I",
             maxMarks: maxMarks || 100,
             status: "Active",
         });
@@ -235,10 +239,19 @@ router.get("/student/:section", async (req, res) => {
 router.get("/student/:section/:studentId", async (req, res) => {
     try {
         const { section, studentId } = req.params;
-        const assignments = await Assignment.find({
+        const { degree, semester, year } = req.query;
+
+        const query = {
             section: section,
             status: { $in: ["Active", "Completed"] },
-        })
+        };
+
+        // Optional filters
+        if (degree) query.degree = degree;
+        if (semester) query.semester = semester;
+        if (year) query.year = year;
+
+        const assignments = await Assignment.find(query)
             .select("-submissions.fileData")
             .sort({ dueDate: 1 });
 

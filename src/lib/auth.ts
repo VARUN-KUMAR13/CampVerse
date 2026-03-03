@@ -13,7 +13,7 @@ export interface CollegeUser {
   name: string;
   collegeId: string;
   email: string;
-  role: "student" | "faculty" | "admin";
+  role: "student" | "faculty" | "admin" | "sub-admin";
   year: string;
   section: string;
   branch: string;
@@ -172,17 +172,9 @@ export const signInUser = async (
   collegeId: string,
   password: string,
 ): Promise<CollegeUser> => {
-  // Admin login — authenticate with backend, then attempt Firebase Auth
+  // Admin login — authenticate with backend JWT only (admin bypasses Firebase Auth)
   if (collegeId === "admin") {
-    const user = await backendLogin(collegeId, password);
-    if (firebaseReady && auth) {
-      try {
-        await signInWithEmailAndPassword(auth, "admin@cvr.ac.in", password);
-      } catch (err: any) {
-        console.warn("Firebase Auth Admin fallback failed", err.message);
-      }
-    }
-    return user;
+    return await backendLogin(collegeId, password);
   }
 
   // Validate college ID

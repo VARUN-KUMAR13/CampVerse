@@ -84,7 +84,17 @@ const assignmentSchema = new mongoose.Schema({
     },
     year: {
         type: String,
-        default: "2022",
+        default: "IV Year",
+    },
+    degree: {
+        type: String,
+        enum: ["Major", "Minor"],
+        default: "Major",
+    },
+    semester: {
+        type: String,
+        enum: ["Semester-I", "Semester-II"],
+        default: "Semester-I",
     },
     maxMarks: {
         type: Number,

@@ -42,7 +42,7 @@ export interface AIResponse {
 export interface ChatbotConfig {
   sessionId: string;
   userId?: string;
-  userRole: 'student' | 'faculty' | 'admin' | 'guest';
+  userRole: 'student' | 'faculty' | 'admin' | 'sub-admin' | 'guest';
   userDetails?: {
     name?: string;
     rollNumber?: string;

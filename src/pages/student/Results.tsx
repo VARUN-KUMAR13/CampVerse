@@ -86,7 +86,7 @@ const StudentResults = () => {
 
         {/* Top Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
-          <Select value={degree} onValueChange={setDegree}>
+          <Select name="degree" value={degree} onValueChange={setDegree}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Degree" />
             </SelectTrigger>
@@ -96,7 +96,7 @@ const StudentResults = () => {
             </SelectContent>
           </Select>
 
-          <Select value={year} onValueChange={setYear}>
+          <Select name="year" value={year} onValueChange={setYear}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Year" />
             </SelectTrigger>
@@ -108,7 +108,7 @@ const StudentResults = () => {
             </SelectContent>
           </Select>
 
-          <Select value={semester} onValueChange={setSemester}>
+          <Select name="semester" value={semester} onValueChange={setSemester}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Semester" />
             </SelectTrigger>

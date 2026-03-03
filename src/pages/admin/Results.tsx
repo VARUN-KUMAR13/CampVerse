@@ -240,12 +240,12 @@ const AdminResults = () => {
 
     return (
         <AdminLayout>
-            <div className="max-w-7xl mx-auto space-y-6">
+            <div className="max-w-7xl mx-auto px-6 pt-6 space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-                            <img src="/results-icon.png" alt="Results" className="w-8 h-8 object-contain" />
+                            <img src="/new-results-logo.png" alt="Results" className="w-8 h-8 object-contain" />
                             Result Management
                         </h1>
                         <p className="text-muted-foreground mt-1">

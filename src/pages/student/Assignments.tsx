@@ -2,6 +2,19 @@ import { useState, useEffect, useRef, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import StudentLayout from "@/components/StudentLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -15,6 +28,7 @@ import {
   FileText,
   Loader2,
   Download,
+  X,
 } from "lucide-react";
 import {
   getStudentAssignments,
@@ -40,6 +54,9 @@ type Assignment = {
   submittedAt: string | null;
   grade: number | null;
   feedback: string;
+  year?: string;
+  degree?: string;
+  semester?: string;
 };
 
 const StudentAssignments = () => {
@@ -50,51 +67,61 @@ const StudentAssignments = () => {
   const [viewingSubmission, setViewingSubmission] = useState<string | null>(null);
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
+  // View modal state
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [viewAssignment, setViewAssignment] = useState<Assignment | null>(null);
+
+  // ── Compute student's current academic year from collegeId ──
+  const getStudentCurrentYear = (): string => {
+    const collegeId = userData?.collegeId || "";
+    const yearCode = collegeId.substring(0, 2);
+    if (!yearCode || !/^\d{2}$/.test(yearCode)) return "IV Year";
+    const admissionYear = parseInt("20" + yearCode);
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const curMonth = now.getMonth(); // 0-indexed
+    // Academic year starts in July
+    const academicStartYear = curMonth >= 6 ? curYear : curYear - 1;
+    const yearNum = academicStartYear - admissionYear + 1;
+    const yearLabels = ["I Year", "II Year", "III Year", "IV Year"];
+    return yearLabels[Math.min(Math.max(yearNum - 1, 0), 3)];
+  };
+
+  // ── Filter State (matching Results page) ──
+  const [degree, setDegree] = useState("Major");
+  const [year, setYear] = useState(() => getStudentCurrentYear());
+  const [semester, setSemester] = useState("Semester-I");
+
   // Get student name - fallback to collegeId if name not available
   const studentName = userData?.name || userData?.collegeId || "Student";
 
   // Determine section from roll number
-  // CSE 4th Year (2022 batch): 22B81A05XX where XX is in hex
-  // Sections: A=01-64, B=65-C8, C=C9-12C (if 3 chars), etc.
-  // Each section ~100 students in decimal (64 in hex)
   const getSectionFromRollNumber = (rollNo: string): string => {
-    // Extract the last 2-3 characters (hex part after 22B81A05)
     const upperRoll = rollNo.toUpperCase();
-
-    // Try to match 22B81A05XX or 22B81A05XXX pattern
     let match = upperRoll.match(/22B81A05([0-9A-F]+)$/);
     if (!match) {
-      // Try without the branch code for other formats
       match = upperRoll.match(/(\d{2})[A-Z].*?([0-9A-F]{2,3})$/);
       if (match) {
         const numPart = parseInt(match[2], 16);
-        // Simple section calculation
         if (numPart >= 0x01 && numPart <= 0x64) return "A";
         if (numPart >= 0x65 && numPart <= 0xC8) return "B";
-        return "B"; // Default
+        return "B";
       }
-      return "B"; // Default to B
+      return "B";
     }
-
     const hexPart = match[1];
-    const numPart = parseInt(hexPart, 16); // Parse as hex
-
-    // Section ranges based on roll number pattern:
-    // 22B81A0501-22B81A0564 = CSE-A (hex 01-64 = decimal 1-100)
-    // 22B81A0565-22B81A05C8 = CSE-B (hex 65-C8 = decimal 101-200)
-    // and so on...
-    if (numPart >= 0x01 && numPart <= 0x64) return "A";   // 1-100
-    if (numPart >= 0x65 && numPart <= 0xC8) return "B";   // 101-200
-    if (numPart >= 0xC9 && numPart <= 0x12C) return "C";  // 201-300
-    if (numPart >= 0x12D && numPart <= 0x190) return "D"; // 301-400
-    if (numPart >= 0x191 && numPart <= 0x1F4) return "E"; // 401-500
-    if (numPart >= 0x1F5 && numPart <= 0x258) return "F"; // 501-600
-    if (numPart >= 0x259 && numPart <= 0x2BC) return "G"; // 601-700
-
-    return "B"; // Default fallback
+    const numPart = parseInt(hexPart, 16);
+    if (numPart >= 0x01 && numPart <= 0x64) return "A";
+    if (numPart >= 0x65 && numPart <= 0xC8) return "B";
+    if (numPart >= 0xC9 && numPart <= 0x12C) return "C";
+    if (numPart >= 0x12D && numPart <= 0x190) return "D";
+    if (numPart >= 0x191 && numPart <= 0x1F4) return "E";
+    if (numPart >= 0x1F5 && numPart <= 0x258) return "F";
+    if (numPart >= 0x259 && numPart <= 0x2BC) return "G";
+    return "B";
   };
 
-  // Fetch assignments for the student based on their section
+  // Fetch assignments for the student based on their section + filters
   const fetchAssignments = async () => {
     try {
       setLoading(true);
@@ -104,11 +131,12 @@ const StudentAssignments = () => {
         return;
       }
 
-      // Determine section from roll number
       const section = getSectionFromRollNumber(studentId);
-      console.log(`[Assignments] Student ${studentId} belongs to Section ${section}`);
-
-      const data = await getStudentAssignments(section, studentId);
+      const data = await getStudentAssignments(section, studentId, {
+        degree,
+        semester,
+        year,
+      });
       setAssignments(data);
     } catch (error) {
       console.error("Error fetching assignments:", error);
@@ -122,7 +150,10 @@ const StudentAssignments = () => {
     if (userData?.collegeId) {
       fetchAssignments();
     }
-  }, [userData?.collegeId]);
+  }, [userData?.collegeId, degree, year, semester]);
+
+  // All filtering is done server-side (degree + year + semester + section)
+  const filteredAssignments = assignments;
 
   // Handle file selection and upload
   const handleFileSelection = async (
@@ -151,14 +182,6 @@ const StudentAssignments = () => {
 
       // Convert file to base64
       const base64Data = await fileToBase64(file);
-
-      console.log("[Assignment] Submitting:", {
-        assignmentId,
-        studentId: userData?.collegeId,
-        studentName,
-        fileName: file.name,
-        fileSize: file.size,
-      });
 
       // Submit to backend
       await submitAssignment(assignmentId, {
@@ -255,25 +278,58 @@ const StudentAssignments = () => {
           </div>
         </div>
 
+        {/* Top Filters — matching /student/results exactly */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Select name="degree" value={degree} onValueChange={setDegree}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Degree" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Major">Major</SelectItem>
+              <SelectItem value="Minor">Minor</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select name="year" value={year} onValueChange={setYear}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Year" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="I Year">I Year</SelectItem>
+              <SelectItem value="II Year">II Year</SelectItem>
+              <SelectItem value="III Year">III Year</SelectItem>
+              <SelectItem value="IV Year">IV Year</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select name="semester" value={semester} onValueChange={setSemester}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Semester" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Semester-I">Semester-I</SelectItem>
+              <SelectItem value="Semester-II">Semester-II</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
-        ) : assignments.length === 0 ? (
-          <Card>
+        ) : filteredAssignments.length === 0 ? (
+          <Card className="border shadow-none bg-card/50">
             <CardContent className="py-12 text-center">
-              <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">
-                No Assignments Yet
-              </h3>
-              <p className="text-muted-foreground">
-                You don't have any assignments assigned to you yet.
+              <FileText className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+              <h3 className="text-lg font-medium mb-2">No Assignments Found</h3>
+              <p className="text-muted-foreground text-sm">
+                No assignments match your selected Degree, Year, and Semester combination.
               </p>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-4">
-            {assignments.map((assignment) => (
+            {filteredAssignments.map((assignment) => (
               <Card
                 key={assignment._id}
                 className="hover:shadow-md transition-shadow border-border/50"
@@ -339,6 +395,19 @@ const StudentAssignments = () => {
                         onChange={(e) => handleFileSelection(assignment._id, e)}
                       />
 
+                      {/* View Button — opens description modal */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setViewAssignment(assignment);
+                          setViewModalOpen(true);
+                        }}
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        View
+                      </Button>
+
                       {/* Submit/Resubmit Button */}
                       <Button
                         size="sm"
@@ -393,6 +462,53 @@ const StudentAssignments = () => {
             ))}
           </div>
         )}
+
+        {/* View Assignment Modal */}
+        <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
+          <DialogContent className="sm:max-w-[550px]">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold">
+                {viewAssignment?.title}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-2">
+              <div className="flex items-center gap-2 text-sm text-primary">
+                <FileText className="w-4 h-4" />
+                {viewAssignment?.course}
+                {viewAssignment?.courseCode && ` (${viewAssignment.courseCode})`}
+              </div>
+
+              <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
+                <h4 className="text-sm font-medium text-foreground mb-2">Description</h4>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {viewAssignment?.description || "No description provided."}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Calendar className="w-4 h-4" />
+                  <span>Due: {viewAssignment?.dueDate ? formatDate(viewAssignment.dueDate) : '-'}</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <FileText className="w-4 h-4" />
+                  <span>Max Marks: {viewAssignment?.maxMarks}</span>
+                </div>
+              </div>
+
+              {viewAssignment?.feedback && (
+                <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
+                  <p className="text-sm font-medium text-foreground mb-1">
+                    Faculty Feedback:
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {viewAssignment.feedback}
+                  </p>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </StudentLayout>
   );

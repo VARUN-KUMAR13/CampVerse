@@ -81,8 +81,8 @@ export const useAI = () => {
             setInitialSuggestions(data.suggestions);
           }
         }
-      } catch (err) {
-        console.warn('Failed to fetch initial suggestions:', err);
+      } catch {
+        // Silently fall back to hardcoded suggestions when backend is unavailable
       } finally {
         initRef.current = true;
         fetchingRef.current = false;

@@ -33,7 +33,7 @@
             ".write": "auth != null"
         },
         "notifications": {
-            ".read": "auth != null",
+            ".read": true,
             ".write": "auth != null"
         },
         "schedules": {

@@ -30,6 +30,7 @@ import {
   Star,
   UsersRound,
   CheckCircle,
+  XCircle,
 } from "lucide-react";
 
 const StudentClubs = () => {
@@ -44,6 +45,18 @@ const StudentClubs = () => {
   const isJoined = (club: any) => {
     if (!userData?.collegeId || !club.joinedStudents) return false;
     return club.joinedStudents.includes(userData.collegeId);
+  };
+
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
+
+  const toggleExpand = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedCards(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const isPastDeadline = (deadline?: string) => {
+    if (!deadline) return false;
+    return new Date(deadline) < new Date();
   };
 
   useEffect(() => {
@@ -161,6 +174,7 @@ const StudentClubs = () => {
                 </div>
               </div>
               <Select
+                name="clubCategory"
                 value={categoryFilter}
                 onValueChange={setCategoryFilter}
               >
@@ -178,6 +192,7 @@ const StudentClubs = () => {
                 </SelectContent>
               </Select>
               <Select
+                name="clubStatus"
                 value={statusFilter}
                 onValueChange={setStatusFilter}
               >
@@ -195,14 +210,7 @@ const StudentClubs = () => {
           </CardContent>
         </Card>
 
-        {/* Error Display */}
-        {error && (
-          <Card className="border-destructive bg-destructive/10">
-            <CardContent className="p-4 text-destructive">
-              {error}
-            </CardContent>
-          </Card>
-        )}
+
 
         {/* Loading State */}
         {loading && clubs.length === 0 && (
@@ -238,7 +246,7 @@ const StudentClubs = () => {
               filteredClubs.map((club) => (
                 <Card
                   key={club._id}
-                  className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                  className="flex flex-col h-full min-h-[420px] hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
@@ -261,9 +269,14 @@ const StudentClubs = () => {
                         </div>
                       </div>
                       {isJoined(club) ? (
-                        <Button size="sm" disabled className="bg-primary">
+                        <Button size="sm" disabled className="bg-green-600 hover:bg-green-700 opacity-100 disabled:opacity-100 cursor-default text-white">
                           <CheckCircle className="w-4 h-4 mr-1" />
                           Joined
+                        </Button>
+                      ) : isPastDeadline(club.recruitmentDeadline) ? (
+                        <Button size="sm" disabled className="bg-destructive hover:bg-destructive opacity-100 disabled:opacity-100 cursor-default text-destructive-foreground">
+                          <XCircle className="w-4 h-4 mr-1" />
+                          Joining Closed
                         </Button>
                       ) : club.recruitmentStatus === "Open" && (
                         <Button
@@ -284,10 +297,20 @@ const StudentClubs = () => {
                       {getRecruitmentBadge(club.recruitmentStatus)}
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-sm text-muted-foreground line-clamp-3">
-                      {club.description}
-                    </p>
+                  <CardContent className="space-y-4 flex-1 flex flex-col">
+                    <div>
+                      <p className={`text-sm text-muted-foreground ${expandedCards[club._id] ? '' : 'line-clamp-3'}`}>
+                        {club.description}
+                      </p>
+                      {club.description && club.description.length > 100 && (
+                        <button
+                          onClick={(e) => toggleExpand(club._id, e)}
+                          className="text-primary text-xs hover:underline mt-1 bg-transparent border-none p-0 cursor-pointer"
+                        >
+                          {expandedCards[club._id] ? 'Show less' : 'Read more'}
+                        </button>
+                      )}
+                    </div>
 
                     {/* Stats */}
                     <div className="grid grid-cols-3 gap-4 py-3 border-y">
@@ -357,7 +380,7 @@ const StudentClubs = () => {
                     )}
 
                     {/* Actions */}
-                    <div className="flex gap-2 pt-2">
+                    <div className="flex gap-2 pt-4 border-t mt-auto">
                       <Button size="sm" className="flex-1">
                         View Details
                         <ExternalLink className="w-3 h-3 ml-1" />

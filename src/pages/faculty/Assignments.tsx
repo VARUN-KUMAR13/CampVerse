@@ -98,9 +98,11 @@ const FacultyAssignments = () => {
     courseCode: "",
     dueDate: "",
     maxMarks: 100,
-    year: "2022",
+    degree: "Major",
+    year: "IV Year",
+    semester: "Semester-I",
     branch: "CSE",
-    section: "B",
+    section: "",
   });
 
   // Fetch assignments - only fetch this faculty's assignments
@@ -129,8 +131,8 @@ const FacultyAssignments = () => {
 
   // Create assignment handler
   const handleCreateAssignment = async () => {
-    if (!formData.title || !formData.course || !formData.dueDate) {
-      toast.error("Please fill in all required fields");
+    if (!formData.title || !formData.course || !formData.dueDate || !formData.section) {
+      toast.error("Please fill in all required fields (including Section)");
       return;
     }
 
@@ -151,9 +153,11 @@ const FacultyAssignments = () => {
         courseCode: "",
         dueDate: "",
         maxMarks: 100,
-        year: "2022",
+        degree: "Major",
+        year: "IV Year",
+        semester: "Semester-I",
         branch: "CSE",
-        section: "B",
+        section: "",
       });
       fetchAssignments();
     } catch (error) {
@@ -349,7 +353,25 @@ const FacultyAssignments = () => {
                 </div>
 
                 {/* Student Category Selection */}
-                <div className="grid grid-cols-3 gap-4">
+                {/* Row 1: Degree + Year */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="degree">Degree *</Label>
+                    <Select
+                      value={formData.degree}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, degree: value })
+                      }
+                    >
+                      <SelectTrigger id="degree">
+                        <SelectValue placeholder="Select Degree" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Major">Major</SelectItem>
+                        <SelectItem value="Minor">Minor</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="grid gap-2">
                     <Label htmlFor="year">Year *</Label>
                     <Select
@@ -362,10 +384,31 @@ const FacultyAssignments = () => {
                         <SelectValue placeholder="Select Year" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="2022">2022 (4th Year)</SelectItem>
-                        <SelectItem value="2023">2023 (3rd Year)</SelectItem>
-                        <SelectItem value="2024">2024 (2nd Year)</SelectItem>
-                        <SelectItem value="2025">2025 (1st Year)</SelectItem>
+                        <SelectItem value="I Year">I Year</SelectItem>
+                        <SelectItem value="II Year">II Year</SelectItem>
+                        <SelectItem value="III Year">III Year</SelectItem>
+                        <SelectItem value="IV Year">IV Year</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Row 2: Semester + Branch */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="semester">Semester *</Label>
+                    <Select
+                      value={formData.semester}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, semester: value })
+                      }
+                    >
+                      <SelectTrigger id="semester">
+                        <SelectValue placeholder="Select Semester" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Semester-I">Semester-I</SelectItem>
+                        <SelectItem value="Semester-II">Semester-II</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -389,28 +432,19 @@ const FacultyAssignments = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="section">Section *</Label>
-                    <Select
-                      value={formData.section}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, section: value })
-                      }
-                    >
-                      <SelectTrigger id="section">
-                        <SelectValue placeholder="Select Section" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="A">Section A (01-64)</SelectItem>
-                        <SelectItem value="B">Section B (65-C8)</SelectItem>
-                        <SelectItem value="C">Section C (C9-12C)</SelectItem>
-                        <SelectItem value="D">Section D (12D-190)</SelectItem>
-                        <SelectItem value="E">Section E (191-1F4)</SelectItem>
-                        <SelectItem value="F">Section F (1F5-258)</SelectItem>
-                        <SelectItem value="G">Section G (259-2BC)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                </div>
+
+                {/* Row 3: Section (full width text input) */}
+                <div className="grid gap-2">
+                  <Label htmlFor="section">Section *</Label>
+                  <Input
+                    id="section"
+                    placeholder="e.g., B"
+                    value={formData.section}
+                    onChange={(e) =>
+                      setFormData({ ...formData, section: e.target.value.trim() })
+                    }
+                  />
                 </div>
               </div>
 

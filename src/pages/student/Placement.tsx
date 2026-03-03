@@ -148,13 +148,7 @@ const StudentPlacement = () => {
 
         </div>
 
-        {/* Error Alert */}
-        {error && (
-          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg">
-            <p className="font-medium">Error loading jobs</p>
-            <p className="text-sm">{error}</p>
-          </div>
-        )}
+
 
         {/* Filters */}
         <Card>
@@ -175,6 +169,7 @@ const StudentPlacement = () => {
                 </div>
               </div>
               <Select
+                name="jobType"
                 value={jobTypeFilter}
                 onValueChange={setJobTypeFilter}
               >
@@ -187,7 +182,7 @@ const StudentPlacement = () => {
                   <SelectItem value="internship">Internship</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select name="status" value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full md:w-[200px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -205,7 +200,7 @@ const StudentPlacement = () => {
         {/* Job Listings */}
         <div>
           <h2 className="text-xl font-semibold mb-4">All Opportunities</h2>
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid gap-6">
             {loading ? (
               // Loading skeleton
               <Card>
@@ -362,9 +357,9 @@ const StudentPlacement = () => {
                             Applied
                           </Button>
                         ) : job.status === "Closed" || (job.deadline && new Date(job.deadline) < new Date()) ? (
-                          <Button disabled className="bg-red-600 opacity-90 cursor-not-allowed">
+                          <Button disabled className="bg-destructive hover:bg-destructive opacity-100 disabled:opacity-100 cursor-default text-destructive-foreground">
                             <XCircle className="w-4 h-4 mr-2" />
-                            Not Applied
+                            Application Closed
                           </Button>
                         ) : job.eligible ? (
                           <Button

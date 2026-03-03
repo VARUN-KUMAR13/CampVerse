@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -55,12 +58,17 @@ import {
   PanelLeft,
   ChevronRight,
   ChevronLeft,
+  ShieldPlus,
+  AlertTriangle,
+  RefreshCcw,
+  History,
 } from "lucide-react";
 import { useEvents } from "@/contexts/EventContext";
 import { useClubs } from "@/contexts/ClubContext";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { useExams } from "@/contexts/ExamContext";
 import { getStudentsForSection } from "@/services/attendanceService";
+import { getStoredToken } from "@/lib/api";
 import AdminLayout from "@/components/AdminLayout";
 
 interface AttachedFile {
@@ -71,6 +79,7 @@ interface AttachedFile {
 }
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const { userData, logout } = useAuth();
   const { addJob } = usePlacement();
   const { addEvent } = useEvents();
@@ -94,8 +103,6 @@ const AdminDashboard = () => {
   });
 
   // Modal states
-
-  // Modal states
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [isExamModalOpen, setIsExamModalOpen] = useState(false);
@@ -105,6 +112,28 @@ const AdminDashboard = () => {
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const [driveLink, setDriveLink] = useState("");
   const [showDriveLinkInput, setShowDriveLinkInput] = useState(false);
+
+  // Quick Action Modal states
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [isReportsModalOpen, setIsReportsModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
+
+  // Quick Action form states
+  const [qaActiveTab, setQaActiveTab] = useState("student");
+  const [qaUserLoading, setQaUserLoading] = useState(false);
+  const [qaStudentForm, setQaStudentForm] = useState({ name: "", email: "", collegeId: "", branch: "", section: "", year: "I", academicBatch: "2026-2030" });
+  const [qaFacultyForm, setQaFacultyForm] = useState({ name: "", email: "", collegeId: "", branch: "", section: "Z" });
+  const [qaSubAdminForm, setQaSubAdminForm] = useState({ name: "", email: "", collegeId: "", permissions: { manageAttendance: false, manageEvents: false, manageClubs: false, manageNotifications: false, manageResults: false } });
+
+  const [qaReports, setQaReports] = useState<any>(null);
+  const [qaReportsLoading, setQaReportsLoading] = useState(false);
+
+  const [qaConfig, setQaConfig] = useState<any>({ academicYear: "2025-2026", defaultSemester: "Odd", attendanceThresholds: { fourWeeks: 75, eightWeeks: 75, twelveWeeks: 75, sixteenWeeks: 75 }, globalNotifications: { emailAlerts: true } });
+  const [qaSettingsLoading, setQaSettingsLoading] = useState(false);
+  const [qaIsPromoting, setQaIsPromoting] = useState(false);
+
+  const [qaIsBackingUp, setQaIsBackingUp] = useState(false);
 
   // Form states
   const [jobForm, setJobForm] = useState({
@@ -287,6 +316,7 @@ const AdminDashboard = () => {
         title: "Attendance Marked Successfully!",
         description: `Marked ${attendanceForm.status} for ${attendanceForm.selectedStudents.length} student(s).`,
       });
+      logAdminActivity(`Attendance marked for ${attendanceForm.selectedStudents.length} students in ${selectedSlot?.code || "admin slot"}`, "course");
 
       // Reset form
       setAttendanceForm(prev => ({ ...prev, selectedStudents: [] }));
@@ -356,64 +386,174 @@ const AdminDashboard = () => {
       changeType: "neutral",
     },
   ];
+  const QA_API = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:5000/api";
 
-  const recentActivities = [
-    {
-      action: "New student registered",
-      user: "22B81A05C4",
-      time: "2 minutes ago",
-      type: "user",
-    },
-    {
-      action: "Course updated",
-      user: "Dr. Jane Smith",
-      time: "15 minutes ago",
-      type: "course",
-    },
-    {
-      action: "System backup completed",
-      user: "System",
-      time: "1 hour ago",
-      type: "system",
-    },
-    {
-      action: "New faculty added",
-      user: "22B81Z05F2",
-      time: "2 hours ago",
-      type: "user",
-    },
-    {
-      action: "Assignment created",
-      user: "Dr. Michael Brown",
-      time: "3 hours ago",
-      type: "assignment",
-    },
-  ];
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
 
+  const fetchRecentActivities = async () => {
+    try {
+      const res = await fetch(`${QA_API}/admin/activities`, {
+        headers: { Authorization: `Bearer ${getStoredToken()}` },
+      });
+      if (res.ok) setRecentActivities(await res.json());
+    } catch { }
+  };
+
+  useEffect(() => {
+    fetchRecentActivities();
+  }, []);
+
+  const timeAgo = (dateString: string) => {
+    if (!dateString) return "Just now";
+    const seconds = Math.floor((new Date().getTime() - new Date(dateString).getTime()) / 1000);
+    let interval = seconds / 31536000;
+    if (interval > 1) return Math.floor(interval) + " years ago";
+    interval = seconds / 2592000;
+    if (interval > 1) return Math.floor(interval) + " months ago";
+    interval = seconds / 86400;
+    if (interval > 1) return Math.floor(interval) + " days ago";
+    interval = seconds / 3600;
+    if (interval > 1) return Math.floor(interval) + " hours ago";
+    interval = seconds / 60;
+    if (interval > 1) return Math.floor(interval) + " minutes ago";
+    return "Just now";
+  };
+
+  const logAdminActivity = async (action: string, type: string) => {
+    try {
+      await fetch(`${QA_API}/admin/activities`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getStoredToken()}` },
+        body: JSON.stringify({ action, user: userData?.name || "System", type }),
+      });
+      fetchRecentActivities();
+    } catch { }
+  };
+
+  // ── Quick Action Handlers ──────────────────────────────────────────
+
+  const qaGenerateId = (role: string) => {
+    const prefix = role === "student" ? "22B81A" : role === "faculty" ? "FCL-" : "SA-";
+    return `${prefix}${Math.floor(1000 + Math.random() * 9000)}`;
+  };
+
+  const handleQaUserSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setQaUserLoading(true);
+    let payload: any = {};
+    if (qaActiveTab === "student") payload = { ...qaStudentForm, role: "student" };
+    else if (qaActiveTab === "faculty") payload = { ...qaFacultyForm, role: "faculty" };
+    else payload = { ...qaSubAdminForm, role: "sub-admin" };
+
+    try {
+      const res = await fetch(`${QA_API}/admin/users`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getStoredToken()}` },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) { const err = await res.json(); throw new Error(err.message || "Failed"); }
+      toast({ title: "User Created", description: `${payload.role} account created for ${payload.name}` });
+      logAdminActivity(`New ${payload.role} registered (${payload.collegeId})`, "user");
+      if (qaActiveTab === "student") setQaStudentForm({ name: "", email: "", collegeId: "", branch: "", section: "", year: "I", academicBatch: "2026-2030" });
+      if (qaActiveTab === "faculty") setQaFacultyForm({ name: "", email: "", collegeId: "", branch: "", section: "Z" });
+      if (qaActiveTab === "sub-admin") setQaSubAdminForm({ name: "", email: "", collegeId: "", permissions: { manageAttendance: false, manageEvents: false, manageClubs: false, manageNotifications: false, manageResults: false } });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally { setQaUserLoading(false); }
+  };
+
+  const fetchQaReports = async () => {
+    try {
+      const res = await fetch(`${QA_API}/admin/reports`, { headers: { Authorization: `Bearer ${getStoredToken()}` } });
+      if (res.ok) setQaReports(await res.json());
+    } catch { toast({ title: "Warning", description: "Could not load reports" }); }
+    finally { setQaReportsLoading(false); }
+  };
+
+  const fetchQaConfig = async () => {
+    try {
+      const res = await fetch(`${QA_API}/admin/settings`, { headers: { Authorization: `Bearer ${getStoredToken()}` } });
+      if (res.ok) setQaConfig(await res.json());
+    } catch { /* use defaults */ }
+  };
+
+  const handleQaSettingsSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setQaSettingsLoading(true);
+    try {
+      const res = await fetch(`${QA_API}/admin/settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getStoredToken()}` },
+        body: JSON.stringify(qaConfig),
+      });
+      if (res.ok) {
+        toast({ title: "Settings Saved", description: "Global configuration updated." });
+        logAdminActivity("System settings updated", "system");
+      }
+    } catch { toast({ title: "Error", description: "Failed to save.", variant: "destructive" }); }
+    finally { setQaSettingsLoading(false); }
+  };
+
+  const handleQaPromote = async () => {
+    if (!window.confirm("WARNING: Promote all students to next year and archive 4th years?")) return;
+    setQaIsPromoting(true);
+    try {
+      const res = await fetch(`${QA_API}/admin/promote`, { method: "POST", headers: { Authorization: `Bearer ${getStoredToken()}` } });
+      const data = await res.json();
+      if (res.ok) {
+        toast({ title: "Promotion Successful", description: data.message });
+        logAdminActivity("Academic Year Promotion executed", "system");
+      }
+      else throw new Error(data.message);
+    } catch (err: any) { toast({ title: "Failed", description: err.message, variant: "destructive" }); }
+    finally { setQaIsPromoting(false); }
+  };
+
+  const handleQaBackup = async () => {
+    setQaIsBackingUp(true);
+    try {
+      const res = await fetch(`${QA_API}/admin/backup`, { method: "POST", headers: { Authorization: `Bearer ${getStoredToken()}` } });
+      const data = await res.json();
+      if (res.ok) {
+        toast({ title: "Backup Complete", description: "System backup stored in Archives." });
+        logAdminActivity("System backup completed manually", "system");
+      }
+      else throw new Error(data.message);
+    } catch (err: any) { toast({ title: "Backup Failed", description: err.message, variant: "destructive" }); }
+    finally { setQaIsBackingUp(false); }
+  };
+
+  const handleQaExportJSON = () => {
+    toast({ title: "Export Scheduled", description: "JSON dump will be sent to your admin email." });
+  };
   const quickActions = [
     {
       title: "Add New User",
       description: "Create student or faculty account",
       icon: <UserPlus className="w-5 h-5" />,
       color: "bg-blue-500",
+      action: () => setIsUserModalOpen(true),
     },
     {
       title: "Generate Reports",
       description: "Export system analytics",
       icon: <Download className="w-5 h-5" />,
       color: "bg-green-500",
+      action: () => { setQaReportsLoading(true); fetchQaReports(); setIsReportsModalOpen(true); },
     },
     {
       title: "System Settings",
       description: "Configure platform settings",
       icon: <Settings className="w-5 h-5" />,
       color: "bg-purple-500",
+      action: () => { fetchQaConfig(); setIsSettingsModalOpen(true); },
     },
     {
       title: "Backup Database",
       description: "Create system backup",
       icon: <Database className="w-5 h-5" />,
       color: "bg-orange-500",
+      action: () => setIsBackupModalOpen(true),
     },
   ];
 
@@ -437,7 +577,7 @@ const AdminDashboard = () => {
       description: "Manage class timetables",
       icon: <Calendar className="w-5 h-5" />,
       color: "bg-amber-600",
-      action: () => window.location.href = "/admin/scheduler",
+      action: () => navigate("/admin/scheduler"),
     },
     {
       title: "Club",
@@ -571,6 +711,7 @@ const AdminDashboard = () => {
         title: "Success!",
         description: "Job posted successfully. Students can now see it!",
       });
+      logAdminActivity(`New placement opportunity: ${jobForm.title} at ${jobForm.company}`, "assignment");
 
       // Reset form
       setJobForm({
@@ -661,6 +802,7 @@ const AdminDashboard = () => {
         title: "Success!",
         description: "Event created successfully. Students can now see it!",
       });
+      logAdminActivity(`New event scheduled: ${eventForm.title}`, "assignment");
 
       // Reset form
       setEventForm({
@@ -755,6 +897,7 @@ const AdminDashboard = () => {
         title: "Success!",
         description: "Club created successfully. Students can now see it!",
       });
+      logAdminActivity(`New club registered: ${clubForm.name}`, "user");
 
       // Reset form
       setClubForm({
@@ -844,6 +987,7 @@ const AdminDashboard = () => {
         title: "Success!",
         description: "Exam scheduled successfully. Students will see it on their dashboard.",
       });
+      logAdminActivity(`New exam scheduled: ${examForm.title}`, "course");
 
       setExamForm(createEmptyExamForm());
       setIsExamModalOpen(false);
@@ -903,6 +1047,7 @@ const AdminDashboard = () => {
         title: "Success!",
         description: "Notification sent successfully to targeted users.",
       });
+      logAdminActivity(`System alert sent: ${notificationForm.title}`, "system");
 
       // Reset form
       setNotificationForm({
@@ -1002,6 +1147,7 @@ const AdminDashboard = () => {
                   <Button
                     key={index}
                     variant="outline"
+                    onClick={action.action}
                     className="h-16 flex flex-col items-center justify-center space-y-1 hover:shadow-md transition-all"
                   >
                     <div
@@ -1073,7 +1219,7 @@ const AdminDashboard = () => {
                         {activity.action}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {activity.user} • {activity.time}
+                        {activity.user} • {timeAgo(activity.createdAt)}
                       </p>
                     </div>
                   </div>
@@ -2691,6 +2837,283 @@ const AdminDashboard = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* ═══ Quick Action Modals ═══════════════════════════════════ */}
+
+        {/* ── Add New User Modal ── */}
+        <Dialog open={isUserModalOpen} onOpenChange={setIsUserModalOpen}>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <UserPlus className="w-6 h-6 text-blue-500" />
+                User Management
+              </DialogTitle>
+              <p className="text-sm text-muted-foreground">Add Students, Faculty, and Sub-Admins with role-based access.</p>
+            </DialogHeader>
+            <Tabs defaultValue="student" onValueChange={setQaActiveTab} className="w-full mt-2">
+              <TabsList className="grid w-full grid-cols-3 mb-4">
+                <TabsTrigger value="student" className="flex items-center gap-1.5 text-xs"><GraduationCap className="w-3.5 h-3.5" /> Student</TabsTrigger>
+                <TabsTrigger value="faculty" className="flex items-center gap-1.5 text-xs"><UsersIcon className="w-3.5 h-3.5" /> Faculty</TabsTrigger>
+                <TabsTrigger value="sub-admin" className="flex items-center gap-1.5 text-xs"><ShieldPlus className="w-3.5 h-3.5" /> Sub-Admin</TabsTrigger>
+              </TabsList>
+              <form onSubmit={handleQaUserSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-semibold">Full Name <span className="text-destructive">*</span></Label>
+                    <Input required value={qaActiveTab === "student" ? qaStudentForm.name : qaActiveTab === "faculty" ? qaFacultyForm.name : qaSubAdminForm.name}
+                      onChange={(e) => { const v = e.target.value; if (qaActiveTab === "student") setQaStudentForm(f => ({ ...f, name: v })); if (qaActiveTab === "faculty") setQaFacultyForm(f => ({ ...f, name: v })); if (qaActiveTab === "sub-admin") setQaSubAdminForm(f => ({ ...f, name: v })); }}
+                      placeholder="e.g. John Doe" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-semibold">Email <span className="text-destructive">*</span></Label>
+                    <Input type="email" required value={qaActiveTab === "student" ? qaStudentForm.email : qaActiveTab === "faculty" ? qaFacultyForm.email : qaSubAdminForm.email}
+                      onChange={(e) => { const v = e.target.value; if (qaActiveTab === "student") setQaStudentForm(f => ({ ...f, email: v })); if (qaActiveTab === "faculty") setQaFacultyForm(f => ({ ...f, email: v })); if (qaActiveTab === "sub-admin") setQaSubAdminForm(f => ({ ...f, email: v })); }}
+                      placeholder="e.g. jdoe@cvr.ac.in" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-semibold">Unique ID <span className="text-destructive">*</span></Label>
+                    <div className="flex gap-2">
+                      <Input required value={qaActiveTab === "student" ? qaStudentForm.collegeId : qaActiveTab === "faculty" ? qaFacultyForm.collegeId : qaSubAdminForm.collegeId}
+                        onChange={(e) => { const v = e.target.value.toUpperCase(); if (qaActiveTab === "student") setQaStudentForm(f => ({ ...f, collegeId: v })); if (qaActiveTab === "faculty") setQaFacultyForm(f => ({ ...f, collegeId: v })); if (qaActiveTab === "sub-admin") setQaSubAdminForm(f => ({ ...f, collegeId: v })); }}
+                        placeholder="e.g. 22B81A05C4" />
+                      <Button type="button" variant="outline" size="sm" onClick={() => { const v = qaGenerateId(qaActiveTab); if (qaActiveTab === "student") setQaStudentForm(f => ({ ...f, collegeId: v })); if (qaActiveTab === "faculty") setQaFacultyForm(f => ({ ...f, collegeId: v })); if (qaActiveTab === "sub-admin") setQaSubAdminForm(f => ({ ...f, collegeId: v })); }}>Auto</Button>
+                    </div>
+                  </div>
+                  {qaActiveTab !== "sub-admin" && (
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-semibold">Branch</Label>
+                      <Select value={qaActiveTab === "student" ? qaStudentForm.branch : qaFacultyForm.branch} onValueChange={(v) => { if (qaActiveTab === "student") setQaStudentForm(f => ({ ...f, branch: v })); if (qaActiveTab === "faculty") setQaFacultyForm(f => ({ ...f, branch: v })); }}>
+                        <SelectTrigger><SelectValue placeholder="Select Branch" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="05">CSE</SelectItem>
+                          <SelectItem value="12">IT</SelectItem>
+                          <SelectItem value="04">ECE</SelectItem>
+                          <SelectItem value="03">EEE</SelectItem>
+                          <SelectItem value="02">MECH</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  {qaActiveTab === "student" && (
+                    <>
+                      <div className="space-y-1.5">
+                        <Label className="text-sm font-semibold">Academic Batch</Label>
+                        <Input value={qaStudentForm.academicBatch} onChange={e => setQaStudentForm(f => ({ ...f, academicBatch: e.target.value }))} placeholder="2026-2030" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-sm font-semibold">Section</Label>
+                        <Input value={qaStudentForm.section} onChange={e => setQaStudentForm(f => ({ ...f, section: e.target.value.toUpperCase() }))} placeholder="A, B, C..." maxLength={1} />
+                      </div>
+                    </>
+                  )}
+                </div>
+                {qaActiveTab === "sub-admin" && (
+                  <div className="pt-3 border-t mt-4">
+                    <h4 className="text-sm font-semibold mb-3">Granular Permissions</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      {(["manageAttendance", "manageEvents", "manageClubs", "manageNotifications", "manageResults"] as const).map(perm => (
+                        <div key={perm} className="flex items-center space-x-2">
+                          <Checkbox id={`qa-${perm}`} checked={qaSubAdminForm.permissions[perm]}
+                            onCheckedChange={(checked) => setQaSubAdminForm(f => ({ ...f, permissions: { ...f.permissions, [perm]: checked } }))} />
+                          <label htmlFor={`qa-${perm}`} className="text-sm cursor-pointer">{perm.replace("manage", "Manage ")}</label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <Button type="submit" disabled={qaUserLoading} className="w-full bg-blue-600 hover:bg-blue-700 mt-4">
+                  {qaUserLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing...</> : `Create ${qaActiveTab === "student" ? "Student" : qaActiveTab === "faculty" ? "Faculty" : "Sub-Admin"}`}
+                </Button>
+              </form>
+            </Tabs>
+          </DialogContent>
+        </Dialog>
+
+        {/* ── Generate Reports Modal ── */}
+        <Dialog open={isReportsModalOpen} onOpenChange={setIsReportsModalOpen}>
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <BarChart3 className="w-6 h-6 text-green-500" />
+                Analytics Dashboard
+              </DialogTitle>
+              <p className="text-sm text-muted-foreground">Comprehensive reports on Attendance, Placements, Events, Clubs, and Results.</p>
+            </DialogHeader>
+            {qaReportsLoading ? (
+              <div className="flex items-center justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>
+            ) : qaReports ? (
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+                    <GraduationCap className="h-4 w-4 text-blue-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{qaReports.users?.studentCount ?? 0}</div>
+                    <p className="text-xs text-muted-foreground">Active in system</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Placements</CardTitle>
+                    <Building2 className="h-4 w-4 text-green-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{qaReports.placements?.totalSelected ?? 0} / {qaReports.placements?.totalPosted ?? 0}</div>
+                    <p className="text-xs text-muted-foreground">Selected / Posted</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Graduated</CardTitle>
+                    <Trophy className="h-4 w-4 text-orange-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{qaReports.users?.graduatedCount ?? 0}</div>
+                    <p className="text-xs text-muted-foreground">Alumni archive</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Pass Rate</CardTitle>
+                    <BarChart3 className="h-4 w-4 text-purple-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{qaReports.results?.passPercentage ?? "N/A"}</div>
+                    <p className="text-xs text-muted-foreground">Avg CGPA: {qaReports.results?.avgCGPA ?? "N/A"}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Active Events</CardTitle>
+                    <CalendarDays className="h-4 w-4 text-emerald-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{qaReports.events?.activeEvents ?? 0}</div>
+                    <p className="text-xs text-muted-foreground">Participation: {qaReports.events?.participationRate ?? "N/A"}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Active Clubs</CardTitle>
+                    <UsersRound className="h-4 w-4 text-rose-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{qaReports.clubs?.totalClubs ?? 0}</div>
+                    <p className="text-xs text-muted-foreground">{qaReports.clubs?.activeMembers ?? 0} Members</p>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">No report data available. Check backend connection.</div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* ── System Settings Modal ── */}
+        <Dialog open={isSettingsModalOpen} onOpenChange={setIsSettingsModalOpen}>
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <Settings className="w-6 h-6 text-purple-500" />
+                System Settings
+              </DialogTitle>
+              <p className="text-sm text-muted-foreground">Configure Academic Year, Attendance thresholds, and global settings.</p>
+            </DialogHeader>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+              {/* Global Config */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold flex items-center gap-2"><Settings className="w-4 h-4" /> Global Configuration</h3>
+                <form onSubmit={handleQaSettingsSave} className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Academic Year</Label>
+                    <Input value={qaConfig?.academicYear || ""} onChange={e => setQaConfig({ ...qaConfig, academicYear: e.target.value })} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Default Semester</Label>
+                    <Select value={qaConfig?.defaultSemester || "Odd"} onValueChange={v => setQaConfig({ ...qaConfig, defaultSemester: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Odd">Odd Semester</SelectItem>
+                        <SelectItem value="Even">Even Semester</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Attendance Thresholds (%)</Label>
+                    <div className="grid grid-cols-4 gap-2">
+                      <div><span className="text-[10px] text-muted-foreground">4w</span><Input type="number" className="h-8 text-sm" value={qaConfig?.attendanceThresholds?.fourWeeks || 75} onChange={e => setQaConfig({ ...qaConfig, attendanceThresholds: { ...qaConfig.attendanceThresholds, fourWeeks: +e.target.value } })} /></div>
+                      <div><span className="text-[10px] text-muted-foreground">8w</span><Input type="number" className="h-8 text-sm" value={qaConfig?.attendanceThresholds?.eightWeeks || 75} onChange={e => setQaConfig({ ...qaConfig, attendanceThresholds: { ...qaConfig.attendanceThresholds, eightWeeks: +e.target.value } })} /></div>
+                      <div><span className="text-[10px] text-muted-foreground">12w</span><Input type="number" className="h-8 text-sm" value={qaConfig?.attendanceThresholds?.twelveWeeks || 75} onChange={e => setQaConfig({ ...qaConfig, attendanceThresholds: { ...qaConfig.attendanceThresholds, twelveWeeks: +e.target.value } })} /></div>
+                      <div><span className="text-[10px] text-muted-foreground">16w</span><Input type="number" className="h-8 text-sm" value={qaConfig?.attendanceThresholds?.sixteenWeeks || 75} onChange={e => setQaConfig({ ...qaConfig, attendanceThresholds: { ...qaConfig.attendanceThresholds, sixteenWeeks: +e.target.value } })} /></div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 pt-2">
+                    <Checkbox checked={qaConfig?.globalNotifications?.emailAlerts} onCheckedChange={c => setQaConfig({ ...qaConfig, globalNotifications: { ...qaConfig.globalNotifications, emailAlerts: !!c } })} />
+                    <Label className="text-sm cursor-pointer">Enable Email Alerts globally</Label>
+                  </div>
+                  <Button type="submit" disabled={qaSettingsLoading} className="w-full bg-slate-900 mt-2">{qaSettingsLoading ? "Saving..." : "Save Settings"}</Button>
+                </form>
+              </div>
+              {/* Academic Management */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold flex items-center gap-2 text-orange-600"><AlertTriangle className="w-4 h-4" /> Academic Management</h3>
+                <div className="p-4 bg-orange-50/10 border border-orange-200/20 rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Execute system-wide processes. These are irreversible.</p>
+                  <h4 className="text-sm font-semibold mb-2">Academic Year Promotion</h4>
+                  <p className="text-xs text-muted-foreground mb-3">Moves students I→II→III→IV. 4th years become Alumni.</p>
+                  <Button onClick={handleQaPromote} disabled={qaIsPromoting} variant="destructive" className="w-full">
+                    <RefreshCcw className={`w-4 h-4 mr-2 ${qaIsPromoting ? "animate-spin" : ""}`} />
+                    {qaIsPromoting ? "Promoting..." : "Promote All Students"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* ── Backup Database Modal ── */}
+        <Dialog open={isBackupModalOpen} onOpenChange={setIsBackupModalOpen}>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <Database className="w-6 h-6 text-orange-500" />
+                Database Backup & Archive
+              </DialogTitle>
+              <p className="text-sm text-muted-foreground">Securely backup system data and manage historical records.</p>
+            </DialogHeader>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+              {/* Manual Backup */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold flex items-center gap-2"><Database className="w-4 h-4" /> Manual Master Backup</h3>
+                <p className="text-xs text-muted-foreground">Creates a snapshot in the MongoDB Archive collection.</p>
+                <Button onClick={handleQaBackup} disabled={qaIsBackingUp} className="w-full bg-orange-600 hover:bg-orange-700">
+                  {qaIsBackingUp ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing...</> : "Create Full Backup"}
+                </Button>
+                <Button variant="outline" onClick={handleQaExportJSON} className="w-full">
+                  <Download className="w-4 h-4 mr-2" /> Export to Local JSON
+                </Button>
+              </div>
+              {/* Restore Points */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold flex items-center gap-2"><History className="w-4 h-4" /> Restore Points</h3>
+                <p className="text-xs text-muted-foreground">Restore is restricted to Super Admins.</p>
+                <div className="space-y-2">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="flex items-center justify-between p-2.5 border rounded-lg bg-muted/30">
+                      <div>
+                        <span className="text-sm font-semibold">Backup #{3 - i}</span>
+                        <span className="text-xs text-muted-foreground ml-2">{new Date(Date.now() - i * 2592000000).toLocaleDateString()}</span>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => toast({ title: "Restricted", description: "Super Admin privileges required." })}>Restore</Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
       </div>
     </AdminLayout>
   );

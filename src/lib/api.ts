@@ -63,9 +63,7 @@ export const api = {
         });
         if (!response.ok) {
             if (response.status === 401) {
-                console.error("Unauthorized API call - token may be expired");
-                // Clear invalid token
-                clearAuthToken();
+                console.warn("Unauthorized API call - token may be expired or missing");
             }
             throw new Error(`API Error: ${response.statusText}`);
         }

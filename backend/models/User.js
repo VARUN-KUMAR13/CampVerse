@@ -42,23 +42,23 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["student", "faculty", "admin"],
+      enum: ["student", "faculty", "admin", "sub-admin"],
       required: true,
     },
     year: {
       type: String,
       required: function () {
-        return this.role !== "admin";
+        return this.role !== "admin" && this.role !== "sub-admin";
       },
     },
     section: {
       type: String,
       required: function () {
-        return this.role !== "admin";
+        return this.role !== "admin" && this.role !== "sub-admin";
       },
       validate: {
         validator: function (v) {
-          if (this.role === "admin") return true;
+          if (this.role === "admin" || this.role === "sub-admin") return true;
           if (this.role === "faculty") return v === "Z";
           return /^[A-G]$/.test(v); // Students: A-G, Faculty: Z
         },
@@ -68,11 +68,11 @@ const userSchema = new mongoose.Schema(
     branch: {
       type: String,
       required: function () {
-        return this.role !== "admin";
+        return this.role !== "admin" && this.role !== "sub-admin";
       },
       validate: {
         validator: function (v) {
-          if (this.role === "admin") return true;
+          if (this.role === "admin" || this.role === "sub-admin") return true;
           // Accept either 2-digit codes or branch names
           const validCodes = /^[0-9]{2}$/.test(v);
           const validNames = [
@@ -96,7 +96,7 @@ const userSchema = new mongoose.Schema(
     rollNumber: {
       type: String,
       required: function () {
-        return this.role !== "admin";
+        return this.role !== "admin" && this.role !== "sub-admin";
       },
     },
     isActive: {
@@ -114,7 +114,19 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    // Sub-Admin Permissions
+    permissions: {
+      manageAttendance: { type: Boolean, default: false },
+      manageEvents: { type: Boolean, default: false },
+      manageClubs: { type: Boolean, default: false },
+      manageNotifications: { type: Boolean, default: false },
+      manageResults: { type: Boolean, default: false },
+    },
+    // Academic Lifecycle Fields
+    academicBatch: { type: String, default: "" }, // e.g. "2022-2026"
+    isGraduated: { type: Boolean, default: false },
     // Extended Profile Fields
+    degree: { type: String, default: "B.Tech" }, // Major/Minor
     phone: { type: String, default: "" },
     address: { type: String, default: "" },
     dateOfBirth: { type: String, default: "" }, // Format: YYYY-MM-DD
@@ -183,7 +195,7 @@ userSchema.virtual("branchInfo").get(function () {
 
 // Virtual for academic year
 userSchema.virtual("academicYear").get(function () {
-  if (this.role === "admin") return null;
+  if (this.role === "admin" || this.role === "sub-admin") return null;
   const currentYear = new Date().getFullYear();
   const joinYear = parseInt("20" + this.year);
   const yearDiff = currentYear - joinYear;

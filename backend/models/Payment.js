@@ -35,7 +35,6 @@ const paymentSchema = new mongoose.Schema({
     },
     feeType: {
         type: String,
-        enum: ['Academic', 'Hostel', 'Transport', 'Optional', 'Other'],
         default: 'Other'
     },
     feeDescription: {
