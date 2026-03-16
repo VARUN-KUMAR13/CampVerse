@@ -37,6 +37,7 @@ import {
   Sparkles,
   Calendar,
   Clock,
+  Edit2,
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -95,6 +96,8 @@ const FacultyCourses = () => {
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editCourseId, setEditCourseId] = useState<string | null>(null);
 
   // Form state
   const [courseCode, setCourseCode] = useState("");
@@ -137,6 +140,8 @@ const FacultyCourses = () => {
 
   // Reset form
   const resetForm = () => {
+    setIsEditing(false);
+    setEditCourseId(null);
     setCourseCode("");
     setCourseName("");
     setCredits("3");
@@ -206,7 +211,7 @@ const FacultyCourses = () => {
 
     try {
       setSubmitting(true);
-      const payload = {
+      const payload: any = {
         courseCode: courseCode.trim(),
         courseName: courseName.trim(),
         credits: Number(credits),
@@ -217,33 +222,67 @@ const FacultyCourses = () => {
           .map((o) => o.trim())
           .filter((o) => o.length > 0),
         syllabus: syllabus.filter((s) => s.topic.trim().length > 0),
-        resources: pendingFiles,
         facultyId: userData?.collegeId || "",
         facultyName: userData?.name || "Faculty",
         color: courseColor,
       };
 
-      const res = await fetch(`${API_BASE}/courses`, {
-        method: "POST",
+      let url = `${API_BASE}/courses`;
+      let method = "POST";
+
+      if (isEditing && editCourseId) {
+        url = `${API_BASE}/courses/${editCourseId}`;
+        method = "PUT";
+      } else {
+        payload.resources = pendingFiles;
+      }
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (res.ok) {
-        toast.success("Course added successfully!");
+        if (isEditing && editCourseId && pendingFiles.length > 0) {
+          for (const file of pendingFiles) {
+            await fetch(`${API_BASE}/courses/${editCourseId}/resources`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(file),
+            });
+          }
+        }
+
+        toast.success(isEditing ? "Course updated successfully!" : "Course added successfully!");
         setAddDialogOpen(false);
         resetForm();
         fetchCourses();
       } else {
         const err = await res.json();
-        toast.error(err.error || "Failed to add course");
+        toast.error(err.error || (isEditing ? "Failed to update course" : "Failed to add course"));
       }
     } catch (error) {
       console.error("Error adding course:", error);
-      toast.error("Failed to add course");
+      toast.error(isEditing ? "Failed to update course" : "Failed to add course");
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleEdit = (course: Course) => {
+    setIsEditing(true);
+    setEditCourseId(course._id);
+    setCourseCode(course.courseCode);
+    setCourseName(course.courseName);
+    setCredits(String(course.credits));
+    setMaxStudents(String(course.maxStudents));
+    setDescription(course.description || "");
+    setObjectives((course.objectives || []).join("\n"));
+    setSyllabus(course.syllabus?.length > 0 ? course.syllabus : [{ topic: "", duration: "" }]);
+    setCourseColor(course.color || COURSE_COLORS[0]);
+    setPendingFiles([]);
+    setAddDialogOpen(true);
   };
 
   // Delete course
@@ -345,7 +384,7 @@ const FacultyCourses = () => {
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-primary" />
-                  Add New Course
+                  {isEditing ? "Edit Course" : "Add New Course"}
                 </DialogTitle>
               </DialogHeader>
 
@@ -550,12 +589,12 @@ const FacultyCourses = () => {
                   {submitting ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Adding...
+                      {isEditing ? "Updating..." : "Adding..."}
                     </>
                   ) : (
                     <>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Course
+                      {isEditing ? <Edit2 className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                      {isEditing ? "Update Course" : "Add Course"}
                     </>
                   )}
                 </Button>
@@ -677,6 +716,13 @@ const FacultyCourses = () => {
                         >
                           <Eye className="w-4 h-4 mr-1" />
                           View
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(course)}
+                        >
+                          <Edit2 className="w-4 h-4 text-blue-500" />
                         </Button>
                         <Button
                           variant="ghost"

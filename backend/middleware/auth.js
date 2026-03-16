@@ -229,7 +229,7 @@ const validateBranchAccess = async (req, res, next) => {
 /**
  * Rate limiting middleware
  */
-const rateLimiter = (maxRequests = 100, timeWindow = 15 * 60 * 1000) => {
+const rateLimiter = (maxRequests = 1000, timeWindow = 15 * 60 * 1000) => {
   const requests = new Map();
 
   return (req, res, next) => {

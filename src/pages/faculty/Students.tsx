@@ -31,6 +31,7 @@ import {
   RefreshCw,
   Timer,
   CheckCheck,
+  Calendar
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -69,9 +70,14 @@ interface StudentAttendanceState {
 const FacultyStudents = () => {
   const { userData } = useAuth();
 
-  // Selection state
-  const [selectedCourse, setSelectedCourse] = useState("Linux Programming");
+  // Academic Selection State
+  const [selectedDegree, setSelectedDegree] = useState("Major");
+  const [selectedYear, setSelectedYear] = useState("25");
+  const [selectedSemester, setSelectedSemester] = useState("I");
+  const [selectedDepartment, setSelectedDepartment] = useState("05");
   const [selectedSection, setSelectedSection] = useState("B");
+  
+  const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
 
   // Time & Permission state
@@ -89,65 +95,35 @@ const FacultyStudents = () => {
   const [showLockWarning, setShowLockWarning] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
 
-  // Available courses - Based on your college curriculum
-  const courses = [
-    { code: "22CS401", name: "Linux Programming", section: "B" },
-    { code: "22HS301", name: "Business Economics and Financial Analysis", section: "B" },
-    { code: "22HS501", name: "Professional Elective-III", section: "B" },
-    { code: "22HS601", name: "Professional Elective-IV", section: "B" },
+  // Static Academic Option Definitions (matching your system)
+  const DEGREES = ["Major", "Minor"];
+  const YEARS = [
+    { value: "22", label: "I Year" },
+    { value: "23", label: "II Year" },
+    { value: "24", label: "III Year" },
+    { value: "25", label: "IV Year" }
   ];
-
-  // Today's slots - Based on your college timetable
-  const todaySlots: TimeSlot[] = [
-    {
-      id: "slot_1",
-      slotNumber: 1,
-      startTime: "09:00",
-      endTime: "12:10",
-      subjectCode: "22CS401",
-      subjectName: "Linux Programming",
-      facultyId: userData?.collegeId || "",
-      section: "B",
-      branch: "05",
-      year: "22",
-    },
-    {
-      id: "slot_2",
-      slotNumber: 2,
-      startTime: "12:10",
-      endTime: "13:10",
-      subjectCode: "22HS301",
-      subjectName: "Business Economics and Financial Analysis",
-      facultyId: userData?.collegeId || "",
-      section: "B",
-      branch: "05",
-      year: "22",
-    },
-    {
-      id: "slot_3",
-      slotNumber: 3,
-      startTime: "13:55",
-      endTime: "14:55",
-      subjectCode: "22HS501",
-      subjectName: "Professional Elective-III",
-      facultyId: userData?.collegeId || "",
-      section: "B",
-      branch: "05",
-      year: "22",
-    },
-    {
-      id: "slot_4",
-      slotNumber: 4,
-      startTime: "14:55",
-      endTime: "15:55",
-      subjectCode: "22HS601",
-      subjectName: "Professional Elective-IV",
-      facultyId: userData?.collegeId || "",
-      section: "B",
-      branch: "05",
-      year: "22",
-    },
+  const DEPARTMENTS = [
+    { value: "05", label: "CSE" },
+    { value: "08", label: "CSE (AI & ML)" },
+    { value: "07", label: "CSE (Data Science)" },
+    { value: "04", label: "ECE" },
+    { value: "02", label: "EEE" },
+    { value: "03", label: "Mechanical" },
+    { value: "01", label: "Civil" },
+    { value: "06", label: "IT" }
   ];
+  const SEMESTERS = [
+    { value: "I", label: "Semester I" },
+    { value: "II", label: "Semester II" },
+    { value: "III", label: "Semester III" },
+    { value: "IV", label: "Semester IV" },
+    { value: "V", label: "Semester V" },
+    { value: "VI", label: "Semester VI" },
+    { value: "VII", label: "Semester VII" },
+    { value: "VIII", label: "Semester VIII" }
+  ];
+  const SECTIONS = ["A", "B", "C", "D", "E", "F", "G"];
 
   // Sync server time
   useEffect(() => {
@@ -203,18 +179,75 @@ const FacultyStudents = () => {
     checkPerm();
   }, [selectedSlot, userData?.collegeId, serverTime]);
 
-  // Load students when course/section changes
+  // Load dynamic schedule from Admin Scheduler
   useEffect(() => {
-    loadStudents();
-  }, [selectedCourse, selectedSection]);
+    const fetchSchedules = async () => {
+      try {
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+        const params = new URLSearchParams({
+          scheduleType: "student",
+          degree: selectedDegree,
+          year: selectedYear,
+          semester: selectedSemester,
+          branch: selectedDepartment,
+          section: selectedSection,
+        });
+        const res = await fetch(`${apiBaseUrl}/schedules?${params.toString()}`);
+        if(res.ok) {
+           const data = await res.json();
+           if (data && data.length > 0) {
+               const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+               const today = days[serverTime.getDay()];
+               const activeSchedule = data.find((doc: any) => 
+                  doc.degree === selectedDegree && 
+                  doc.year === selectedYear && 
+                  doc.semester === selectedSemester && 
+                  doc.branch === selectedDepartment &&
+                  doc.section === selectedSection
+               ) || data[0]; // fallback safely to first result
 
-  // Auto-select slot based on current course
+               const todaySchedule = activeSchedule.schedule?.find((d: any) => d.day === (today === "Sunday" ? "Monday" : today));
+               
+               if (todaySchedule && todaySchedule.slots) {
+                   const slots: TimeSlot[] = todaySchedule.slots
+                      .filter((s: any) => s.subjectName || s.subjectCode) // non-empty slots only
+                      .map((slot: any) => ({
+                         id: `slot_${slot.slotNumber}`,
+                         slotNumber: slot.slotNumber,
+                         startTime: slot.startTime,
+                         endTime: slot.endTime,
+                         subjectCode: slot.subjectCode,
+                         subjectName: slot.subjectName,
+                         facultyId: slot.faculty || "",
+                         section: activeSchedule.section || selectedSection,
+                         branch: activeSchedule.branch || selectedDepartment,
+                         year: activeSchedule.year || selectedYear,
+                   }));
+                   setAvailableSlots(slots);
+               } else {
+                   setAvailableSlots([]);
+               }
+           } else {
+               setAvailableSlots([]);
+           }
+        }
+      } catch (err) {
+        console.error("Failed to load generic scheduled slots", err);
+      }
+    };
+    fetchSchedules();
+  }, [selectedDegree, selectedYear, selectedSemester, selectedDepartment, selectedSection, serverTime]);
+
+  // Load students when academic filters change
   useEffect(() => {
-    const matchingSlot = todaySlots.find(
-      (slot) => slot.subjectName === selectedCourse && slot.section === selectedSection
-    );
-    setSelectedSlot(matchingSlot || null);
-  }, [selectedCourse, selectedSection]);
+    // Empty specific attendance list to force UI reload and wait for slot picking
+    loadStudents();
+  }, [selectedDegree, selectedYear, selectedSemester, selectedDepartment, selectedSection]);
+
+  // Auto-remove slot selection on date/filter change
+  useEffect(() => {
+    setSelectedSlot(null);
+  }, [selectedDegree, selectedYear, selectedSemester, selectedDepartment, selectedSection]);
 
   // Real-time subscription for slot attendance
   useEffect(() => {
@@ -257,10 +290,8 @@ const FacultyStudents = () => {
   const loadStudents = async () => {
     setIsLoading(true);
     try {
-      // Get the current slot to determine year and branch
-      const currentSlot = todaySlots.find(slot => slot.subjectName === selectedCourse);
-      const year = currentSlot?.year || "22";
-      const branch = currentSlot?.branch || "05";
+      const branch = selectedDepartment; 
+      const year = selectedYear;
 
       console.log(`Loading students for Year: ${year}, Branch: ${branch}, Section: ${selectedSection}`);
 
@@ -471,7 +502,10 @@ const FacultyStudents = () => {
           selectedSlot.section,
           selectedSlot.branch,
           selectedSlot.year,
-          false
+          false,
+          "", // overrideReason
+          selectedDegree,
+          selectedSemester
         );
       }
 
@@ -547,47 +581,95 @@ const FacultyStudents = () => {
                 </CardDescription>
               </div>
 
-              {/* Timer Badge */}
-              {selectedSlot && permission?.canMark && (
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "gap-2 py-1.5 px-3",
-                    remainingTime === "Expired"
-                      ? "border-red-500 text-red-500"
-                      : "border-green-500 text-green-500"
-                  )}
-                >
-                  <Timer className="w-4 h-4" />
-                  {remainingTime}
-                </Badge>
-              )}
+
             </div>
           </CardHeader>
 
           <CardContent className="pt-6">
             {/* Filters and Actions */}
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
-              <div className="flex gap-4 flex-1">
-                <Select value={selectedCourse} onValueChange={setSelectedCourse}>
-                  <SelectTrigger className="w-full md:w-64">
-                    <SelectValue />
+              <div className="flex flex-wrap gap-4 w-full md:flex-wrap md:w-auto flex-1">
+                {/* 1. Course (Degree) */}
+                <Select value={selectedDegree} onValueChange={setSelectedDegree}>
+                  <SelectTrigger className="w-full md:w-32">
+                    <SelectValue placeholder="Course" />
                   </SelectTrigger>
                   <SelectContent>
-                    {courses.map((course) => (
-                      <SelectItem key={course.code} value={course.name}>
-                        {course.name}
-                      </SelectItem>
+                    {DEGREES.map((deg) => (
+                      <SelectItem key={deg} value={deg}>{deg}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
 
-                <Select value={selectedSection} onValueChange={setSelectedSection}>
-                  <SelectTrigger className="w-full md:w-48">
-                    <SelectValue />
+                {/* 2. Year */}
+                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                  <SelectTrigger className="w-full md:w-32">
+                    <SelectValue placeholder="Year" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="B">Section B</SelectItem>
+                    {YEARS.map((yr) => (
+                      <SelectItem key={yr.value} value={yr.value}>{yr.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* 3. Semester */}
+                <Select value={selectedSemester} onValueChange={setSelectedSemester}>
+                  <SelectTrigger className="w-full md:w-32">
+                    <SelectValue placeholder="Semester" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SEMESTERS.map((sem) => (
+                      <SelectItem key={sem.value} value={sem.value}>{sem.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* 4. Department */}
+                <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                  <SelectTrigger className="w-full md:w-36">
+                    <SelectValue placeholder="Department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DEPARTMENTS.map((dept) => (
+                      <SelectItem key={dept.value} value={dept.value}>{dept.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* 5. Section */}
+                <Select value={selectedSection} onValueChange={setSelectedSection}>
+                  <SelectTrigger className="w-full md:w-32">
+                    <SelectValue placeholder="Section" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SECTIONS.map((sec) => (
+                      <SelectItem key={sec} value={sec}>Section {sec}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                {/* 6. Slot Selection */}
+                <Select
+                  value={selectedSlot?.id || ""}
+                  onValueChange={(id) => {
+                    const slot = availableSlots.find(s => s.id === id);
+                    setSelectedSlot(slot || null);
+                  }}
+                  disabled={availableSlots.length === 0}
+                >
+                  <SelectTrigger className="w-full md:w-[250px]">
+                    <SelectValue placeholder={availableSlots.length > 0 ? "Select a slot" : "No slots found"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableSlots.map((slot) => (
+                      <SelectItem key={slot.id} value={slot.id}>
+                        Slot {slot.slotNumber} - {slot.subjectName}
+                        <span className="ml-2 text-xs text-muted-foreground hidden lg:inline">
+                          ({slot.startTime} - {slot.endTime})
+                        </span>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -619,28 +701,55 @@ const FacultyStudents = () => {
               </div>
             </div>
 
-            {/* Status Summary */}
-            <div className="grid grid-cols-4 gap-4 mb-6">
-              <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-green-500">{statusCounts.present}</div>
-                <div className="text-xs text-muted-foreground">Present</div>
-              </div>
-              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-red-500">{statusCounts.absent}</div>
-                <div className="text-xs text-muted-foreground">Absent</div>
-              </div>
-              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-yellow-500">{statusCounts.late}</div>
-                <div className="text-xs text-muted-foreground">Late</div>
-              </div>
-              <div className="bg-gray-500/10 border border-gray-500/30 rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-gray-500">{statusCounts.unmarked}</div>
-                <div className="text-xs text-muted-foreground">Not Marked</div>
-              </div>
-            </div>
+            {/* Empty State checks */}
+            {students.length === 0 && availableSlots.length > 0 ? (
+               <div className="flex flex-col items-center justify-center py-16 text-center">
+                 <Users className="w-12 h-12 text-muted-foreground/30 mb-4" />
+                 <h3 className="text-xl font-medium text-foreground">No Students Found</h3>
+                 <p className="text-muted-foreground mt-2 max-w-sm">
+                    No students available for the selected academic combination.
+                 </p>
+               </div>
+            ) : availableSlots.length === 0 ? (
+               <div className="flex flex-col items-center justify-center py-16 text-center">
+                 <Calendar className="w-12 h-12 text-muted-foreground/30 mb-4" />
+                 <h3 className="text-xl font-medium text-foreground">No Slots Found</h3>
+                 <p className="text-muted-foreground mt-2 max-w-sm">
+                    No scheduled class for the selected academic filters.
+                 </p>
+               </div>
+            ) : !selectedSlot ? (
+               <div className="flex flex-col items-center justify-center py-16 text-center">
+                 <Clock className="w-12 h-12 text-muted-foreground/30 mb-4" />
+                 <h3 className="text-xl font-medium text-foreground">Select a Slot</h3>
+                 <p className="text-muted-foreground mt-2 max-w-sm">
+                    Please select a scheduled slot to view and mark attendance.
+                 </p>
+               </div>
+            ) : (
+                <>
+                  {/* Status Summary */}
+                  <div className="grid grid-cols-4 gap-4 mb-6">
+                    <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-center">
+                      <div className="text-2xl font-bold text-green-500">{statusCounts.present}</div>
+                      <div className="text-xs text-muted-foreground">Present</div>
+                    </div>
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-center">
+                      <div className="text-2xl font-bold text-red-500">{statusCounts.absent}</div>
+                      <div className="text-xs text-muted-foreground">Absent</div>
+                    </div>
+                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-center">
+                      <div className="text-2xl font-bold text-yellow-500">{statusCounts.late}</div>
+                      <div className="text-xs text-muted-foreground">Late</div>
+                    </div>
+                    <div className="bg-gray-500/10 border border-gray-500/30 rounded-lg p-3 text-center">
+                      <div className="text-2xl font-bold text-gray-500">{statusCounts.unmarked}</div>
+                      <div className="text-xs text-muted-foreground">Not Marked</div>
+                    </div>
+                  </div>
 
-            {/* Attendance Table */}
-            <div className="space-y-2">
+                  {/* Attendance Table */}
+                  <div className="space-y-2">
               <div className="grid grid-cols-3 gap-8 py-3 border-b text-sm font-medium text-muted-foreground px-4">
                 <div>Roll Number</div>
                 <div>Status</div>
@@ -746,6 +855,8 @@ const FacultyStudents = () => {
                   </span>
                 </div>
               </div>
+            )}
+            </>
             )}
           </CardContent>
         </Card>

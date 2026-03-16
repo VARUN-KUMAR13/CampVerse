@@ -355,7 +355,9 @@ export const markAttendance = async (
     branch: string,
     year: string,
     isOverride: boolean = false,
-    overrideReason?: string
+    overrideReason?: string,
+    course?: string,
+    semester?: string
 ): Promise<AttendanceRecord | null> => {
     const recordId = generateAttendanceId(studentId, date, slotId);
 
@@ -377,6 +379,11 @@ export const markAttendance = async (
         section,
         branch,
         year,
+        course: course || "Major",
+        semester: semester || "Semester I",
+        subject: subjectName,
+        slot: `Slot ${parseInt(slotId.split('_').pop() || '0')}`,
+        rollNumber: studentId,
     };
 
     console.log('[markAttendance] Saving record:', {
@@ -431,7 +438,9 @@ export const markBulkAttendance = async (
     subjectName: string,
     section: string,
     branch: string,
-    year: string
+    year: string,
+    course?: string,
+    semester?: string
 ): Promise<BulkAttendanceResponse> => {
     const results: BulkAttendanceResponse = {
         success: true,
@@ -458,7 +467,9 @@ export const markBulkAttendance = async (
                 branch,
                 year,
                 isOverride,
-                request.overrideReason
+                request.overrideReason,
+                course,
+                semester
             );
 
             if (record) {
@@ -646,10 +657,10 @@ export const getSubjectWiseAttendance = async (
     if (!firebaseReady || !database) {
         // Return mock data for development
         return [
-            { subjectCode: '22CS401', subjectName: 'Linux Programming', totalClasses: 30, attended: 24, percentage: 80, status: 'SATISFACTORY' },
-            { subjectCode: '22HS301', subjectName: 'Business Economics', totalClasses: 28, attended: 22, percentage: 78, status: 'SATISFACTORY' },
-            { subjectCode: '22HS501', subjectName: 'Professional Elective III', totalClasses: 25, attended: 20, percentage: 80, status: 'SATISFACTORY' },
-            { subjectCode: '22HS601', subjectName: 'Professional Elective IV', totalClasses: 22, attended: 15, percentage: 68, status: 'WARNING' },
+            { subjectCode: '22CS401', subjectName: 'Linux Programming', totalClasses: 30, attended: 24, absent: 6, notMarked: 0, percentage: 80, status: 'SATISFACTORY' },
+            { subjectCode: '22HS301', subjectName: 'Business Economics', totalClasses: 28, attended: 22, absent: 5, notMarked: 1, percentage: 78, status: 'SATISFACTORY' },
+            { subjectCode: '22HS501', subjectName: 'Professional Elective III', totalClasses: 25, attended: 20, absent: 5, notMarked: 0, percentage: 80, status: 'SATISFACTORY' },
+            { subjectCode: '22HS601', subjectName: 'Professional Elective IV', totalClasses: 22, attended: 15, absent: 7, notMarked: 0, percentage: 68, status: 'WARNING' },
         ];
     }
 
@@ -990,10 +1001,10 @@ export const getHistoricalSubjectAttendance = async (
     if (!database) {
         console.log('[getHistoricalSubjectAttendance] Firebase not ready');
         return [
-            { subjectCode: '22CS401', subjectName: 'Linux Programming', totalClasses: 30, attended: 24, percentage: 80, status: 'SATISFACTORY' as const },
-            { subjectCode: '22HS301', subjectName: 'Business Economics', totalClasses: 28, attended: 22, percentage: 78, status: 'SATISFACTORY' as const },
-            { subjectCode: '22HS501', subjectName: 'Professional Elective III', totalClasses: 25, attended: 20, percentage: 80, status: 'SATISFACTORY' as const },
-            { subjectCode: '22HS601', subjectName: 'Professional Elective IV', totalClasses: 22, attended: 15, percentage: 68, status: 'WARNING' as const },
+            { subjectCode: '22CS401', subjectName: 'Linux Programming', totalClasses: 30, attended: 24, absent: 6, notMarked: 0, percentage: 80, status: 'SATISFACTORY' as const },
+            { subjectCode: '22HS301', subjectName: 'Business Economics', totalClasses: 28, attended: 22, absent: 5, notMarked: 1, percentage: 78, status: 'SATISFACTORY' as const },
+            { subjectCode: '22HS501', subjectName: 'Professional Elective III', totalClasses: 25, attended: 20, absent: 5, notMarked: 0, percentage: 80, status: 'SATISFACTORY' as const },
+            { subjectCode: '22HS601', subjectName: 'Professional Elective IV', totalClasses: 22, attended: 15, absent: 7, notMarked: 0, percentage: 68, status: 'WARNING' as const },
         ].filter(m => subjects.some(s => s.subjectCode === m.subjectCode));
     }
 
@@ -1006,20 +1017,20 @@ export const getHistoricalSubjectAttendance = async (
         if (!snapshot.exists()) {
             console.log('[getHistoricalSubjectAttendance] No records found');
             return [
-                { subjectCode: '22CS401', subjectName: 'Linux Programming', totalClasses: 30, attended: 24, percentage: 80, status: 'SATISFACTORY' as const },
-                { subjectCode: '22HS301', subjectName: 'Business Economics', totalClasses: 28, attended: 22, percentage: 78, status: 'SATISFACTORY' as const },
-                { subjectCode: '22HS501', subjectName: 'Professional Elective III', totalClasses: 25, attended: 20, percentage: 80, status: 'SATISFACTORY' as const },
-                { subjectCode: '22HS601', subjectName: 'Professional Elective IV', totalClasses: 22, attended: 15, percentage: 68, status: 'WARNING' as const },
+                { subjectCode: '22CS401', subjectName: 'Linux Programming', totalClasses: 30, attended: 24, absent: 6, notMarked: 0, percentage: 80, status: 'SATISFACTORY' as const },
+                { subjectCode: '22HS301', subjectName: 'Business Economics', totalClasses: 28, attended: 22, absent: 5, notMarked: 1, percentage: 78, status: 'SATISFACTORY' as const },
+                { subjectCode: '22HS501', subjectName: 'Professional Elective III', totalClasses: 25, attended: 20, absent: 5, notMarked: 0, percentage: 80, status: 'SATISFACTORY' as const },
+                { subjectCode: '22HS601', subjectName: 'Professional Elective IV', totalClasses: 22, attended: 15, absent: 7, notMarked: 0, percentage: 68, status: 'WARNING' as const },
             ].filter(m => subjects.some(s => s.subjectCode === m.subjectCode));
         }
 
         // Parse all records across all dates
         const dateRecords = snapshot.val();
-        const subjectStats: Record<string, { total: number; attended: number }> = {};
+        const subjectStats: Record<string, { total: number; attended: number; absent: number; notMarked: number; }> = {};
 
         // Initialize stats for each subject
         subjects.forEach(s => {
-            subjectStats[s.subjectCode] = { total: 0, attended: 0 };
+            subjectStats[s.subjectCode] = { total: 0, attended: 0, absent: 0, notMarked: 0 };
         });
 
         // Iterate over all dates
@@ -1038,6 +1049,10 @@ export const getHistoricalSubjectAttendance = async (
                         subjectStats[subjectCode].total++;
                         if (record.status === 'PRESENT' || record.status === 'LATE') {
                             subjectStats[subjectCode].attended++;
+                        } else if (record.status === 'ABSENT') {
+                            subjectStats[subjectCode].absent++;
+                        } else if (record.status === 'NOT_MARKED') {
+                            subjectStats[subjectCode].notMarked++;
                         }
                     }
                 }
@@ -1046,7 +1061,7 @@ export const getHistoricalSubjectAttendance = async (
 
         // Build summary for each subject
         const result: SubjectAttendanceSummary[] = subjects.map(s => {
-            const stats = subjectStats[s.subjectCode] || { total: 0, attended: 0 };
+            const stats = subjectStats[s.subjectCode] || { total: 0, attended: 0, absent: 0, notMarked: 0 };
             const percentage = stats.total > 0
                 ? Math.round((stats.attended / stats.total) * 100)
                 : 0;
@@ -1060,6 +1075,8 @@ export const getHistoricalSubjectAttendance = async (
                 subjectName: s.subjectName,
                 totalClasses: stats.total,
                 attended: stats.attended,
+                absent: stats.absent,
+                notMarked: stats.notMarked,
                 percentage,
                 status,
             };
@@ -1071,10 +1088,10 @@ export const getHistoricalSubjectAttendance = async (
     } catch (error) {
         console.error('[getHistoricalSubjectAttendance] Error:', error);
         return [
-            { subjectCode: '22CS401', subjectName: 'Linux Programming', totalClasses: 30, attended: 24, percentage: 80, status: 'SATISFACTORY' as const },
-            { subjectCode: '22HS301', subjectName: 'Business Economics', totalClasses: 28, attended: 22, percentage: 78, status: 'SATISFACTORY' as const },
-            { subjectCode: '22HS501', subjectName: 'Professional Elective III', totalClasses: 25, attended: 20, percentage: 80, status: 'SATISFACTORY' as const },
-            { subjectCode: '22HS601', subjectName: 'Professional Elective IV', totalClasses: 22, attended: 15, percentage: 68, status: 'WARNING' as const },
+            { subjectCode: '22CS401', subjectName: 'Linux Programming', totalClasses: 30, attended: 24, absent: 6, notMarked: 0, percentage: 80, status: 'SATISFACTORY' as const },
+            { subjectCode: '22HS301', subjectName: 'Business Economics', totalClasses: 28, attended: 22, absent: 5, notMarked: 1, percentage: 78, status: 'SATISFACTORY' as const },
+            { subjectCode: '22HS501', subjectName: 'Professional Elective III', totalClasses: 25, attended: 20, absent: 5, notMarked: 0, percentage: 80, status: 'SATISFACTORY' as const },
+            { subjectCode: '22HS601', subjectName: 'Professional Elective IV', totalClasses: 22, attended: 15, absent: 7, notMarked: 0, percentage: 68, status: 'WARNING' as const },
         ].filter(m => subjects.some(s => s.subjectCode === m.subjectCode));
     }
 };

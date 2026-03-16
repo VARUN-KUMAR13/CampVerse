@@ -8,6 +8,7 @@ import {
   Bell,
   ChevronLeft,
   Calendar,
+  Megaphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -43,6 +44,11 @@ const AdminSidebar = ({ onClose, isOpen }: AdminSidebarProps) => {
       icon: <CalendarDays className="w-5 h-5" />,
       label: "Events",
       path: "/admin/event",
+    },
+    {
+      icon: <Megaphone className="w-5 h-5" />,
+      label: "Announcements",
+      path: "/admin/announcements",
     },
     {
       icon: <UsersRound className="w-5 h-5" />,

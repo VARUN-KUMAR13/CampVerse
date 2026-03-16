@@ -45,6 +45,11 @@ export interface AttendanceRecord {
     section: string;
     branch: string;
     year: string;
+    course?: string;
+    semester?: string;
+    subject?: string;
+    slot?: string;
+    rollNumber?: string;
 }
 
 // Student Attendance Summary
@@ -72,6 +77,8 @@ export interface SubjectAttendanceSummary {
     subjectName: string;
     totalClasses: number;
     attended: number;
+    absent: number;
+    notMarked: number;
     percentage: number;
     status: 'SATISFACTORY' | 'WARNING' | 'CRITICAL';
 }
@@ -83,6 +90,8 @@ export interface DailyScheduleItem {
     time: string;
     subjectCode: string;
     subjectName: string;
+    room?: string;
+    classType?: string;
     status: AttendanceStatus;
     isSlotOpen: boolean;
     canMark: boolean;

@@ -14,6 +14,7 @@ import {
   XCircle,
   AlertCircle,
   RefreshCw,
+  Megaphone,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -70,6 +71,9 @@ const StudentDashboard = () => {
   const [isEligibleForAttendance, setIsEligibleForAttendance] = useState(false);
   const [studentSection, setStudentSection] = useState<string | null>(null);
 
+  // Store fetched weekly schedule config to avoid repeated fetches
+  const [weeklyScheduleConfig, setWeeklyScheduleConfig] = useState<any[] | null>(null);
+
   // Real-time performance metrics
   const [realTimeMetrics, setRealTimeMetrics] = useState({
     totalClasses: 4,
@@ -81,6 +85,9 @@ const StudentDashboard = () => {
 
   // Calendar attendance data for coloring
   const [calendarAttendance, setCalendarAttendance] = useState<Record<string, CalendarDayStatus>>({});
+
+  // Announcements
+  const [announcements, setAnnouncements] = useState<any[]>([]);
 
   // Validate if roll number is in Section B range (22B81A0565 to 22B81A05C8)
   const isValidSectionBRollNumber = (rollNo: string): boolean => {
@@ -167,83 +174,105 @@ const StudentDashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Initialize today's schedule - load from admin-configured schedules or use defaults
+  // 1) Fetch whole weekly schedule once when studentSection is ready
   useEffect(() => {
-    const currentTime = formatTime(serverTime);
+    if (!studentSection) return;
 
-    // Get current day of week - if Sunday, show Monday's schedule
-    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    let today = days[serverTime.getDay()];
+    const fetchWeeklySchedule = async () => {
+      let config = null;
 
-    // If it's Sunday, show Monday's schedule as preview
-    if (today === "Sunday") {
-      today = "Monday";
-      console.log("[Schedule] Today is Sunday, showing Monday's schedule as preview");
-    }
+      try {
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+        const params = new URLSearchParams({
+          scheduleType: "student",
+          degree: "Major",   // Using default generic values matching Faculty 
+          year: "25",        // IV Year matching default
+          semester: "I",     // Semester I
+          section: "B",
+        });
 
-    // Try to load schedule from localStorage (set by admin scheduler)
-    let scheduleData: { subjectCode: string; subjectName: string; startTime: string; endTime: string }[] | null = null;
+        const res = await fetch(`${apiBaseUrl}/schedules?${params.toString()}`);
+        if (res.ok) {
+          const schedules = await res.json();
+          if (schedules.length > 0) {
+            config = schedules[0].schedule;
+            console.log("[Schedule] ✓ Loaded weekly schedule from MongoDB API");
+          }
+        }
+      } catch (error) {
+        console.log("[Schedule] MongoDB API call failed, trying localStorage fallback:", error);
+      }
 
-    // Abort loading schedule if backend call failed and we don't have a section
-    if (!studentSection) {
-      setTodaySchedule([]);
-      setIsLoadingSchedule(false);
+      if (!config) {
+        try {
+          const scheduleConfigStr = localStorage.getItem("campverse_schedule_config");
+          if (scheduleConfigStr) {
+            const parsedConfig = JSON.parse(scheduleConfigStr);
+            const possibleKeys = [
+              studentSection ? `22_05_${studentSection}` : null,
+              "22_05_B",
+              Object.keys(parsedConfig)[0]
+            ].filter(Boolean);
+
+            for (const key of possibleKeys) {
+              if (key && parsedConfig[key]) {
+                config = parsedConfig[key];
+                break;
+              }
+            }
+          }
+        } catch (error) {
+           console.log("[Schedule] Error loading schedule config from localStorage:", error);
+        }
+      }
+
+      setWeeklyScheduleConfig(config || []);
+    };
+
+    fetchWeeklySchedule();
+  }, [studentSection]);
+
+  // 2) Update displayed schedule when calendar date changes
+  useEffect(() => {
+    // If we haven't fetched the config yet or don't have a section
+    if (!weeklyScheduleConfig) {
+      if (!studentSection) {
+        setTodaySchedule([]);
+        setIsLoadingSchedule(false);
+      }
       return;
     }
 
-    try {
-      const scheduleConfig = localStorage.getItem("campverse_schedule_config");
-      console.log("[Schedule] Checking localStorage for schedule config...");
+    setIsLoadingSchedule(true);
 
-      if (scheduleConfig) {
-        const config = JSON.parse(scheduleConfig);
-        console.log("[Schedule] Found config:", Object.keys(config));
+    const targetDate = date || serverTime;
+    const currentTime = formatTime(serverTime);
+    
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    let dayOfWeek = days[targetDate.getDay()];
+    
+    let scheduleData: any[] | null = null;
+    const daySchedule = weeklyScheduleConfig.find((d: any) => d.day === dayOfWeek);
 
-        // Try to match student's section (e.g., 22_05_B for CSE-B 2022 batch)
-        // Try multiple key formats to find a match
-        const possibleKeys = [
-          studentSection ? `22_05_${studentSection}` : null,
-          "22_05_B", // Default CSE-B 2022
-          Object.keys(config)[0] // First available schedule
-        ].filter(Boolean);
+    if (daySchedule?.slots?.length > 0) {
+      const filledSlots = daySchedule.slots.filter((slot: any) =>
+        (slot.subjectCode && slot.subjectCode.trim() !== "") ||
+        (slot.subjectName && slot.subjectName.trim() !== "")
+      );
 
-        let sectionSchedule = null;
-        let matchedKey = null;
-
-        for (const key of possibleKeys) {
-          if (key && config[key]) {
-            sectionSchedule = config[key];
-            matchedKey = key;
-            break;
-          }
-        }
-
-        if (sectionSchedule) {
-          console.log("[Schedule] Matched section key:", matchedKey);
-          const todayScheduleData = sectionSchedule.find((d: any) => d.day === today);
-
-          if (todayScheduleData?.slots && todayScheduleData.slots.length > 0) {
-            scheduleData = todayScheduleData.slots.map((slot: any) => ({
-              subjectCode: slot.subjectCode || "",
-              subjectName: slot.subjectName || "No Subject",
-              startTime: slot.startTime || "09:00",
-              endTime: slot.endTime || "10:00",
-            }));
-            console.log("[Schedule] ✓ Loaded admin-configured schedule for", today, "with", scheduleData.length, "slots");
-          } else {
-            console.log("[Schedule] No slots found for", today, "in section schedule");
-          }
-        } else {
-          console.log("[Schedule] No matching section schedule found. Available keys:", Object.keys(config));
-        }
-      } else {
-        console.log("[Schedule] No schedule config in localStorage");
+      if (filledSlots.length > 0) {
+        scheduleData = filledSlots.map((slot: any, idx: number) => ({
+          slotNumber: slot.slotNumber || idx + 1,
+          subjectCode: slot.subjectCode || "",
+          subjectName: slot.subjectName || "No Subject",
+          startTime: slot.startTime || "09:00",
+          endTime: slot.endTime || "10:00",
+          room: slot.room || "",
+          classType: slot.classType || "Class",
+        }));
       }
-    } catch (error) {
-      console.log("[Schedule] Error loading schedule config:", error);
     }
 
-    // Format time for display (e.g., "09:00" -> "9:00 AM")
     const formatTimeDisplay = (time: string) => {
       const [hours, minutes] = time.split(':');
       const hour = parseInt(hours);
@@ -252,70 +281,27 @@ const StudentDashboard = () => {
       return `${displayHour}:${minutes} ${ampm}`;
     };
 
-    // Build schedule from loaded data or use defaults
-    const initialSchedule: DailyScheduleItem[] = scheduleData ? scheduleData.map((slot, idx) => ({
-      slotId: `slot_${idx + 1}`,
-      slotNumber: idx + 1,
+    const initialSchedule: DailyScheduleItem[] = scheduleData ? scheduleData.map((slot) => ({
+      slotId: `slot_${slot.slotNumber}`,
+      slotNumber: slot.slotNumber,
       time: `${formatTimeDisplay(slot.startTime)} - ${formatTimeDisplay(slot.endTime)}`,
       subjectCode: slot.subjectCode,
       subjectName: slot.subjectName,
+      room: slot.room || "",
+      classType: slot.classType || "Class",
       status: "NOT_MARKED" as const,
       isSlotOpen: isSlotOpen(currentTime, slot.endTime.replace(':', ':'), 15),
       canMark: false,
-    })) : [
-      // Default schedule if no admin-configured schedule exists
-      {
-        slotId: "slot_1",
-        slotNumber: 1,
-        time: "9:00 AM - 12:10 PM",
-        subjectCode: "22CS401",
-        subjectName: "Linux programming",
-        status: "NOT_MARKED",
-        isSlotOpen: isSlotOpen(currentTime, "12:10", 15),
-        canMark: false,
-      },
-      {
-        slotId: "slot_2",
-        slotNumber: 2,
-        time: "12:10 PM - 1:10 PM",
-        subjectCode: "22HS301",
-        subjectName: "Business Economics and Financial Analysis",
-        status: "NOT_MARKED",
-        isSlotOpen: isSlotOpen(currentTime, "13:10", 15),
-        canMark: false,
-      },
-      {
-        slotId: "slot_3",
-        slotNumber: 3,
-        time: "1:55 PM - 2:55 PM",
-        subjectCode: "22HS501",
-        subjectName: "Professional Elective-lll",
-        status: "NOT_MARKED",
-        isSlotOpen: isSlotOpen(currentTime, "14:55", 15),
-        canMark: false,
-      },
-      {
-        slotId: "slot_4",
-        slotNumber: 4,
-        time: "2:55 PM - 3:55 PM",
-        subjectCode: "22HS601",
-        subjectName: "Professional Elective-lV",
-        status: "NOT_MARKED",
-        isSlotOpen: isSlotOpen(currentTime, "15:55", 15),
-        canMark: false,
-      },
-    ];
-
-    console.log("[Schedule] Final schedule has", initialSchedule.length, "slots:",
-      initialSchedule.map(s => s.subjectName).join(", "));
+    })) : [];
 
     setTodaySchedule(initialSchedule);
 
-    // Simulate real-time fetch delay to show loading animation momentarily
+    // Apply fade transition logic smoothly
     setTimeout(() => {
       setIsLoadingSchedule(false);
-    }, 800);
-  }, [serverTime, studentSection]);
+    }, 250);
+
+  }, [weeklyScheduleConfig, date, serverTime, studentSection]);
 
   // Real-time attendance subscription + localStorage check
   useEffect(() => {
@@ -327,10 +313,13 @@ const StudentDashboard = () => {
       return;
     }
 
-    const today = formatDate(serverTime);
-    const section = "B"; // CSE Section-B (matches Firebase dataset)
+    const targetDate = date || serverTime;
+    const today = formatDate(targetDate);
+    const section = "B";
     const branch = "05";
-    const year = "22";
+    const year = "25"; // Update to match faculty generic filter (IV Year)
+    const degree = "Major";
+    const semester = "I";
     const studentId = userData.collegeId;
 
     console.log(`[Attendance] Checking for student: ${studentId}, Section: B, Date: ${today}`);
@@ -427,16 +416,17 @@ const StudentDashboard = () => {
       clearInterval(interval);
       unsubscribe();
     };
-  }, [userData?.collegeId, serverTime, isEligibleForAttendance]);
+  }, [userData?.collegeId, serverTime, isEligibleForAttendance, date]);
 
   // Subscribe to real-time performance metrics
   useEffect(() => {
     if (!userData?.collegeId || !isEligibleForAttendance) return;
 
-    const today = formatDate(serverTime);
+    const targetDate = date || serverTime;
+    const today = formatDate(targetDate);
     const section = "B";
     const branch = "05";
-    const year = "22";
+    const year = "25";
     const studentId = userData.collegeId;
 
     const unsubscribe = subscribeToPerformanceMetrics(
@@ -452,7 +442,7 @@ const StudentDashboard = () => {
     );
 
     return () => unsubscribe();
-  }, [userData?.collegeId, serverTime, isEligibleForAttendance]);
+  }, [userData?.collegeId, serverTime, isEligibleForAttendance, date]);
 
   // Automatic attendance marking after 4:00 PM (16:00)
   // If faculty/admin hasn't marked attendance, auto-mark ALL students as PRESENT
@@ -460,8 +450,11 @@ const StudentDashboard = () => {
     if (!isEligibleForAttendance) return;
 
     const checkAndAutoMark = async () => {
-      // Check if it's 4:00 PM (16:00) or later
-      if (shouldAutoMarkAsPresent(serverTime)) {
+      const targetDate = date || serverTime;
+      const isViewingToday = targetDate.toLocaleDateString() === serverTime.toLocaleDateString();
+
+      // Check if it's 4:00 PM (16:00) or later and we are viewing today
+      if (shouldAutoMarkAsPresent(serverTime) && isViewingToday) {
         const notMarkedSlots = todaySchedule.filter(s => s.status === "NOT_MARKED");
 
         if (notMarkedSlots.length > 0) {
@@ -507,12 +500,13 @@ const StudentDashboard = () => {
       }
     };
 
-    // Check immediately and then every minute
+    // Check every minute
+    const interval = setInterval(checkAndAutoMark, 60000);
+    // Also check on mount
     checkAndAutoMark();
-    const interval = setInterval(checkAndAutoMark, 60000); // Check every minute
 
     return () => clearInterval(interval);
-  }, [serverTime, isEligibleForAttendance, todaySchedule]);
+  }, [isEligibleForAttendance, todaySchedule, serverTime, date]);
 
   // Load performance metrics - fetches historical attendance across ALL dates
   useEffect(() => {
@@ -526,14 +520,30 @@ const StudentDashboard = () => {
     }
 
     const loadHistoricalMetrics = async () => {
-      const subjects = [
-        { subjectCode: "22CS401", subjectName: "Linux programming" },
-        { subjectCode: "22HS301", subjectName: "Business Economics and Financial Analysis" },
-        { subjectCode: "22HS501", subjectName: "Professional Elective-lll" },
-        { subjectCode: "22HS601", subjectName: "Professional Elective-lV" },
-      ];
-
       try {
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+        const coursesRes = await fetch(`${apiBaseUrl}/courses`);
+        let subjects: { subjectCode: string; subjectName: string }[] = [];
+        
+        if (coursesRes.ok) {
+          const coursesData = await coursesRes.json();
+          subjects = coursesData
+            .filter((c: any) => c.status === "Active")
+            .map((c: any) => ({
+              subjectCode: c.courseCode,
+              subjectName: c.courseName,
+            }));
+        }
+
+        if (subjects.length === 0) {
+          subjects = [
+            { subjectCode: "22CS401", subjectName: "Linux programming" },
+            { subjectCode: "22HS301", subjectName: "Business Economics and Financial Analysis" },
+            { subjectCode: "22HS501", subjectName: "Professional Elective-lll" },
+            { subjectCode: "22HS601", subjectName: "Professional Elective-lV" },
+          ];
+        }
+
         const metrics = await getHistoricalSubjectAttendance(
           userData.collegeId,
           "22", // year
@@ -596,7 +606,35 @@ const StudentDashboard = () => {
     };
 
     loadCalendarData();
-  }, [userData?.collegeId, isEligibleForAttendance, todaySchedule]);
+  }, [userData?.collegeId, isEligibleForAttendance]);
+
+  // Fetch announcements
+  useEffect(() => {
+    const fetchAnnouncements = async () => {
+      try {
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+        const res = await fetch(`${apiBaseUrl}/announcements/active?audience=Students`);
+        if (res.ok) {
+          const data = await res.json();
+          setAnnouncements(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch announcements:", error);
+      }
+    };
+    fetchAnnouncements();
+  }, []);
+
+  if (!userData) {
+    return (
+      <StudentLayout>
+        <div className="flex items-center justify-center h-screen">
+          <Skeleton className="w-12 h-12 rounded-full mb-4" />
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </StudentLayout>
+    );
+  }
 
   const refreshAttendance = async () => {
     setIsRefreshing(true);
@@ -809,11 +847,15 @@ const StudentDashboard = () => {
       <Card className="border-border/50 shadow-lg">
         <CardHeader>
           <div>
-            <CardTitle className="text-xl">Today's Schedule & Attendance</CardTitle>
+            <CardTitle className="text-xl">
+              {date && date.toLocaleDateString() !== serverTime.toLocaleDateString()
+                ? "Schedule & Attendance for the Day"
+                : "Schedule & Attendance for Today"}
+            </CardTitle>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div className={cn("space-y-3 transition-all duration-300 ease-in-out", isLoadingSchedule ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0")}>
             {isLoadingSchedule ? (
               // Loading animation
               <>
@@ -837,9 +879,27 @@ const StudentDashboard = () => {
               <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
                 <CalendarIcon className="w-12 h-12 mb-4 text-muted-foreground/30" />
                 <h3 className="text-lg font-medium text-foreground">No Schedule Found</h3>
-                <p>No classes scheduled for today.</p>
+                <p>No classes scheduled for this day.</p>
               </div>
-            ) : todaySchedule.map((item) => {
+            ) : [...todaySchedule]
+              .sort((a, b) => {
+                const parseTime = (timeStr?: string) => {
+                  if (!timeStr) return 0;
+                  const startPart = timeStr.split(/[-–]/)[0].trim();
+                  const match = startPart.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                  if (match) {
+                    let hours = parseInt(match[1]);
+                    const minutes = parseInt(match[2]);
+                    const period = match[3].toUpperCase();
+                    if (period === 'PM' && hours !== 12) hours += 12;
+                    if (period === 'AM' && hours === 12) hours = 0;
+                    return hours * 60 + minutes;
+                  }
+                  return 0;
+                };
+                return parseTime(a.time) - parseTime(b.time);
+              })
+              .map((item) => {
               // Determine background color based on who marked attendance
               const markedByRole = attendanceMarkedBy[item.slotId] || (item as any).markedByRole;
 
@@ -886,19 +946,33 @@ const StudentDashboard = () => {
                   )}
                 >
                   <div className="flex-1">
-                    <div className="font-medium text-foreground">
+                    <div className="text-lg font-semibold text-foreground">
                       {item.subjectName}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       {item.subjectCode}
                     </div>
+                    {(item.room || item.classType) && (
+                      <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                        {item.room && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary font-medium">
+                            {item.room}
+                          </span>
+                        )}
+                        {item.classType && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-400 font-medium">
+                            {item.classType}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div className="text-center mx-4">
-                    <div className="text-sm text-muted-foreground">
-                      {item.time}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-6">
+                    {item.time && (
+                      <div className="text-base font-medium text-foreground tracking-wide whitespace-nowrap">
+                        {item.time}
+                      </div>
+                    )}
                     {getStatusBadge(item.status, markedByRole)}
                   </div>
                 </div>
@@ -914,26 +988,18 @@ const StudentDashboard = () => {
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-primary" />
-            Today's Attendance Summary
+            Selected Date Attendance Summary
           </CardTitle>
         </CardHeader>
         <CardContent>
           {/* Calculate totals from historical + today's data */}
           {(() => {
-            // Get historical totals from performance metrics
-            const historicalPresent = performanceMetrics.reduce((sum, m) => sum + m.attended, 0);
-            const historicalTotal = performanceMetrics.reduce((sum, m) => sum + m.totalClasses, 0);
-            const historicalAbsent = historicalTotal - historicalPresent;
-
-            // Today's not marked count
-            const todayNotMarked = todaySchedule.filter(s => s.status === "NOT_MARKED").length;
-            const todayPresent = todaySchedule.filter(s => s.status === "PRESENT").length;
-            const todayAbsent = todaySchedule.filter(s => s.status === "ABSENT").length;
-
-            // Combined totals (historical + today's marked)
-            const totalClasses = historicalTotal + todaySchedule.length;
-            const totalPresent = historicalPresent + todayPresent;
-            const totalAbsent = historicalAbsent + todayAbsent;
+            // Get cumulative totals from performance metrics directly
+            const totalClasses = performanceMetrics.reduce((sum, m) => sum + m.totalClasses, 0);
+            const totalPresent = performanceMetrics.reduce((sum, m) => sum + m.attended, 0);
+            const totalAbsent = performanceMetrics.reduce((sum, m) => sum + m.absent, 0);
+            const totalNotMarked = performanceMetrics.reduce((sum, m) => sum + m.notMarked, 0);
+            
             const percentage = totalClasses > 0 ? Math.round((totalPresent / totalClasses) * 100) : 0;
 
             return (
@@ -951,7 +1017,7 @@ const StudentDashboard = () => {
                   <div className="text-xs text-muted-foreground">Absent</div>
                 </div>
                 <div className="text-center p-3 rounded-lg bg-gray-500/10 border border-gray-500/20">
-                  <div className="text-2xl font-bold text-gray-500">{todayNotMarked}</div>
+                  <div className="text-2xl font-bold text-gray-500">{totalNotMarked}</div>
                   <div className="text-xs text-muted-foreground">Not Marked</div>
                 </div>
                 <div className="text-center p-3 rounded-lg bg-primary/10 border border-primary/20">
@@ -994,16 +1060,6 @@ const StudentDashboard = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Performance Metrics</CardTitle>
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    overallAttendance.percentage >= 75
-                      ? "text-green-500 border-green-500"
-                      : "text-yellow-500 border-yellow-500"
-                  )}
-                >
-                  Overall: {overallAttendance.percentage}%
-                </Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -1065,6 +1121,45 @@ const StudentDashboard = () => {
               ))}
             </CardContent>
           </Card>
+
+          {/* Announcements Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+              <Megaphone className="w-5 h-5 text-primary" />
+              Announcements
+            </h3>
+            {announcements.length === 0 ? (
+              <Card className="border-border/50 border-dashed bg-transparent">
+                <CardContent className="flex flex-col items-center justify-center py-8 text-center">
+                  <Megaphone className="w-8 h-8 text-muted-foreground/30 mb-2" />
+                  <p className="text-sm text-muted-foreground">No active announcements</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {announcements.map((ann) => (
+                  <Card key={ann._id} className="border-border/50 shadow-md hover:border-primary/50 transition-colors">
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-start gap-4">
+                        <CardTitle className="text-base leading-tight">{ann.title}</CardTitle>
+                        {ann.priority === "Important" && (
+                          <Badge variant="destructive" className="shrink-0 text-[10px] px-1.5 py-0 h-4">Important</Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">{ann.message}</p>
+                      <div className="flex items-center gap-2 mt-4 text-xs text-muted-foreground">
+                        <span className="font-medium">Posted by {ann.createdBy}</span>
+                        <span>•</span>
+                        <span>{new Date(ann.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Calendar & Events */}

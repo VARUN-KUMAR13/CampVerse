@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import FacultyLayout from "@/components/FacultyLayout";
-import { BookOpen, Users, FileText, Calendar, Clock, Loader2, MapPin } from "lucide-react";
+import { BookOpen, Users, FileText, Calendar, Clock, Loader2, MapPin, Megaphone } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
@@ -20,6 +20,30 @@ const FacultyDashboard = () => {
   const [loadingCourses, setLoadingCourses] = useState(true);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<any | null>(null);
+
+  // Faculty schedule state
+  const [todaySchedule, setTodaySchedule] = useState<any[]>([]);
+  const [loadingSchedule, setLoadingSchedule] = useState(true);
+
+  // Announcements
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+
+  // Fetch announcements
+  useEffect(() => {
+    const fetchAnnouncements = async () => {
+      try {
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+        const res = await fetch(`${apiBaseUrl}/announcements/active?audience=Faculty`);
+        if (res.ok) {
+          const data = await res.json();
+          setAnnouncements(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch announcements:", error);
+      }
+    };
+    fetchAnnouncements();
+  }, []);
 
   useEffect(() => {
     if (!userData?.uid) return;
@@ -57,6 +81,88 @@ const FacultyDashboard = () => {
     fetchDashboardCourses();
   }, [userData?.uid, userData?.collegeId]);
 
+  // Fetch faculty schedule from MongoDB
+  useEffect(() => {
+    if (!userData?.collegeId) {
+      setLoadingSchedule(false);
+      return;
+    }
+
+    const fetchFacultySchedule = async () => {
+      setLoadingSchedule(true);
+      try {
+        const rollNumber = userData.collegeId;
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+
+        const res = await fetch(
+          `${apiBaseUrl}/schedules?scheduleType=faculty&rollNumber=${encodeURIComponent(rollNumber)}`
+        );
+
+        if (res.ok) {
+          const schedules = await res.json();
+
+          if (schedules.length > 0) {
+            const schedule = schedules[0]; // Use first matching schedule
+
+            // Get today's day name
+            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            let today = days[new Date().getDay()];
+            if (today === "Sunday") today = "Monday";
+
+            const todayData = schedule.schedule?.find((d: any) => d.day === today);
+
+            if (todayData?.slots?.length > 0) {
+              const SLOT_COLORS = ["bg-red-500", "bg-blue-500", "bg-orange-500", "bg-purple-500", "bg-green-500", "bg-teal-500"];
+
+              // Filter out empty slots (no data entered)
+              const filledSlots = todayData.slots.filter((slot: any) =>
+                (slot.subjectCode && slot.subjectCode.trim() !== "") ||
+                (slot.subjectName && slot.subjectName.trim() !== "")
+              );
+
+              if (filledSlots.length > 0) {
+                const mapped = filledSlots.map((slot: any, idx: number) => {
+                  // Format times
+                  const formatTime = (t: string) => {
+                    const [h, m] = t.split(":");
+                    const hour = parseInt(h);
+                    const ampm = hour >= 12 ? "PM" : "AM";
+                    const dh = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+                    return `${dh}:${m} ${ampm}`;
+                  };
+
+                  return {
+                    time: `${formatTime(slot.startTime)} - ${formatTime(slot.endTime)}`,
+                    course: slot.subjectCode || `S${idx + 1}`,
+                    courseName: slot.subjectName || "—",
+                    room: slot.room || "—",
+                    classType: slot.classType || "Class",
+                    section: "",
+                    students: 0,
+                    type: slot.classType || "Class",
+                    color: SLOT_COLORS[idx % SLOT_COLORS.length],
+                  };
+                });
+
+                setTodaySchedule(mapped);
+                setLoadingSchedule(false);
+                return;
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching faculty schedule:", error);
+      }
+
+      // No valid schedule data — show empty state
+      setTodaySchedule([]);
+      setLoadingSchedule(false);
+    };
+
+    fetchFacultySchedule();
+  }, [userData?.collegeId]);
+
   const upcomingEvents = [
     {
       date: "15",
@@ -76,51 +182,9 @@ const FacultyDashboard = () => {
     },
   ];
 
-  const todaySchedule = [
-    {
-      time: "09:00 AM - 10:30 AM",
-      course: "CS101",
-      courseName: "Introduction to Computer Science",
-      room: "Room 301",
-      section: "A",
-      students: 45,
-      type: "Lecture",
-      color: "bg-red-500",
-    },
-    {
-      time: "11:00 AM - 12:30 PM",
-      course: "CS201",
-      courseName: "Data Structures and Algorithms",
-      room: "Room 205",
-      section: "A",
-      students: 42,
-      type: "Lecture",
-      color: "bg-blue-500",
-    },
-    {
-      time: "02:00 PM - 03:30 PM",
-      course: "CS301",
-      courseName: "Database Management Systems",
-      room: "Lab 101",
-      section: "A",
-      students: 38,
-      type: "Lab",
-      color: "bg-orange-500",
-    },
-    {
-      time: "04:00 PM - 05:00 PM",
-      course: "CS401",
-      courseName: "Software Engineering",
-      room: "Room 403",
-      section: "A",
-      students: 40,
-      type: "Tutorial",
-      color: "bg-purple-500",
-    },
-  ];
-
   const getTypeColor = (type: string) => {
     switch (type) {
+      case "Class":
       case "Lecture":
         return "bg-blue-100 text-blue-800";
       case "Lab":
@@ -152,49 +216,60 @@ const FacultyDashboard = () => {
           <CardTitle>Today's Schedule</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {todaySchedule.map((class_, index) => (
-              <div
-                key={index}
-                className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-muted/20 rounded-xl hover:bg-muted/30 transition-colors gap-4"
-              >
-                <div className="flex items-center space-x-4 sm:space-x-5 flex-1 min-w-0">
-                  {/* Highlighted Course Code Box */}
-                  <div
-                    className={`shrink-0 h-14 w-auto min-w-[4rem] px-3 ${class_.color || "bg-primary"} rounded-xl flex items-center justify-center text-white font-bold text-sm tracking-wide`}
-                  >
-                    {class_.course}
+          {loadingSchedule ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : todaySchedule.length === 0 ? (
+            <div className="text-center py-8 text-sm text-muted-foreground">
+              <Calendar className="w-10 h-10 mx-auto mb-3 text-muted-foreground/50" />
+              No schedule found for today.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {todaySchedule.map((class_, index) => (
+                <div
+                  key={index}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-muted/20 rounded-xl hover:bg-muted/30 transition-colors gap-4"
+                >
+                  <div className="flex items-center space-x-4 sm:space-x-5 flex-1 min-w-0">
+                    {/* Highlighted Course Code Box */}
+                    <div
+                      className={`shrink-0 h-14 w-auto min-w-[4rem] px-3 ${class_.color || "bg-primary"} rounded-xl flex items-center justify-center text-white font-bold text-sm tracking-wide`}
+                    >
+                      {class_.course}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-foreground text-base truncate">
+                        {class_.courseName}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-muted-foreground mt-1.5">
+                        <div className="flex items-center space-x-1.5">
+                          <MapPin className="w-4 h-4" />
+                          <span>Room: {class_.room}</span>
+                        </div>
+                        <div className="flex items-center space-x-1.5">
+                          <BookOpen className="w-4 h-4" />
+                          <span>Class Type: {class_.classType || class_.type || "Class"}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-foreground text-base truncate">
-                      {class_.courseName}
+                  {/* Right Side Info */}
+                  <div className="flex items-center space-x-4 shrink-0 self-start sm:self-auto pl-[5.5rem] sm:pl-0 mt-1 sm:mt-0">
+                    <div className="text-sm font-medium text-muted-foreground whitespace-nowrap">
+                      {class_.time}
                     </div>
-                    <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-muted-foreground mt-1.5">
-                      <div className="flex items-center space-x-1.5">
-                        <MapPin className="w-4 h-4" />
-                        <span>{class_.room}</span>
-                      </div>
-                      <div className="flex items-center space-x-1.5">
-                        <Users className="w-4 h-4" />
-                        <span>{class_.students} Students</span>
-                      </div>
-                    </div>
+                    <Badge variant="outline" className={`${getTypeColor(class_.type)} border-transparent font-medium px-4 py-1 rounded-full`}>
+                      {class_.type}
+                    </Badge>
                   </div>
                 </div>
-
-                {/* Right Side Info */}
-                <div className="flex items-center space-x-4 shrink-0 self-start sm:self-auto pl-[5.5rem] sm:pl-0 mt-1 sm:mt-0">
-                  <div className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-                    {class_.time}
-                  </div>
-                  <Badge variant="outline" className={`${getTypeColor(class_.type)} border-transparent font-medium px-4 py-1 rounded-full`}>
-                    {class_.type === "Lecture" ? "Class" : class_.type}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -232,6 +307,43 @@ const FacultyDashboard = () => {
                 </div>
               </div>
             ))}
+          </CardContent>
+        </Card>
+
+        {/* Announcements Section */}
+        <Card className="flex flex-col">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Megaphone className="w-5 h-5 text-primary" />
+              Announcements
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 flex-1 overflow-y-auto max-h-[400px]">
+            {announcements.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center h-full">
+                <Megaphone className="w-8 h-8 text-muted-foreground/30 mb-2" />
+                <p className="text-sm text-muted-foreground">No active announcements</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {announcements.map((ann) => (
+                  <div key={ann._id} className="p-4 rounded-xl border border-border/50 bg-muted/10 hover:bg-muted/30 transition-colors">
+                    <div className="flex justify-between items-start gap-4 mb-2">
+                      <h4 className="font-semibold text-foreground text-sm leading-tight">{ann.title}</h4>
+                      {ann.priority === "Important" && (
+                        <Badge variant="destructive" className="shrink-0 text-[10px] px-1.5 py-0 h-4">Important</Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">{ann.message}</p>
+                    <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
+                      <span className="font-medium">By {ann.createdBy}</span>
+                      <span>•</span>
+                      <span>{new Date(ann.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 

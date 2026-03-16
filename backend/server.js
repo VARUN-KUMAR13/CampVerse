@@ -74,6 +74,8 @@ const courseRoutes = require("./routes/courses");
 const studentRoutes = require("./routes/students");
 const contactRoutes = require("./routes/contact");
 const adminRoutes = require("./routes/admin");
+const scheduleRoutes = require("./routes/schedules");
+const announcementRoutes = require("./routes/announcements");
 
 // Import middleware
 const { corsHandler, rateLimiter, validateApiVersion } = require("./middleware/auth");
@@ -98,6 +100,8 @@ app.use("/api/courses", courseRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/schedules", scheduleRoutes);
+app.use("/api/announcements", announcementRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {
@@ -121,6 +125,6 @@ app.use("*", (req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, () => {
   console.log(`🚀 CampVerse API server running on port ${PORT}`);
 });

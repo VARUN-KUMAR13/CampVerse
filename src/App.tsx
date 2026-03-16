@@ -76,6 +76,7 @@ import UserManagement from "./pages/admin/UserManagement";
 import Reports from "./pages/admin/Reports";
 import SystemSettings from "./pages/admin/SystemSettings";
 import BackupDatabase from "./pages/admin/BackupDatabase";
+import AdminAnnouncements from "./pages/admin/Announcements";
 
 const queryClient = new QueryClient();
 
@@ -342,6 +343,14 @@ const AppContent = () => {
           element={
             <ProtectedRoute requiredRole="admin">
               <AdminAttendance />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/announcements"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminAnnouncements />
             </ProtectedRoute>
           }
         />

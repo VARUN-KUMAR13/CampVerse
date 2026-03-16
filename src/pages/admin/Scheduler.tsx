@@ -16,7 +16,6 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
 import {
     AlertDialog,
@@ -43,20 +42,20 @@ import { useToast } from "@/hooks/use-toast";
 import {
     Calendar,
     Clock,
-    RefreshCw,
     Loader2,
-    Search,
     Plus,
     Trash2,
     Edit,
     Save,
     BookOpen,
     GraduationCap,
+    Users,
 } from "lucide-react";
+import { api } from "@/lib/api";
 
-// Schedule slot interface
+// ─── Interfaces ───────────────────────────────
 interface ScheduleSlot {
-    id: string;
+    _id?: string;
     slotNumber: number;
     subjectCode: string;
     subjectName: string;
@@ -64,173 +63,238 @@ interface ScheduleSlot {
     endTime: string;
     faculty?: string;
     room?: string;
+    classType?: string;
+    className?: string;
+    section?: string;
 }
 
-// Day schedule interface
 interface DaySchedule {
     day: string;
     slots: ScheduleSlot[];
 }
 
-// Section schedule interface
-interface SectionSchedule {
-    id: string;
-    year: string;
-    branch: string;
-    section: string;
-    semester: string;
+interface ScheduleDoc {
+    _id: string;
+    scheduleType: "student" | "faculty";
+    // Student fields
+    year?: string;
+    branch?: string;
+    section?: string;
+    semester?: string;
+    degree?: string;
+    // Faculty fields
+    department?: string;
+    rollNumber?: string;
+    // Common
     schedule: DaySchedule[];
     createdAt: string;
     updatedAt: string;
     createdBy: string;
 }
 
+// ─── Constants ────────────────────────────────
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-const DEFAULT_SLOTS: Omit<ScheduleSlot, 'id'>[] = [
-    { slotNumber: 1, subjectCode: "", subjectName: "", startTime: "09:00", endTime: "12:10", faculty: "", room: "" },
-    { slotNumber: 2, subjectCode: "", subjectName: "", startTime: "12:10", endTime: "13:10", faculty: "", room: "" },
-    { slotNumber: 3, subjectCode: "", subjectName: "", startTime: "13:55", endTime: "14:55", faculty: "", room: "" },
-    { slotNumber: 4, subjectCode: "", subjectName: "", startTime: "14:55", endTime: "15:55", faculty: "", room: "" },
-];
+const DEFAULT_SLOTS: Omit<ScheduleSlot, '_id'>[] = [];
+
+const DEPARTMENTS = ["CSE", "ECE", "EEE", "Civil", "Mech", "IT", "AIDS", "AIML"];
 
 const AdminScheduler = () => {
     const { userData } = useAuth();
     const { toast } = useToast();
 
+    // ─── Core State ──────────────────────────
     const [loading, setLoading] = useState(false);
-    const [searchTerm, setSearchTerm] = useState("");
+    const [schedules, setSchedules] = useState<ScheduleDoc[]>([]);
+
+    // Toggle: "student" or "faculty"
+    const [activeTab, setActiveTab] = useState<"student" | "faculty">("student");
+
+    // ─── Filter State ────────────────────────
+    // Student filters
+    const [filterDegree, setFilterDegree] = useState("");
+    const [filterYear, setFilterYear] = useState("");
+    const [filterBranch, setFilterBranch] = useState("");
+    const [filterSemester, setFilterSemester] = useState("");
+    // Faculty filters
+    const [filterDepartment, setFilterDepartment] = useState("");
+    const [filterRollNumber, setFilterRollNumber] = useState("");
+
+    // ─── Create Schedule Modal ───────────────
+    const [isCreateTypeModalOpen, setIsCreateTypeModalOpen] = useState(false);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [createType, setCreateType] = useState<"student" | "faculty">("student");
 
-    // Current schedules
-    const [schedules, setSchedules] = useState<SectionSchedule[]>([]);
-
-    // Form state for new/edit schedule
-    const [scheduleForm, setScheduleForm] = useState({
+    // Student form
+    const [studentForm, setStudentForm] = useState({
         year: "22",
         branch: "05",
         section: "B",
         semester: "VI",
+        degree: "Major",
     });
 
-    // Current day schedule being edited
-    const [currentDaySchedule, setCurrentDaySchedule] = useState<DaySchedule[]>([]);
+    // Faculty form
+    const [facultyForm, setFacultyForm] = useState({
+        department: "CSE",
+        rollNumber: "",
+    });
+
+    // ─── Edit Modal ──────────────────────────
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
     const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
+    const [currentDaySchedule, setCurrentDaySchedule] = useState<DaySchedule[]>([]);
     const [selectedDay, setSelectedDay] = useState<string>("Monday");
 
-    // Load schedules from localStorage (in production, this would be Firebase/MongoDB)
+    // ─── Load schedules from MongoDB ─────────
     useEffect(() => {
         loadSchedules();
-    }, []);
+    }, [activeTab, filterDegree, filterYear, filterBranch, filterSemester, filterDepartment, filterRollNumber]);
 
-    const loadSchedules = () => {
+    const loadSchedules = async () => {
         setLoading(true);
         try {
-            const saved = localStorage.getItem("campverse_schedules");
-            if (saved) {
-                setSchedules(JSON.parse(saved));
+            const params = new URLSearchParams();
+            params.set("scheduleType", activeTab);
+
+            if (activeTab === "student") {
+                if (filterDegree && filterDegree !== "all") params.set("degree", filterDegree);
+                if (filterYear && filterYear !== "all") params.set("year", filterYear);
+                if (filterBranch && filterBranch !== "all") params.set("branch", filterBranch);
+                if (filterSemester && filterSemester !== "all") params.set("semester", filterSemester);
             } else {
-                // Initialize with default schedule for CSE-B
-                const defaultSchedule = createDefaultSchedule();
-                setSchedules([defaultSchedule]);
-                localStorage.setItem("campverse_schedules", JSON.stringify([defaultSchedule]));
+                if (filterDepartment && filterDepartment !== "all") params.set("department", filterDepartment);
+                if (filterRollNumber) params.set("rollNumber", filterRollNumber);
             }
-        } catch (error) {
+
+            const data = await api.get(`/schedules?${params.toString()}`);
+            setSchedules(data);
+        } catch (error: any) {
             console.error("Error loading schedules:", error);
+            // If API fails, try localStorage fallback for student schedules
+            if (activeTab === "student") {
+                try {
+                    const saved = localStorage.getItem("campverse_schedules");
+                    if (saved) {
+                        const localSchedules = JSON.parse(saved);
+                        // Convert to ScheduleDoc format
+                        const converted: ScheduleDoc[] = localSchedules.map((s: any) => ({
+                            _id: s.id || s._id,
+                            scheduleType: "student" as const,
+                            year: s.year,
+                            branch: s.branch,
+                            section: s.section,
+                            semester: s.semester,
+                            degree: s.degree || "Major",
+                            schedule: s.schedule,
+                            createdAt: s.createdAt,
+                            updatedAt: s.updatedAt,
+                            createdBy: s.createdBy,
+                        }));
+                        setSchedules(converted);
+                    }
+                } catch (e) {
+                    console.error("Error loading from localStorage:", e);
+                }
+            }
         } finally {
             setLoading(false);
         }
     };
 
-    const createDefaultSchedule = (): SectionSchedule => {
-        const defaultDaySchedule: DaySchedule[] = DAYS.map(day => ({
-            day,
-            slots: [
-                { id: `${day}_1`, slotNumber: 1, subjectCode: "22CS401", subjectName: "Linux programming", startTime: "09:00", endTime: "12:10", faculty: "Dr. Smith", room: "Lab 101" },
-                { id: `${day}_2`, slotNumber: 2, subjectCode: "22HS301", subjectName: "Business Economics and Financial Analysis", startTime: "12:10", endTime: "13:10", faculty: "Dr. Johnson", room: "Room 201" },
-                { id: `${day}_3`, slotNumber: 3, subjectCode: "22HS501", subjectName: "Professional Elective-III", startTime: "13:55", endTime: "14:55", faculty: "Dr. Williams", room: "Room 301" },
-                { id: `${day}_4`, slotNumber: 4, subjectCode: "22HS501", subjectName: "Professional Elective-IV", startTime: "14:55", endTime: "15:55", faculty: "Dr. Brown", room: "Room 302" },
-            ]
-        }));
-
-        return {
-            id: "schedule_22_05_B",
-            year: "22",
-            branch: "05",
-            section: "B",
-            semester: "VI",
-            schedule: defaultDaySchedule,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            createdBy: userData?.collegeId || "admin",
-        };
+    // ─── Create Schedule Flow ────────────────
+    const handleOpenCreateModal = () => {
+        setIsCreateTypeModalOpen(true);
     };
 
-    const saveSchedules = (updatedSchedules: SectionSchedule[]) => {
-        localStorage.setItem("campverse_schedules", JSON.stringify(updatedSchedules));
-        setSchedules(updatedSchedules);
-
-        // Also save to a global config for student dashboard to read
-        const scheduleConfig: Record<string, DaySchedule[]> = {};
-        updatedSchedules.forEach(s => {
-            const key = `${s.year}_${s.branch}_${s.section}`;
-            scheduleConfig[key] = s.schedule;
-            console.log("[Scheduler] Saving schedule for key:", key, "with", s.schedule.length, "days");
-        });
-        localStorage.setItem("campverse_schedule_config", JSON.stringify(scheduleConfig));
-        console.log("[Scheduler] ✓ Saved schedule config to localStorage:", Object.keys(scheduleConfig));
+    const handleSelectCreateType = (type: "student" | "faculty") => {
+        setCreateType(type);
+        setIsCreateTypeModalOpen(false);
+        setIsAddModalOpen(true);
     };
 
-    const handleCreateSchedule = () => {
-        const scheduleId = `schedule_${scheduleForm.year}_${scheduleForm.branch}_${scheduleForm.section}`;
-
-        // Check if schedule already exists
-        if (schedules.find(s => s.id === scheduleId)) {
-            toast({
-                title: "Schedule Exists",
-                description: "A schedule for this section already exists. Please edit it instead.",
-                variant: "destructive",
-            });
-            return;
-        }
-
-        const newSchedule: SectionSchedule = {
-            id: scheduleId,
-            ...scheduleForm,
-            schedule: DAYS.map(day => ({
+    const handleCreateSchedule = async () => {
+        setIsSubmitting(true);
+        try {
+            const defaultDaySchedule: DaySchedule[] = DAYS.map(day => ({
                 day,
                 slots: DEFAULT_SLOTS.map((slot, idx) => ({
                     ...slot,
-                    id: `${day}_${idx + 1}`,
+                    slotNumber: idx + 1,
                 })),
-            })),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            createdBy: userData?.collegeId || "admin",
-        };
+            }));
 
-        const updatedSchedules = [...schedules, newSchedule];
-        saveSchedules(updatedSchedules);
+            let body: any = {
+                scheduleType: createType,
+                schedule: defaultDaySchedule,
+                createdBy: userData?.collegeId || "admin",
+            };
 
-        toast({
-            title: "Success!",
-            description: "Schedule created successfully. Now edit it to add subjects.",
-        });
+            if (createType === "student") {
+                body = {
+                    ...body,
+                    year: studentForm.year,
+                    branch: studentForm.branch,
+                    section: studentForm.section,
+                    semester: studentForm.semester,
+                    degree: studentForm.degree,
+                };
+            } else {
+                if (!facultyForm.rollNumber.trim()) {
+                    toast({
+                        title: "Roll Number Required",
+                        description: "Please enter a faculty roll/ID number.",
+                        variant: "destructive",
+                    });
+                    setIsSubmitting(false);
+                    return;
+                }
+                body = {
+                    ...body,
+                    department: facultyForm.department,
+                    rollNumber: facultyForm.rollNumber.trim(),
+                };
+            }
 
-        setIsAddModalOpen(false);
+            const saved = await api.post("/schedules", body);
 
-        // Open edit modal for the new schedule
-        setSelectedScheduleId(scheduleId);
-        setCurrentDaySchedule(newSchedule.schedule);
-        setIsEditModalOpen(true);
+            toast({
+                title: "Success!",
+                description: "Schedule created successfully. Now edit it to add subjects.",
+            });
+
+            setIsAddModalOpen(false);
+
+            // Also save to localStorage for backward compatibility (student only)
+            if (createType === "student") {
+                syncStudentScheduleToLocalStorage([...schedules, saved]);
+            }
+
+            // Open edit modal
+            setSelectedScheduleId(saved._id);
+            setCurrentDaySchedule(saved.schedule);
+            setIsEditModalOpen(true);
+
+            // Refresh list
+            loadSchedules();
+        } catch (error: any) {
+            const msg = error.message || "Failed to create schedule.";
+            toast({
+                title: "Error",
+                description: msg.includes("409") ? "A schedule with these parameters already exists." : msg,
+                variant: "destructive",
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
-    const handleEditSchedule = (schedule: SectionSchedule) => {
-        setSelectedScheduleId(schedule.id);
-        setCurrentDaySchedule(JSON.parse(JSON.stringify(schedule.schedule))); // Deep copy
+    // ─── Edit Schedule ───────────────────────
+    const handleEditSchedule = (schedule: ScheduleDoc) => {
+        setSelectedScheduleId(schedule._id);
+        setCurrentDaySchedule(JSON.parse(JSON.stringify(schedule.schedule)));
         setSelectedDay("Monday");
         setIsEditModalOpen(true);
     };
@@ -249,14 +313,12 @@ const AdminScheduler = () => {
         }));
     };
 
-    // Add a new slot to the selected day
     const handleAddSlot = () => {
         setCurrentDaySchedule(prev => prev.map(d => {
             if (d.day === selectedDay) {
                 const newSlotNumber = d.slots.length + 1;
                 const lastSlot = d.slots[d.slots.length - 1];
                 const newSlot: ScheduleSlot = {
-                    id: `${d.day}_${newSlotNumber}`,
                     slotNumber: newSlotNumber,
                     subjectCode: "",
                     subjectName: "",
@@ -264,6 +326,7 @@ const AdminScheduler = () => {
                     endTime: lastSlot ? addHourToTime(lastSlot.endTime) : "10:00",
                     faculty: "",
                     room: "",
+                    classType: "Class",
                 };
                 return { ...d, slots: [...d.slots, newSlot] };
             }
@@ -276,18 +339,15 @@ const AdminScheduler = () => {
         });
     };
 
-    // Delete a slot from the selected day
     const handleDeleteSlot = (slotIndex: number) => {
         setCurrentDaySchedule(prev => prev.map(d => {
             if (d.day === selectedDay) {
                 const updatedSlots = d.slots.filter((_, idx) => idx !== slotIndex);
-                // Renumber slots
                 return {
                     ...d,
                     slots: updatedSlots.map((slot, idx) => ({
                         ...slot,
                         slotNumber: idx + 1,
-                        id: `${d.day}_${idx + 1}`,
                     })),
                 };
             }
@@ -300,37 +360,50 @@ const AdminScheduler = () => {
         });
     };
 
-    // Helper function to add an hour to a time string
     const addHourToTime = (time: string): string => {
         const [hours, minutes] = time.split(':').map(Number);
         const newHours = (hours + 1) % 24;
         return `${newHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     };
 
-    const handleSaveSchedule = () => {
+    const handleSaveSchedule = async () => {
         if (!selectedScheduleId) return;
 
         setIsSubmitting(true);
         try {
-            const updatedSchedules = schedules.map(s => {
-                if (s.id === selectedScheduleId) {
-                    return {
-                        ...s,
-                        schedule: currentDaySchedule,
-                        updatedAt: new Date().toISOString(),
-                    };
-                }
-                return s;
+            const cleanedDaySchedule = currentDaySchedule.map(day => {
+                const filledSlots = day.slots.filter(slot => 
+                    (slot.subjectName?.trim() || slot.subjectCode?.trim() || slot.faculty?.trim() || slot.room?.trim())
+                );
+                return {
+                    ...day,
+                    slots: filledSlots.map((slot, idx) => ({ ...slot, slotNumber: idx + 1 }))
+                };
             });
 
-            saveSchedules(updatedSchedules);
+            const updated = await api.put(`/schedules/${selectedScheduleId}`, {
+                schedule: cleanedDaySchedule,
+            });
 
             toast({
                 title: "Schedule Updated!",
-                description: "The timetable has been updated. Students will see the changes on their dashboard.",
+                description: "The timetable has been updated. Changes will reflect on dashboards.",
             });
 
+            // Also update localStorage for student schedules (backward compat)
+            const targetSchedule = schedules.find(s => s._id === selectedScheduleId);
+            if (targetSchedule?.scheduleType === "student") {
+                const updatedSchedules = schedules.map(s => {
+                    if (s._id === selectedScheduleId) {
+                        return { ...s, schedule: cleanedDaySchedule, updatedAt: new Date().toISOString() };
+                    }
+                    return s;
+                });
+                syncStudentScheduleToLocalStorage(updatedSchedules);
+            }
+
             setIsEditModalOpen(false);
+            loadSchedules();
         } catch (error: any) {
             toast({
                 title: "Error",
@@ -345,13 +418,18 @@ const AdminScheduler = () => {
     const handleDeleteSchedule = async (id: string) => {
         setDeletingId(id);
         try {
-            const updatedSchedules = schedules.filter(s => s.id !== id);
-            saveSchedules(updatedSchedules);
+            await api.delete(`/schedules/${id}`);
 
             toast({
                 title: "Deleted!",
                 description: "Schedule has been deleted successfully.",
             });
+
+            // Remove from localStorage too
+            const remaining = schedules.filter(s => s._id !== id);
+            syncStudentScheduleToLocalStorage(remaining.filter(s => s.scheduleType === "student"));
+
+            loadSchedules();
         } catch (error: any) {
             toast({
                 title: "Error",
@@ -360,6 +438,23 @@ const AdminScheduler = () => {
             });
         } finally {
             setDeletingId(null);
+        }
+    };
+
+    // ─── Helpers ─────────────────────────────
+    const syncStudentScheduleToLocalStorage = (studentSchedules: ScheduleDoc[]) => {
+        try {
+            // Save in old format for student dashboard backward compat
+            const scheduleConfig: Record<string, DaySchedule[]> = {};
+            studentSchedules.forEach(s => {
+                if (s.scheduleType === "student" && s.year && s.branch && s.section) {
+                    const key = `${s.year}_${s.branch}_${s.section}`;
+                    scheduleConfig[key] = s.schedule;
+                }
+            });
+            localStorage.setItem("campverse_schedule_config", JSON.stringify(scheduleConfig));
+        } catch (e) {
+            console.error("Error syncing to localStorage:", e);
         }
     };
 
@@ -382,16 +477,22 @@ const AdminScheduler = () => {
         return branches[code] || code;
     };
 
-    const filteredSchedules = schedules.filter(schedule => {
-        const searchLower = searchTerm.toLowerCase();
-        return (
-            schedule.section.toLowerCase().includes(searchLower) ||
-            getBranchName(schedule.branch).toLowerCase().includes(searchLower) ||
-            schedule.year.includes(searchLower)
-        );
-    });
+    const getYearLabel = (code: string) => {
+        const years: Record<string, string> = {
+            "22": "I Year", "23": "II Year", "24": "III Year", "25": "IV Year",
+        };
+        return years[code] || `20${code} Batch`;
+    };
 
     const currentDayData = currentDaySchedule.find(d => d.day === selectedDay);
+
+    // ─── Stats ───────────────────────────────
+    const studentSchedules = schedules.filter(s => s.scheduleType === "student");
+    const facultySchedules = schedules.filter(s => s.scheduleType === "faculty");
+    const displayedSchedules = activeTab === "student" ? studentSchedules : facultySchedules;
+
+    // Determine the type of schedule being edited
+    const editingScheduleType = schedules.find(s => s._id === selectedScheduleId)?.scheduleType || createType;
 
     return (
         <AdminLayout>
@@ -408,113 +509,10 @@ const AdminScheduler = () => {
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        <Button variant="outline" onClick={loadSchedules} disabled={loading}>
-                            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                            <span className="ml-2">Refresh</span>
+                        <Button onClick={handleOpenCreateModal}>
+                            <Plus className="w-4 h-4 mr-2" />
+                            Create Schedule
                         </Button>
-                        <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-                            <DialogTrigger asChild>
-                                <Button>
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Create Schedule
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-md">
-                                <DialogHeader>
-                                    <DialogTitle className="flex items-center gap-2 text-xl">
-                                        <Calendar className="w-6 h-6 text-primary" />
-                                        Create New Schedule
-                                    </DialogTitle>
-                                </DialogHeader>
-                                <div className="space-y-4 py-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label>Year</Label>
-                                            <Select
-                                                value={scheduleForm.year}
-                                                onValueChange={(value) => setScheduleForm({ ...scheduleForm, year: value })}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="22">2022 Batch</SelectItem>
-                                                    <SelectItem value="23">2023 Batch</SelectItem>
-                                                    <SelectItem value="24">2024 Batch</SelectItem>
-                                                    <SelectItem value="25">2025 Batch</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Branch</Label>
-                                            <Select
-                                                value={scheduleForm.branch}
-                                                onValueChange={(value) => setScheduleForm({ ...scheduleForm, branch: value })}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="05">CSE</SelectItem>
-                                                    <SelectItem value="04">ECE</SelectItem>
-                                                    <SelectItem value="02">EEE</SelectItem>
-                                                    <SelectItem value="01">Civil</SelectItem>
-                                                    <SelectItem value="03">Mech</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label>Section</Label>
-                                            <Select
-                                                value={scheduleForm.section}
-                                                onValueChange={(value) => setScheduleForm({ ...scheduleForm, section: value })}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="A">Section A</SelectItem>
-                                                    <SelectItem value="B">Section B</SelectItem>
-                                                    <SelectItem value="C">Section C</SelectItem>
-                                                    <SelectItem value="D">Section D</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Semester</Label>
-                                            <Select
-                                                value={scheduleForm.semester}
-                                                onValueChange={(value) => setScheduleForm({ ...scheduleForm, semester: value })}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="I">Semester I</SelectItem>
-                                                    <SelectItem value="II">Semester II</SelectItem>
-                                                    <SelectItem value="III">Semester III</SelectItem>
-                                                    <SelectItem value="IV">Semester IV</SelectItem>
-                                                    <SelectItem value="V">Semester V</SelectItem>
-                                                    <SelectItem value="VI">Semester VI</SelectItem>
-                                                    <SelectItem value="VII">Semester VII</SelectItem>
-                                                    <SelectItem value="VIII">Semester VIII</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-                                    <div className="flex justify-end gap-3 pt-4 border-t">
-                                        <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
-                                            Cancel
-                                        </Button>
-                                        <Button onClick={handleCreateSchedule}>
-                                            Create & Edit
-                                        </Button>
-                                    </div>
-                                </div>
-                            </DialogContent>
-                        </Dialog>
                     </div>
                 </div>
 
@@ -537,8 +535,14 @@ const AdminScheduler = () => {
                                 <GraduationCap className="w-6 h-6 text-blue-500" />
                             </div>
                             <div>
-                                <p className="text-sm text-muted-foreground">Sections Covered</p>
-                                <p className="text-2xl font-bold">{new Set(schedules.map(s => s.section)).size}</p>
+                                <p className="text-sm text-muted-foreground">
+                                    {activeTab === "student" ? "Sections Covered" : "Faculty Covered"}
+                                </p>
+                                <p className="text-2xl font-bold">
+                                    {activeTab === "student"
+                                        ? new Set(studentSchedules.map(s => s.section)).size
+                                        : facultySchedules.length}
+                                </p>
                             </div>
                         </CardContent>
                     </Card>
@@ -549,24 +553,130 @@ const AdminScheduler = () => {
                             </div>
                             <div>
                                 <p className="text-sm text-muted-foreground">Daily Slots</p>
-                                <p className="text-2xl font-bold">4</p>
+                                <p className="text-2xl font-bold">
+                                    {displayedSchedules[0]?.schedule?.[0]?.slots?.length || 4}
+                                </p>
                             </div>
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* Search */}
+                {/* ─── Toggle Switch: Student | Faculty ─── */}
+                <div className="flex justify-start">
+                    <div className="inline-flex rounded-full p-1 bg-muted/60 border border-border">
+                        <button
+                            onClick={() => setActiveTab("student")}
+                            className={`px-8 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 ${activeTab === "student"
+                                ? "bg-blue-500 text-white shadow-lg shadow-blue-500/25"
+                                : "text-muted-foreground hover:text-foreground"
+                                }`}
+                        >
+                            Student
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("faculty")}
+                            className={`px-8 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 ${activeTab === "faculty"
+                                ? "bg-blue-500 text-white shadow-lg shadow-blue-500/25"
+                                : "text-muted-foreground hover:text-foreground"
+                                }`}
+                        >
+                            Faculty
+                        </button>
+                    </div>
+                </div>
+
+                {/* ─── Filter Dropdowns ─── */}
                 <Card>
                     <CardContent className="p-4">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                            <Input
-                                placeholder="Search schedules by section, branch..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10"
-                            />
-                        </div>
+                        {activeTab === "student" ? (
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">Degree</Label>
+                                    <Select value={filterDegree} onValueChange={setFilterDegree}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="All Degrees" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Degrees</SelectItem>
+                                            <SelectItem value="Major">Major</SelectItem>
+                                            <SelectItem value="Minor">Minor</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">Year</Label>
+                                    <Select value={filterYear} onValueChange={setFilterYear}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="All Years" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Years</SelectItem>
+                                            <SelectItem value="22">I Year</SelectItem>
+                                            <SelectItem value="23">II Year</SelectItem>
+                                            <SelectItem value="24">III Year</SelectItem>
+                                            <SelectItem value="25">IV Year</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">Semester</Label>
+                                    <Select value={filterSemester} onValueChange={setFilterSemester}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="All Semesters" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Semesters</SelectItem>
+                                            <SelectItem value="I">Semester I</SelectItem>
+                                            <SelectItem value="II">Semester II</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">Branch</Label>
+                                    <Select value={filterBranch} onValueChange={setFilterBranch}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="All Branches" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Branches</SelectItem>
+                                            <SelectItem value="05">CSE</SelectItem>
+                                            <SelectItem value="04">ECE</SelectItem>
+                                            <SelectItem value="02">EEE</SelectItem>
+                                            <SelectItem value="01">Civil</SelectItem>
+                                            <SelectItem value="03">Mech</SelectItem>
+                                            <SelectItem value="06">IT</SelectItem>
+                                            <SelectItem value="07">AIDS</SelectItem>
+                                            <SelectItem value="08">AIML</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">Department</Label>
+                                    <Select value={filterDepartment} onValueChange={setFilterDepartment}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="All Departments" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Departments</SelectItem>
+                                            {DEPARTMENTS.map(dept => (
+                                                <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">Roll Number (Optional)</Label>
+                                    <Input
+                                        placeholder="Enter faculty roll number..."
+                                        value={filterRollNumber}
+                                        onChange={(e) => setFilterRollNumber(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -581,62 +691,50 @@ const AdminScheduler = () => {
                 )}
 
                 {/* Schedules List */}
-                {!loading && filteredSchedules.length === 0 ? (
+                {!loading && displayedSchedules.length === 0 ? (
                     <Card>
                         <CardContent className="p-12 text-center">
                             <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                             <h3 className="text-lg font-medium text-foreground mb-2">No schedules found</h3>
                             <p className="text-muted-foreground">
-                                {schedules.length === 0
-                                    ? "No schedules created yet. Click 'Create Schedule' to add one."
-                                    : "Try adjusting your search."}
+                                No {activeTab} schedules created yet. Click "Create Schedule" to add one.
                             </p>
                         </CardContent>
                     </Card>
                 ) : (
                     <div className="space-y-4">
-                        {filteredSchedules.map((schedule) => (
-                            <Card key={schedule.id} className="hover:shadow-lg transition-shadow">
+                        {displayedSchedules.map((schedule) => (
+                            <Card key={schedule._id} className="hover:shadow-lg transition-shadow">
                                 <CardContent className="p-6">
                                     <div className="flex items-start justify-between gap-4">
                                         <div className="flex-1 space-y-2">
                                             <div className="flex items-start gap-3 flex-wrap">
-                                                <h3 className="text-lg font-bold text-foreground">
-                                                    {getBranchName(schedule.branch)} - Section {schedule.section}
-                                                </h3>
-                                                <Badge className="bg-blue-500">20{schedule.year} Batch</Badge>
-                                                <Badge variant="secondary">Semester {schedule.semester}</Badge>
+                                                {schedule.scheduleType === "student" ? (
+                                                    <>
+                                                        <h3 className="text-lg font-bold text-foreground">
+                                                            {getBranchName(schedule.branch || "")} - Section {schedule.section}
+                                                        </h3>
+                                                        <Badge className="bg-blue-500">20{schedule.year} Batch</Badge>
+                                                        <Badge variant="secondary">Semester {schedule.semester}</Badge>
+                                                        {schedule.degree && (
+                                                            <Badge variant="outline">{schedule.degree}</Badge>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                                                            <Users className="w-5 h-5 text-purple-500" />
+                                                            {schedule.department} - {schedule.rollNumber}
+                                                        </h3>
+                                                        <Badge className="bg-purple-500">Faculty</Badge>
+                                                    </>
+                                                )}
                                             </div>
 
                                             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                                                <span className="flex items-center gap-1">
-                                                    <Clock className="w-4 h-4" />
-                                                    {schedule.schedule[0]?.slots.length || 0} slots/day
-                                                </span>
-                                                <span className="flex items-center gap-1">
-                                                    <Calendar className="w-4 h-4" />
-                                                    6 days/week
-                                                </span>
                                                 <span className="text-xs">
                                                     Updated: {new Date(schedule.updatedAt).toLocaleDateString()}
                                                 </span>
-                                            </div>
-
-                                            {/* Preview of today's schedule */}
-                                            <div className="mt-3 p-3 bg-muted/50 rounded-lg">
-                                                <p className="text-xs text-muted-foreground mb-2">Today's Preview (Monday):</p>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {schedule.schedule.find(d => d.day === "Monday")?.slots.slice(0, 3).map((slot, idx) => (
-                                                        <Badge key={idx} variant="outline" className="text-xs">
-                                                            {slot.subjectName || "Empty Slot"}
-                                                        </Badge>
-                                                    ))}
-                                                    {schedule.schedule.find(d => d.day === "Monday")?.slots.length > 3 && (
-                                                        <Badge variant="outline" className="text-xs">
-                                                            +{schedule.schedule.find(d => d.day === "Monday")!.slots.length - 3} more
-                                                        </Badge>
-                                                    )}
-                                                </div>
                                             </div>
                                         </div>
 
@@ -656,9 +754,9 @@ const AdminScheduler = () => {
                                                         variant="ghost"
                                                         size="sm"
                                                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                        disabled={deletingId === schedule.id}
+                                                        disabled={deletingId === schedule._id}
                                                     >
-                                                        {deletingId === schedule.id ? (
+                                                        {deletingId === schedule._id ? (
                                                             <Loader2 className="w-4 h-4 animate-spin" />
                                                         ) : (
                                                             <Trash2 className="w-4 h-4" />
@@ -669,13 +767,13 @@ const AdminScheduler = () => {
                                                     <AlertDialogHeader>
                                                         <AlertDialogTitle>Delete Schedule?</AlertDialogTitle>
                                                         <AlertDialogDescription>
-                                                            Are you sure you want to delete the schedule for {getBranchName(schedule.branch)} Section {schedule.section}? This action cannot be undone.
+                                                            Are you sure you want to delete this schedule? This action cannot be undone.
                                                         </AlertDialogDescription>
                                                     </AlertDialogHeader>
                                                     <AlertDialogFooter>
                                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                                                         <AlertDialogAction
-                                                            onClick={() => handleDeleteSchedule(schedule.id)}
+                                                            onClick={() => handleDeleteSchedule(schedule._id)}
                                                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                                         >
                                                             Delete
@@ -691,7 +789,187 @@ const AdminScheduler = () => {
                     </div>
                 )}
 
-                {/* Edit Schedule Modal */}
+                {/* ─── Create Type Selection Modal ─── */}
+                <Dialog open={isCreateTypeModalOpen} onOpenChange={setIsCreateTypeModalOpen}>
+                    <DialogContent className="max-w-sm">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2 text-xl">
+                                <Calendar className="w-6 h-6 text-primary" />
+                                Create Schedule For
+                            </DialogTitle>
+                        </DialogHeader>
+                        <div className="flex gap-4 py-6">
+                            <Button
+                                className="flex-1 h-24 flex-col gap-2"
+                                variant="outline"
+                                onClick={() => handleSelectCreateType("student")}
+                            >
+                                <GraduationCap className="w-8 h-8 text-blue-500" />
+                                <span className="text-sm font-semibold">Student</span>
+                            </Button>
+                            <Button
+                                className="flex-1 h-24 flex-col gap-2"
+                                variant="outline"
+                                onClick={() => handleSelectCreateType("faculty")}
+                            >
+                                <Users className="w-8 h-8 text-purple-500" />
+                                <span className="text-sm font-semibold">Faculty</span>
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
+                {/* ─── Create Schedule Form Modal ─── */}
+                <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+                    <DialogContent className="max-w-md">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2 text-xl">
+                                {createType === "student" ? (
+                                    <GraduationCap className="w-6 h-6 text-blue-500" />
+                                ) : (
+                                    <Users className="w-6 h-6 text-purple-500" />
+                                )}
+                                Create {createType === "student" ? "Student" : "Faculty"} Schedule
+                            </DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                            {createType === "student" ? (
+                                <>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label>Degree</Label>
+                                            <Select
+                                                value={studentForm.degree}
+                                                onValueChange={(value) => setStudentForm({ ...studentForm, degree: value })}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Major">Major</SelectItem>
+                                                    <SelectItem value="Minor">Minor</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Year</Label>
+                                            <Select
+                                                value={studentForm.year}
+                                                onValueChange={(value) => setStudentForm({ ...studentForm, year: value })}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="22">I Year</SelectItem>
+                                                    <SelectItem value="23">II Year</SelectItem>
+                                                    <SelectItem value="24">III Year</SelectItem>
+                                                    <SelectItem value="25">IV Year</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label>Branch</Label>
+                                            <Select
+                                                value={studentForm.branch}
+                                                onValueChange={(value) => setStudentForm({ ...studentForm, branch: value })}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="05">CSE</SelectItem>
+                                                    <SelectItem value="04">ECE</SelectItem>
+                                                    <SelectItem value="02">EEE</SelectItem>
+                                                    <SelectItem value="01">Civil</SelectItem>
+                                                    <SelectItem value="03">Mech</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Section</Label>
+                                            <Select
+                                                value={studentForm.section}
+                                                onValueChange={(value) => setStudentForm({ ...studentForm, section: value })}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="A">Section A</SelectItem>
+                                                    <SelectItem value="B">Section B</SelectItem>
+                                                    <SelectItem value="C">Section C</SelectItem>
+                                                    <SelectItem value="D">Section D</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Semester</Label>
+                                        <Select
+                                            value={studentForm.semester}
+                                            onValueChange={(value) => setStudentForm({ ...studentForm, semester: value })}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="I">Semester I</SelectItem>
+                                                <SelectItem value="II">Semester II</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="space-y-2">
+                                        <Label>Department</Label>
+                                        <Select
+                                            value={facultyForm.department}
+                                            onValueChange={(value) => setFacultyForm({ ...facultyForm, department: value })}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {DEPARTMENTS.map(dept => (
+                                                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Roll Number / Faculty ID</Label>
+                                        <Input
+                                            placeholder="Enter faculty roll number..."
+                                            value={facultyForm.rollNumber}
+                                            onChange={(e) => setFacultyForm({ ...facultyForm, rollNumber: e.target.value })}
+                                        />
+                                    </div>
+                                </>
+                            )}
+                            <div className="flex justify-end gap-3 pt-4 border-t">
+                                <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
+                                    Cancel
+                                </Button>
+                                <Button onClick={handleCreateSchedule} disabled={isSubmitting}>
+                                    {isSubmitting ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                            Creating...
+                                        </>
+                                    ) : (
+                                        "Create & Edit"
+                                    )}
+                                </Button>
+                            </div>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
+                {/* ─── Edit Schedule Modal ─── */}
                 <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
                     <DialogContent className="max-w-[95vw] w-full max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
@@ -725,20 +1003,28 @@ const AdminScheduler = () => {
                                             <TableHead className="min-w-[280px]">Subject Name</TableHead>
                                             <TableHead className="min-w-[140px]">Start Time</TableHead>
                                             <TableHead className="min-w-[140px]">End Time</TableHead>
-                                            <TableHead className="min-w-[180px]">Faculty</TableHead>
+                                            {editingScheduleType === "faculty" ? (
+                                                <>
+                                                    <TableHead className="min-w-[140px]">Class</TableHead>
+                                                    <TableHead className="min-w-[120px]">Section</TableHead>
+                                                </>
+                                            ) : (
+                                                <TableHead className="min-w-[180px]">Faculty</TableHead>
+                                            )}
                                             <TableHead className="min-w-[120px]">Room</TableHead>
+                                            <TableHead className="min-w-[120px]">Class Type</TableHead>
                                             <TableHead className="w-14">Action</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {currentDayData.slots.map((slot, idx) => (
-                                            <TableRow key={slot.id}>
+                                            <TableRow key={idx}>
                                                 <TableCell className="font-medium">{slot.slotNumber}</TableCell>
                                                 <TableCell>
                                                     <Input
                                                         value={slot.subjectCode}
                                                         onChange={(e) => handleSlotChange(selectedDay, idx, "subjectCode", e.target.value)}
-                                                        placeholder="22CS401"
+                                                        placeholder=""
                                                         className="h-9 min-w-[120px]"
                                                     />
                                                 </TableCell>
@@ -746,7 +1032,7 @@ const AdminScheduler = () => {
                                                     <Input
                                                         value={slot.subjectName}
                                                         onChange={(e) => handleSlotChange(selectedDay, idx, "subjectName", e.target.value)}
-                                                        placeholder="Linux Programming"
+                                                        placeholder=""
                                                         className="h-9 min-w-[250px]"
                                                     />
                                                 </TableCell>
@@ -766,21 +1052,53 @@ const AdminScheduler = () => {
                                                         className="h-9 w-32"
                                                     />
                                                 </TableCell>
-                                                <TableCell>
-                                                    <Input
-                                                        value={slot.faculty || ""}
-                                                        onChange={(e) => handleSlotChange(selectedDay, idx, "faculty", e.target.value)}
-                                                        placeholder="Dr. Smith"
-                                                        className="h-9 min-w-[160px]"
-                                                    />
-                                                </TableCell>
+                                                {editingScheduleType === "faculty" ? (
+                                                    <>
+                                                        <TableCell>
+                                                            <Input
+                                                                value={slot.className || ""}
+                                                                onChange={(e) => handleSlotChange(selectedDay, idx, "className", e.target.value)}
+                                                                placeholder=""
+                                                                className="h-9 min-w-[120px]"
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Input
+                                                                value={slot.section || ""}
+                                                                onChange={(e) => handleSlotChange(selectedDay, idx, "section", e.target.value)}
+                                                                placeholder=""
+                                                                className="h-9 min-w-[80px]"
+                                                            />
+                                                        </TableCell>
+                                                    </>
+                                                ) : (
+                                                    <TableCell>
+                                                        <Input
+                                                            value={slot.faculty || ""}
+                                                            onChange={(e) => handleSlotChange(selectedDay, idx, "faculty", e.target.value)}
+                                                            placeholder=""
+                                                            className="h-9 min-w-[160px]"
+                                                        />
+                                                    </TableCell>
+                                                )}
                                                 <TableCell>
                                                     <Input
                                                         value={slot.room || ""}
                                                         onChange={(e) => handleSlotChange(selectedDay, idx, "room", e.target.value)}
-                                                        placeholder="Lab 101"
+                                                        placeholder=""
                                                         className="h-9 min-w-[100px]"
                                                     />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <select
+                                                        value={slot.classType || "Class"}
+                                                        onChange={(e) => handleSlotChange(selectedDay, idx, "classType", e.target.value)}
+                                                        className="h-9 min-w-[100px] rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                                    >
+                                                        <option value="Class">Class</option>
+                                                        <option value="Lab">Lab</option>
+                                                        <option value="Tutorial">Tutorial</option>
+                                                    </select>
                                                 </TableCell>
                                                 <TableCell>
                                                     <Button

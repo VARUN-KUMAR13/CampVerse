@@ -84,6 +84,7 @@ import {
     getStudentsForSection,
     calculateFourWeekAttendance,
 } from "@/services/attendanceService";
+import { AdminClassAttendance } from "@/components/AdminClassAttendance";
 
 interface StudentWithSelection extends AttendanceStudent {
     selected: boolean;
@@ -94,7 +95,7 @@ const AdminAttendance = () => {
     const { userData } = useAuth();
 
     // Tab state
-    const [activeTab, setActiveTab] = useState("override");
+    const [activeTab, setActiveTab] = useState("class");
 
     // Filter state
     const [selectedYear, setSelectedYear] = useState("22");
@@ -120,11 +121,16 @@ const AdminAttendance = () => {
     const [serverTime, setServerTime] = useState<Date>(new Date());
 
     // Statistics
-    const [stats, setStats] = useState({
-        totalStudents: 0,
-        averageAttendance: 0,
-        belowThreshold: 0,
-        perfectAttendance: 0,
+    const [stats, setStats] = useState<{
+        totalStudents: number | null;
+        averageAttendance: number | null;
+        belowThreshold: number | null;
+        perfectAttendance: number | null;
+    }>({
+        totalStudents: null,
+        averageAttendance: null,
+        belowThreshold: null,
+        perfectAttendance: null,
     });
 
     // Available slots
@@ -337,7 +343,7 @@ const AdminAttendance = () => {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-muted-foreground">Total Students</p>
-                                    <p className="text-2xl font-bold text-blue-500">{stats.totalStudents}</p>
+                                    <p className="text-2xl font-bold text-blue-500">{stats.totalStudents !== null ? stats.totalStudents : "--"}</p>
                                 </div>
                                 <Users className="w-8 h-8 text-blue-500/50" />
                             </div>
@@ -349,7 +355,9 @@ const AdminAttendance = () => {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-muted-foreground">Average Attendance</p>
-                                    <p className="text-2xl font-bold text-green-500">{stats.averageAttendance}%</p>
+                                    <p className="text-2xl font-bold text-green-500">
+                                        {stats.averageAttendance !== null ? `${stats.averageAttendance}%` : "--"}
+                                    </p>
                                 </div>
                                 <TrendingUp className="w-8 h-8 text-green-500/50" />
                             </div>
@@ -361,7 +369,7 @@ const AdminAttendance = () => {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-muted-foreground">Below Threshold</p>
-                                    <p className="text-2xl font-bold text-red-500">{stats.belowThreshold}</p>
+                                    <p className="text-2xl font-bold text-red-500">{stats.belowThreshold !== null ? stats.belowThreshold : "--"}</p>
                                 </div>
                                 <UserX className="w-8 h-8 text-red-500/50" />
                             </div>
@@ -373,7 +381,7 @@ const AdminAttendance = () => {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-muted-foreground">Perfect Attendance</p>
-                                    <p className="text-2xl font-bold text-purple-500">{stats.perfectAttendance}</p>
+                                    <p className="text-2xl font-bold text-purple-500">{stats.perfectAttendance !== null ? stats.perfectAttendance : "--"}</p>
                                 </div>
                                 <Trophy className="w-8 h-8 text-purple-500/50" />
                             </div>
@@ -383,7 +391,11 @@ const AdminAttendance = () => {
 
                 {/* Main Content Tabs */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                    <TabsList className="grid grid-cols-5 w-full max-w-3xl">
+                    <TabsList className="grid grid-cols-6 w-full max-w-4xl">
+                        <TabsTrigger value="class" className="gap-2">
+                            <Users className="w-4 h-4" />
+                            Class Attendance
+                        </TabsTrigger>
                         <TabsTrigger value="override" className="gap-2">
                             <Shield className="w-4 h-4" />
                             Override
@@ -405,6 +417,11 @@ const AdminAttendance = () => {
                             Settings
                         </TabsTrigger>
                     </TabsList>
+
+                    {/* Class Attendance Tab */}
+                    <TabsContent value="class" className="space-y-6">
+                        <AdminClassAttendance onStatsUpdate={setStats} />
+                    </TabsContent>
 
                     {/* Override Attendance Tab */}
                     <TabsContent value="override" className="space-y-6">
