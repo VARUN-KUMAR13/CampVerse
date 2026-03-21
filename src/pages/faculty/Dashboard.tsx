@@ -94,60 +94,65 @@ const FacultyDashboard = () => {
         const rollNumber = userData.collegeId;
         const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
+        // Fetch all schedules containing slots for this faculty
         const res = await fetch(
-          `${apiBaseUrl}/schedules?scheduleType=faculty&rollNumber=${encodeURIComponent(rollNumber)}`
+          `${apiBaseUrl}/schedules?facultyId=${encodeURIComponent(rollNumber)}`
         );
 
         if (res.ok) {
           const schedules = await res.json();
 
           if (schedules.length > 0) {
-            const schedule = schedules[0]; // Use first matching schedule
-
             // Get today's day name
             const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
             let today = days[new Date().getDay()];
-            if (today === "Sunday") today = "Monday";
+            
+            // Map to collect all assigned slots for today across all schedules
+            const allTodaySlots: any[] = [];
+            
+            schedules.forEach((scheduleDoc: any) => {
+              const todayData = scheduleDoc.schedule?.find((d: any) => d.day === today);
+              if (todayData?.slots) {
+                // IMPORTANT: Filter slots strictly by facultyId
+                const assignedSlots = todayData.slots.filter((slot: any) => 
+                  slot.facultyId === rollNumber &&
+                  (slot.subjectCode?.trim() || slot.subjectName?.trim())
+                );
+                allTodaySlots.push(...assignedSlots);
+              }
+            });
 
-            const todayData = schedule.schedule?.find((d: any) => d.day === today);
-
-            if (todayData?.slots?.length > 0) {
+            if (allTodaySlots.length > 0) {
               const SLOT_COLORS = ["bg-red-500", "bg-blue-500", "bg-orange-500", "bg-purple-500", "bg-green-500", "bg-teal-500"];
 
-              // Filter out empty slots (no data entered)
-              const filledSlots = todayData.slots.filter((slot: any) =>
-                (slot.subjectCode && slot.subjectCode.trim() !== "") ||
-                (slot.subjectName && slot.subjectName.trim() !== "")
-              );
+              // Sort slots by start time
+              allTodaySlots.sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-              if (filledSlots.length > 0) {
-                const mapped = filledSlots.map((slot: any, idx: number) => {
-                  // Format times
-                  const formatTime = (t: string) => {
-                    const [h, m] = t.split(":");
-                    const hour = parseInt(h);
-                    const ampm = hour >= 12 ? "PM" : "AM";
-                    const dh = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
-                    return `${dh}:${m} ${ampm}`;
-                  };
+              const mapped = allTodaySlots.map((slot: any, idx: number) => {
+                const formatTime = (t: string) => {
+                  const [h, m] = t.split(":");
+                  const hour = parseInt(h);
+                  const ampm = hour >= 12 ? "PM" : "AM";
+                  const dh = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+                  return `${dh}:${m} ${ampm}`;
+                };
 
-                  return {
-                    time: `${formatTime(slot.startTime)} - ${formatTime(slot.endTime)}`,
-                    course: slot.subjectCode || `S${idx + 1}`,
-                    courseName: slot.subjectName || "—",
-                    room: slot.room || "—",
-                    classType: slot.classType || "Class",
-                    section: "",
-                    students: 0,
-                    type: slot.classType || "Class",
-                    color: SLOT_COLORS[idx % SLOT_COLORS.length],
-                  };
-                });
+                return {
+                  time: `${formatTime(slot.startTime)} - ${formatTime(slot.endTime)}`,
+                  course: slot.subjectCode || `S${idx + 1}`,
+                  courseName: slot.subjectName || "—",
+                  room: slot.room || "—",
+                  classType: slot.classType || "Class",
+                  section: slot.section || "",
+                  students: 0,
+                  type: slot.classType || "Class",
+                  color: SLOT_COLORS[idx % SLOT_COLORS.length],
+                };
+              });
 
-                setTodaySchedule(mapped);
-                setLoadingSchedule(false);
-                return;
-              }
+              setTodaySchedule(mapped);
+              setLoadingSchedule(false);
+              return;
             }
           }
         }

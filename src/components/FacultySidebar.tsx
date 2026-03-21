@@ -6,6 +6,7 @@ import {
   FileText,
   Award,
   LogOut,
+  Bell,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,7 +34,7 @@ const FacultySidebar = ({ onNavigate }: FacultySidebarProps) => {
     },
     {
       icon: <Users className="w-5 h-5" />,
-      label: "Attendence",
+      label: "Attendance",
       path: "/faculty/attendence",
     },
     {
@@ -45,6 +46,11 @@ const FacultySidebar = ({ onNavigate }: FacultySidebarProps) => {
       icon: <Award className="w-5 h-5" />,
       label: "Grades",
       path: "/faculty/grades",
+    },
+    {
+      icon: <Bell className="w-5 h-5" />,
+      label: "Alerts",
+      path: "/faculty/alerts",
     },
   ];
 

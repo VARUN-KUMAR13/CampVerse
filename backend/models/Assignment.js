@@ -78,9 +78,13 @@ const assignmentSchema = new mongoose.Schema({
         type: String,
         default: "B",
     },
+    department: {
+        type: String,
+        default: "", // Unified cross-module mapping
+    },
     branch: {
         type: String,
-        default: "CSE",
+        default: "CSE", // Legacy fallback
     },
     year: {
         type: String,

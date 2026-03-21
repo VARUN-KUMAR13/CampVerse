@@ -14,6 +14,18 @@ const courseSchema = new mongoose.Schema(
             required: true,
             trim: true,
         },
+        department: {
+            type: String,
+            default: "CSE",
+        },
+        year: {
+            type: String,
+            default: "IV Year",
+        },
+        semester: {
+            type: String,
+            default: "Semester I",
+        },
         credits: {
             type: Number,
             required: true,

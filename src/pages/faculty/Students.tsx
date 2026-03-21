@@ -183,53 +183,55 @@ const FacultyStudents = () => {
   useEffect(() => {
     const fetchSchedules = async () => {
       try {
+        const rollNumber = userData.collegeId;
         const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
-        const params = new URLSearchParams({
-          scheduleType: "student",
-          degree: selectedDegree,
-          year: selectedYear,
-          semester: selectedSemester,
-          branch: selectedDepartment,
-          section: selectedSection,
-        });
-        const res = await fetch(`${apiBaseUrl}/schedules?${params.toString()}`);
-        if(res.ok) {
-           const data = await res.json();
-           if (data && data.length > 0) {
-               const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-               const today = days[serverTime.getDay()];
-               const activeSchedule = data.find((doc: any) => 
-                  doc.degree === selectedDegree && 
-                  doc.year === selectedYear && 
-                  doc.semester === selectedSemester && 
-                  doc.branch === selectedDepartment &&
-                  doc.section === selectedSection
-               ) || data[0]; // fallback safely to first result
-
-               const todaySchedule = activeSchedule.schedule?.find((d: any) => d.day === (today === "Sunday" ? "Monday" : today));
-               
-               if (todaySchedule && todaySchedule.slots) {
-                   const slots: TimeSlot[] = todaySchedule.slots
-                      .filter((s: any) => s.subjectName || s.subjectCode) // non-empty slots only
-                      .map((slot: any) => ({
-                         id: `slot_${slot.slotNumber}`,
-                         slotNumber: slot.slotNumber,
-                         startTime: slot.startTime,
-                         endTime: slot.endTime,
-                         subjectCode: slot.subjectCode,
-                         subjectName: slot.subjectName,
-                         facultyId: slot.faculty || "",
-                         section: activeSchedule.section || selectedSection,
-                         branch: activeSchedule.branch || selectedDepartment,
-                         year: activeSchedule.year || selectedYear,
-                   }));
-                   setAvailableSlots(slots);
-               } else {
-                   setAvailableSlots([]);
-               }
-           } else {
-               setAvailableSlots([]);
-           }
+        
+        // Fetch all schedules containing slots for this faculty
+        const res = await fetch(`${apiBaseUrl}/schedules?facultyId=${encodeURIComponent(rollNumber)}`);
+        
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.length > 0) {
+            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            const today = days[serverTime.getDay()];
+            
+            const allAvailableSlots: TimeSlot[] = [];
+            
+            data.forEach((scheduleDoc: any) => {
+              // Only consider the schedule if it matches current academic filters OR if it's the faculty's own schedule
+              // Actually, rule says "only show slots where facultyId matches". So we search all.
+              
+              const todaySchedule = scheduleDoc.schedule?.find((d: any) => d.day === today);
+              
+              if (todaySchedule && todaySchedule.slots) {
+                const assignedSlots = todaySchedule.slots
+                  .filter((s: any) => 
+                    s.facultyId === rollNumber && 
+                    (s.subjectName?.trim() || s.subjectCode?.trim())
+                  )
+                  .map((slot: any) => ({
+                    id: `slot_${slot.slotNumber}_${scheduleDoc._id}`,
+                    slotNumber: slot.slotNumber,
+                    startTime: slot.startTime,
+                    endTime: slot.endTime,
+                    subjectCode: slot.subjectCode,
+                    subjectName: slot.subjectName,
+                    facultyId: slot.facultyId || "",
+                    section: scheduleDoc.section || slot.section || selectedSection,
+                    branch: scheduleDoc.branch || slot.department || selectedDepartment,
+                    year: scheduleDoc.year || selectedYear,
+                  }));
+                
+                allAvailableSlots.push(...assignedSlots);
+              }
+            });
+            
+            // Sort by time
+            allAvailableSlots.sort((a, b) => a.startTime.localeCompare(b.startTime));
+            setAvailableSlots(allAvailableSlots);
+          } else {
+            setAvailableSlots([]);
+          }
         }
       } catch (err) {
         console.error("Failed to load generic scheduled slots", err);

@@ -90,9 +90,14 @@ const studentGradeSchema = new mongoose.Schema({
 // Main Grade Sheet schema (per subject per section)
 const gradeSheetSchema = new mongoose.Schema({
     // Subject details
+    courseCode: {
+        type: String,
+        required: false, // Make it optional for fallback logic
+        default: "",
+    },
     subjectCode: {
         type: String,
-        required: true,
+        required: true, // Legacy fallback
     },
     subjectName: {
         type: String,
@@ -113,9 +118,14 @@ const gradeSheetSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    department: {
+        type: String,
+        required: false,
+        default: "",
+    },
     branch: {
         type: String,
-        required: true,
+        required: true, // Legacy fallback
     },
     section: {
         type: String,

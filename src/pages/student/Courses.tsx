@@ -42,6 +42,9 @@ interface Course {
   facultyName: string;
   status: string;
   color: string;
+  department?: string;
+  year?: string;
+  semester?: string;
   createdAt: string;
 }
 
@@ -59,7 +62,20 @@ const StudentCourses = () => {
         const res = await fetch(`${API_BASE}/courses`);
         if (res.ok) {
           const data = await res.json();
-          setCourses(data.filter((c: Course) => c.status === "Active"));
+          // Profile match logic (defaulting to typical CSE IV Year Semester I if user missing data)
+          const stdDept = userData?.department || "CSE";
+          const stdYear = userData?.year || "IV Year";
+          const stdSem = userData?.semester || "Semester I";
+
+          setCourses(
+            data.filter(
+              (c: Course) =>
+                c.status === "Active" &&
+                (c.department === stdDept || !c.department) &&
+                (c.year === stdYear || !c.year) &&
+                (c.semester === stdSem || !c.semester)
+            )
+          );
         }
       } catch (error) {
         console.error("Error fetching courses:", error);

@@ -61,11 +61,12 @@ interface ScheduleSlot {
     subjectName: string;
     startTime: string;
     endTime: string;
-    faculty?: string;
+    facultyName?: string;
+    facultyId?: string;
     room?: string;
     classType?: string;
-    className?: string;
-    section?: string;
+    className?: string; // only if it's faculty schedule
+    section?: string; // only if it's faculty schedule
 }
 
 interface DaySchedule {
@@ -93,7 +94,7 @@ interface ScheduleDoc {
 }
 
 // ─── Constants ────────────────────────────────
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 const DEFAULT_SLOTS: Omit<ScheduleSlot, '_id'>[] = [];
 
@@ -294,7 +295,15 @@ const AdminScheduler = () => {
     // ─── Edit Schedule ───────────────────────
     const handleEditSchedule = (schedule: ScheduleDoc) => {
         setSelectedScheduleId(schedule._id);
-        setCurrentDaySchedule(JSON.parse(JSON.stringify(schedule.schedule)));
+        
+        // Ensure all days (including newly added Sunday) are present in the local editing state
+        const scheduleCopy = JSON.parse(JSON.stringify(schedule.schedule));
+        const hydratedSchedule = DAYS.map(dayName => {
+            const existingDay = scheduleCopy.find((d: any) => d.day === dayName);
+            return existingDay || { day: dayName, slots: [] };
+        });
+
+        setCurrentDaySchedule(hydratedSchedule);
         setSelectedDay("Monday");
         setIsEditModalOpen(true);
     };
@@ -324,7 +333,8 @@ const AdminScheduler = () => {
                     subjectName: "",
                     startTime: lastSlot ? lastSlot.endTime : "09:00",
                     endTime: lastSlot ? addHourToTime(lastSlot.endTime) : "10:00",
-                    faculty: "",
+                    facultyName: "",
+                    facultyId: "",
                     room: "",
                     classType: "Class",
                 };
@@ -373,8 +383,16 @@ const AdminScheduler = () => {
         try {
             const cleanedDaySchedule = currentDaySchedule.map(day => {
                 const filledSlots = day.slots.filter(slot => 
-                    (slot.subjectName?.trim() || slot.subjectCode?.trim() || slot.faculty?.trim() || slot.room?.trim())
+                    (slot.subjectName?.trim() || slot.subjectCode?.trim() || slot.facultyName?.trim() || slot.facultyId?.trim() || slot.room?.trim())
                 );
+
+                // Validation: if subjectCode or subjectName exists, facultyId must exist
+                for (const slot of filledSlots) {
+                    if ((slot.subjectCode?.trim() || slot.subjectName?.trim()) && !slot.facultyId?.trim()) {
+                        throw new Error(`Faculty ID is required for slot ${slot.slotNumber} on ${day.day}`);
+                    }
+                }
+
                 return {
                     ...day,
                     slots: filledSlots.map((slot, idx) => ({ ...slot, slotNumber: idx + 1 }))
@@ -1009,7 +1027,10 @@ const AdminScheduler = () => {
                                                     <TableHead className="min-w-[120px]">Section</TableHead>
                                                 </>
                                             ) : (
-                                                <TableHead className="min-w-[180px]">Faculty</TableHead>
+                                                <>
+                                                    <TableHead className="min-w-[180px]">Faculty Name</TableHead>
+                                                    <TableHead className="min-w-[140px]">Faculty ID *</TableHead>
+                                                </>
                                             )}
                                             <TableHead className="min-w-[120px]">Room</TableHead>
                                             <TableHead className="min-w-[120px]">Class Type</TableHead>
@@ -1072,14 +1093,25 @@ const AdminScheduler = () => {
                                                         </TableCell>
                                                     </>
                                                 ) : (
-                                                    <TableCell>
-                                                        <Input
-                                                            value={slot.faculty || ""}
-                                                            onChange={(e) => handleSlotChange(selectedDay, idx, "faculty", e.target.value)}
-                                                            placeholder=""
-                                                            className="h-9 min-w-[160px]"
-                                                        />
-                                                    </TableCell>
+                                                    <>
+                                                        <TableCell>
+                                                            <Input
+                                                                value={slot.facultyName || ""}
+                                                                onChange={(e) => handleSlotChange(selectedDay, idx, "facultyName", e.target.value)}
+                                                                placeholder="Faculty name"
+                                                                className="h-9 min-w-[160px]"
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Input
+                                                                value={slot.facultyId || ""}
+                                                                onChange={(e) => handleSlotChange(selectedDay, idx, "facultyId", e.target.value)}
+                                                                placeholder="Faculty ID"
+                                                                className="h-9 min-w-[120px] bg-primary/5 border-primary/20"
+                                                                required
+                                                            />
+                                                        </TableCell>
+                                                    </>
                                                 )}
                                                 <TableCell>
                                                     <Input

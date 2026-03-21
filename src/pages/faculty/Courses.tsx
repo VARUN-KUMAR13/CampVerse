@@ -74,6 +74,9 @@ interface Course {
   _id: string;
   courseCode: string;
   courseName: string;
+  department: string;
+  year: string;
+  semester: string;
   credits: number;
   maxStudents: number;
   description: string;
@@ -102,6 +105,9 @@ const FacultyCourses = () => {
   // Form state
   const [courseCode, setCourseCode] = useState("");
   const [courseName, setCourseName] = useState("");
+  const [department, setDepartment] = useState("CSE");
+  const [year, setYear] = useState("IV Year");
+  const [semester, setSemester] = useState("Semester I");
   const [credits, setCredits] = useState("3");
   const [maxStudents, setMaxStudents] = useState("60");
   const [description, setDescription] = useState("");
@@ -144,6 +150,9 @@ const FacultyCourses = () => {
     setEditCourseId(null);
     setCourseCode("");
     setCourseName("");
+    setDepartment("CSE");
+    setYear("IV Year");
+    setSemester("Semester I");
     setCredits("3");
     setMaxStudents("60");
     setDescription("");
@@ -214,6 +223,9 @@ const FacultyCourses = () => {
       const payload: any = {
         courseCode: courseCode.trim(),
         courseName: courseName.trim(),
+        department: department,
+        year: year,
+        semester: semester,
         credits: Number(credits),
         maxStudents: Number(maxStudents),
         description: description.trim(),
@@ -275,6 +287,9 @@ const FacultyCourses = () => {
     setEditCourseId(course._id);
     setCourseCode(course.courseCode);
     setCourseName(course.courseName);
+    setDepartment(course.department || "CSE");
+    setYear(course.year || "IV Year");
+    setSemester(course.semester || "Semester I");
     setCredits(String(course.credits));
     setMaxStudents(String(course.maxStudents));
     setDescription(course.description || "");
@@ -408,6 +423,49 @@ const FacultyCourses = () => {
                       value={courseName}
                       onChange={(e) => setCourseName(e.target.value)}
                     />
+                  </div>
+                </div>
+
+                {/* Row 1.5: Department, Year, Semester */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="department">Department *</Label>
+                    <Select value={department} onValueChange={setDepartment}>
+                      <SelectTrigger id="department">
+                        <SelectValue placeholder="Select Department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {["CSE", "CSE (AI & ML)", "CSE (Data Science)", "ECE", "EEE", "Mechanical", "Civil", "IT"].map((dept) => (
+                          <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="year">Year *</Label>
+                    <Select value={year} onValueChange={setYear}>
+                      <SelectTrigger id="year">
+                        <SelectValue placeholder="Select Year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {["I Year", "II Year", "III Year", "IV Year"].map((y) => (
+                          <SelectItem key={y} value={y}>{y}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="semester">Semester *</Label>
+                    <Select value={semester} onValueChange={setSemester}>
+                      <SelectTrigger id="semester">
+                        <SelectValue placeholder="Select Semester" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {["Semester I", "Semester II", "Semester III", "Semester IV", "Semester V", "Semester VI", "Semester VII", "Semester VIII"].map((sem) => (
+                          <SelectItem key={sem} value={sem}>{sem}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 

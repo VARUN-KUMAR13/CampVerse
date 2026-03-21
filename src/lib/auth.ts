@@ -14,9 +14,11 @@ export interface CollegeUser {
   collegeId: string;
   email: string;
   role: "student" | "faculty" | "admin" | "sub-admin";
-  year: string;
-  section: string;
-  branch: string;
+  year?: string;
+  semester?: string;
+  section?: string;
+  branch?: string;
+  department?: string;
   rollNumber: string;
 }
 
@@ -111,8 +113,10 @@ const backendLogin = async (
     email: user.email,
     role: user.role,
     year: user.year || "",
+    semester: user.semester || "",
     section: user.section || "",
     branch: user.branch || "",
+    department: user.department || user.branch || "",
     rollNumber: user.rollNumber || "",
   };
 };
@@ -147,8 +151,10 @@ const firebaseBackendLogin = async (
     email: user.email,
     role: user.role,
     year: user.year || "",
+    semester: user.semester || "",
     section: user.section || "",
     branch: user.branch || "",
+    department: user.department || user.branch || "",
     rollNumber: user.rollNumber || "",
   };
 };

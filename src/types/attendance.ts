@@ -50,6 +50,8 @@ export interface AttendanceRecord {
     subject?: string;
     slot?: string;
     rollNumber?: string;
+    courseCode?: string;
+    facultyId?: string;
 }
 
 // Student Attendance Summary

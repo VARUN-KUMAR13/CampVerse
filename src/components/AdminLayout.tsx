@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Shield } from "lucide-react";
 import AdminSidebar from "@/components/AdminSidebar";
 import DashboardLayout from "@/components/DashboardLayout";
+import SystemHealthIndicator from "@/components/SystemHealthIndicator";
 
 interface AdminLayoutProps {
     children: React.ReactNode;
@@ -43,10 +44,7 @@ const AdminTopbar = () => {
                 </div>
 
                 <div className="flex items-center space-x-4">
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 hidden sm:flex">
-                        <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                        System Online
-                    </Badge>
+                    <SystemHealthIndicator />
                     <div className="text-right hidden sm:block">
                         <div className="font-medium text-foreground">{userData?.name || "Administrator"}</div>
                         <div className="text-sm text-muted-foreground">{userData?.email || "admin@cvr.ac.in"}</div>

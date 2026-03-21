@@ -384,6 +384,8 @@ export const markAttendance = async (
         subject: subjectName,
         slot: `Slot ${parseInt(slotId.split('_').pop() || '0')}`,
         rollNumber: studentId,
+        courseCode: subjectCode,
+        facultyId: markedBy,
     };
 
     console.log('[markAttendance] Saving record:', {
@@ -1538,7 +1540,7 @@ export const shouldAutoMarkAsPresent = (currentTime: Date): boolean => {
  * Get attendance data for calendar coloring
  * Returns a map of dates to attendance status: 'full' | 'partial' | 'absent' | 'holiday'
  */
-export type CalendarDayStatus = 'full' | 'partial' | 'absent' | 'holiday' | 'none';
+export type CalendarDayStatus = 'present' | 'absent' | 'none';
 
 export const getCalendarAttendanceData = async (
     studentId: string,
@@ -1575,8 +1577,10 @@ export const getCalendarAttendanceData = async (
             const studentRecords = (Object.values(records) as AttendanceRecord[])
                 .filter((r) => r.studentId === studentId);
 
-            if (studentRecords.length === 0) {
-                // No records for this date means not marked yet
+            const dayOfWeek = new Date(dateKey).getDay();
+            
+            // Do not show attendance on Sundays
+            if (dayOfWeek === 0 || studentRecords.length === 0) {
                 result[dateKey] = 'none';
                 continue;
             }
@@ -1584,17 +1588,14 @@ export const getCalendarAttendanceData = async (
             const presentCount = studentRecords.filter(r => r.status === 'PRESENT').length;
             const absentCount = studentRecords.filter(r => r.status === 'ABSENT').length;
 
-            if (presentCount === CLASSES_PER_DAY) {
-                // All classes present
-                result[dateKey] = 'full';
-            } else if (presentCount > 0) {
-                // Partially present
-                result[dateKey] = 'partial';
-            } else if (absentCount === CLASSES_PER_DAY) {
-                // All classes absent
+            if (presentCount > 0) {
+                // At least one class marked as Present -> Green
+                result[dateKey] = 'present';
+            } else if (absentCount === studentRecords.length && studentRecords.length > 0) {
+                // All classes are marked as Absent -> Red
                 result[dateKey] = 'absent';
             } else {
-                // Mixed or not fully marked
+                // None
                 result[dateKey] = 'none';
             }
         }

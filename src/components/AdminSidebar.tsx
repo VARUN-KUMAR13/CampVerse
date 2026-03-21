@@ -4,11 +4,13 @@ import {
   Building2,
   CalendarDays,
   UsersRound,
+  Users,
   LogOut,
   Bell,
   ChevronLeft,
   Calendar,
   Megaphone,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -36,6 +38,21 @@ const AdminSidebar = ({ onClose, isOpen }: AdminSidebarProps) => {
       path: "/admin/attendance",
     },
     {
+      icon: <Calendar className="w-5 h-5" />,
+      label: "Scheduler",
+      path: "/admin/scheduler",
+    },
+    {
+      icon: <CalendarDays className="w-5 h-5" />,
+      label: "Academic Calendar",
+      path: "/admin/academic-calendar",
+    },
+    {
+      icon: <BarChart3 className="w-5 h-5" />,
+      label: "Results",
+      path: "/admin/results",
+    },
+    {
       icon: <Building2 className="w-5 h-5" />,
       label: "Placement",
       path: "/admin/placement",
@@ -46,24 +63,14 @@ const AdminSidebar = ({ onClose, isOpen }: AdminSidebarProps) => {
       path: "/admin/event",
     },
     {
-      icon: <Megaphone className="w-5 h-5" />,
-      label: "Announcements",
-      path: "/admin/announcements",
-    },
-    {
-      icon: <UsersRound className="w-5 h-5" />,
+      icon: <Users className="w-5 h-5" />,
       label: "Clubs",
       path: "/admin/club",
     },
     {
-      icon: <Calendar className="w-5 h-5" />,
-      label: "Scheduler",
-      path: "/admin/scheduler",
-    },
-    {
-      icon: <img src="/new-results-logo.png" className="w-5 h-5 object-contain" alt="Results" />,
-      label: "Results",
-      path: "/admin/results",
+      icon: <Megaphone className="w-5 h-5" />,
+      label: "Announcements",
+      path: "/admin/announcements",
     },
     {
       icon: <Bell className="w-5 h-5" />,

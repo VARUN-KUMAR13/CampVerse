@@ -59,6 +59,7 @@ import FacultyAssignments from "./pages/faculty/Assignments";
 import FacultyGrades from "./pages/faculty/Grades";
 import FacultyProfile from "./pages/faculty/Profile";
 import FacultySettings from "./pages/faculty/Settings";
+import FacultyAlerts from "./pages/faculty/Alerts";
 
 // Admin Dashboard Pages
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -77,6 +78,8 @@ import Reports from "./pages/admin/Reports";
 import SystemSettings from "./pages/admin/SystemSettings";
 import BackupDatabase from "./pages/admin/BackupDatabase";
 import AdminAnnouncements from "./pages/admin/Announcements";
+// Trigger refresh
+import AdminAcademicCalendar from "./pages/admin/AcademicCalendar";
 
 const queryClient = new QueryClient();
 
@@ -265,6 +268,14 @@ const AppContent = () => {
           }
         />
         <Route
+          path="/faculty/alerts"
+          element={
+            <ProtectedRoute requiredRole="faculty">
+              <FacultyAlerts />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/faculty/settings"
           element={
             <ProtectedRoute requiredRole="faculty">
@@ -351,6 +362,14 @@ const AppContent = () => {
           element={
             <ProtectedRoute requiredRole="admin">
               <AdminAnnouncements />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/academic-calendar"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminAcademicCalendar />
             </ProtectedRoute>
           }
         />

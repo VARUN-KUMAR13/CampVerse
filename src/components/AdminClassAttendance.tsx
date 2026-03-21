@@ -125,7 +125,7 @@ export const AdminClassAttendance = ({
               doc.section === selectedSection
             ) || data[0];
 
-            const targetDaySchedule = activeSchedule.schedule?.find((d: any) => d.day === (selectedDay === "Sunday" ? "Monday" : selectedDay));
+            const targetDaySchedule = activeSchedule.schedule?.find((d: any) => d.day === selectedDay);
 
             if (targetDaySchedule && targetDaySchedule.slots) {
               const slots: TimeSlot[] = targetDaySchedule.slots
@@ -137,7 +137,7 @@ export const AdminClassAttendance = ({
                   endTime: slot.endTime,
                   subjectCode: slot.subjectCode,
                   subjectName: slot.subjectName,
-                  facultyId: slot.faculty || "",
+                  facultyId: slot.facultyId || slot.faculty || "",
                   section: activeSchedule.section || selectedSection,
                   branch: activeSchedule.branch || selectedDepartment,
                   year: activeSchedule.year || selectedYear,

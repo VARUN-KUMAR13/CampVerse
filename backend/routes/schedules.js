@@ -18,6 +18,11 @@ router.get("/", async (req, res) => {
         if (req.query.degree) filter.degree = req.query.degree;
         if (req.query.department) filter.department = req.query.department;
         if (req.query.rollNumber) filter.rollNumber = req.query.rollNumber;
+        
+        // Filter by facultyId within slots (searches both student and faculty schedules)
+        if (req.query.facultyId) {
+            filter["schedule.slots.facultyId"] = req.query.facultyId;
+        }
 
         const schedules = await Schedule.find(filter).sort({ updatedAt: -1 });
         res.json(schedules);

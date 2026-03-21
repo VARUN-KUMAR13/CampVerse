@@ -12,12 +12,14 @@ export interface Notification {
     message: string;
     urgency: 'normal' | 'important' | 'critical';
     targetAudience: {
-        type: 'all' | 'students' | 'faculty' | 'custom';
+        type: 'all' | 'students' | 'faculty' | 'custom' | 'faculty_alert';
         branches?: string[];
         sections?: string[];
         years?: string[];
         groups?: string[];
         specificRoles?: string[];
+        courseCode?: string;
+        semester?: string;
     };
     postedBy: {
         name: string;
@@ -121,6 +123,17 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             if (target.sections && target.sections.length > 0) {
                 const userSection = user.section || extractSectionFromId(user.collegeId);
                 if (target.sections.includes(userSection)) return true;
+            }
+        }
+
+        // For Faculty Alerts
+        if (target.type === 'faculty_alert') {
+            const userYear = extractYearFromId(user.collegeId);
+            const userSection = user.section || extractSectionFromId(user.collegeId);
+            const userSemester = user.semester || "Semester I"; // Default if not parsed
+            
+            if (target.years?.[0] === userYear && target.semester === userSemester && target.sections?.[0] === userSection) {
+                return true; 
             }
         }
 

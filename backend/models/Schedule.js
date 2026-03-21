@@ -3,11 +3,13 @@ const mongoose = require("mongoose");
 // Slot schema - reused by both student and faculty schedules
 const slotSchema = new mongoose.Schema({
     slotNumber: { type: Number, required: true },
-    subjectCode: { type: String, default: "" },
+    courseCode: { type: String, default: "" }, // Unified cross-module mapping
+    subjectCode: { type: String, default: "" }, // Legacy fallback
     subjectName: { type: String, default: "" },
     startTime: { type: String, required: true },
     endTime: { type: String, required: true },
-    faculty: { type: String, default: "" },
+    facultyName: { type: String, default: "" },
+    facultyId: { type: String, default: "" },
     room: { type: String, default: "" },
     classType: { type: String, default: "Class", enum: ["Class", "Lab", "Tutorial"] },
     className: { type: String, default: "" },   // e.g. "III Year" - used in faculty schedules
@@ -16,7 +18,7 @@ const slotSchema = new mongoose.Schema({
 
 // Day schedule schema
 const dayScheduleSchema = new mongoose.Schema({
-    day: { type: String, required: true, enum: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] },
+    day: { type: String, required: true, enum: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] },
     slots: [slotSchema],
 });
 

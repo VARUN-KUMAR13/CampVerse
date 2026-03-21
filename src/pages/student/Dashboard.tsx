@@ -17,6 +17,7 @@ import {
   Megaphone,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { format } from "date-fns";
 
 import {
   AttendanceRecord,
@@ -89,6 +90,41 @@ const StudentDashboard = () => {
   // Announcements
   const [announcements, setAnnouncements] = useState<any[]>([]);
 
+  // Academic Calendar
+  const [academicEvents, setAcademicEvents] = useState<any[]>([]);
+  const [studentSemester, setStudentSemester] = useState<string | null>(null);
+
+  // Dynamic Dashboard Stats
+  const [displaySemester, setDisplaySemester] = useState<string | null>(null);
+  const [subjectsCount, setSubjectsCount] = useState<number | null>(null);
+  const [labsCount, setLabsCount] = useState<number | null>(null);
+  const [facultyCount, setFacultyCount] = useState<number | null>(null);
+
+  // Normalize semester utility
+  const normalizeSemester = (val: string | undefined): string => {
+    if (!val) return "1"; // Default safely
+    const str = val.toUpperCase().trim();
+    
+    // Check for digits directly first (handles "6", "Semester 6", "Semester-6", "1")
+    const match = str.match(/(\d+)/);
+    if (match) return match[1];
+
+    // Roman Numerals map (longest first to avoid partial matches like I in VI)
+    const romanMap: Record<string, string> = { "VIII": "8", "VII": "7", "VI": "6", "V": "5", "IV": "4", "III": "3", "II": "2", "I": "1" };
+    
+    // Clean up typical boilerplate
+    const cleaned = str.replace(/SEMESTER|SEM|-|\s/g, "");
+    
+    // Check exact match in roman map
+    if (romanMap[cleaned]) return romanMap[cleaned];
+    
+    // Fallback substring search if needed
+    for (const [r, n] of Object.entries(romanMap)) {
+      if (str.includes(r)) return n;
+    }
+    return "1";
+  };
+
   // Validate if roll number is in Section B range (22B81A0565 to 22B81A05C8)
   const isValidSectionBRollNumber = (rollNo: string): boolean => {
     // Extract the numeric part from roll number (e.g., "22B81A0565" -> "0565")
@@ -136,13 +172,12 @@ const StudentDashboard = () => {
 
           const isValidRollNumber = isValidSectionBRollNumber(rollNumber);
           setIsEligibleForAttendance(isValidRollNumber);
-          return;
         }
 
         // If backend returned 404, student not found in Firebase or MongoDB
         if (response.status === 404) {
           console.log(`[StudentData] Student ${rollNumber} not found in backend`);
-        } else {
+        } else if (!response.ok) {
           console.warn(`[StudentData] Backend returned ${response.status}`);
         }
       } catch (error) {
@@ -157,6 +192,38 @@ const StudentDashboard = () => {
 
     fetchStudentData();
   }, [userData?.collegeId]);
+
+  // Fetch semester from user profile (same source as Profile page)
+  useEffect(() => {
+    if (!userData?.uid) return;
+
+    const fetchProfileSemester = async () => {
+      try {
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+        const response = await fetch(`${apiBaseUrl}/users/${userData.uid}`);
+        if (response.ok) {
+          const profile = await response.json();
+          console.log(`[StudentData] Profile data from /users/:uid:`, profile);
+
+          // Get semester as stored in profile (handle academicInformation.currentSemester as requested)
+          const semesterValue = profile.academicInformation?.currentSemester || profile.semester || null;
+          console.log(`[StudentData] Profile semester: "${semesterValue}"`);
+
+          if (semesterValue) {
+            setDisplaySemester(semesterValue);
+
+            // Also normalize for academic calendar filtering
+            const normalized = normalizeSemester(semesterValue);
+            setStudentSemester(normalized);
+          }
+        }
+      } catch (error) {
+        console.warn("[StudentData] Failed to fetch profile semester:", error);
+      }
+    };
+
+    fetchProfileSemester();
+  }, [userData?.uid]);
 
   // Sync server time and check for daily reset
   useEffect(() => {
@@ -527,8 +594,18 @@ const StudentDashboard = () => {
         
         if (coursesRes.ok) {
           const coursesData = await coursesRes.json();
+          // Profile match logic for course mapping
+          const stdDept = userData?.department || "CSE";
+          const stdYear = userData?.year || "IV Year";
+          const stdSem = userData?.semester || "Semester I";
+
           subjects = coursesData
-            .filter((c: any) => c.status === "Active")
+            .filter((c: any) => 
+               c.status === "Active" &&
+               (c.department === stdDept || !c.department) &&
+               (c.year === stdYear || !c.year) &&
+               (c.semester === stdSem || !c.semester)
+            )
             .map((c: any) => ({
               subjectCode: c.courseCode,
               subjectName: c.courseName,
@@ -536,12 +613,8 @@ const StudentDashboard = () => {
         }
 
         if (subjects.length === 0) {
-          subjects = [
-            { subjectCode: "22CS401", subjectName: "Linux programming" },
-            { subjectCode: "22HS301", subjectName: "Business Economics and Financial Analysis" },
-            { subjectCode: "22HS501", subjectName: "Professional Elective-lll" },
-            { subjectCode: "22HS601", subjectName: "Professional Elective-lV" },
-          ];
+          // If profile didn't match any courses, fallback to an empty array so Performance Metrics is accurate
+          subjects = [];
         }
 
         const metrics = await getHistoricalSubjectAttendance(
@@ -624,6 +697,32 @@ const StudentDashboard = () => {
     };
     fetchAnnouncements();
   }, []);
+
+  // Fetch Academic Calendar (Wait for studentSemester)
+  useEffect(() => {
+    if (!userData?.collegeId || !studentSemester) return;
+    const fetchAcademicCalendar = async () => {
+      try {
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+        console.log(`[AcademicCalendar] Fetching with semester filter: ${studentSemester}`);
+        
+        // Fetch specifically from ADMIN created events filtered by normalized semester
+        const res = await fetch(`${apiBaseUrl}/academic-calendar?collegeId=ADMIN&semester=${studentSemester}`);
+        if (res.ok) {
+          const events = await res.json();
+          // The API might return all events for the collegeId, so we double filter by semester value (normalized)
+          const filtered = events.filter((e: any) => e.semester === studentSemester);
+          console.log(`[AcademicCalendar] Fetched ${filtered.length} matching events for semester ${studentSemester}`);
+          
+          const sorted = filtered.sort((a: any, b: any) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+          setAcademicEvents(sorted);
+        }
+      } catch (error) {
+        console.error("Failed to fetch academic calendar:", error);
+      }
+    };
+    fetchAcademicCalendar();
+  }, [userData?.collegeId, studentSemester]);
 
   if (!userData) {
     return (
@@ -762,71 +861,117 @@ const StudentDashboard = () => {
     return "bg-red-500";
   };
 
+  // Derive subjects and labs from weekly schedule config
+  useEffect(() => {
+    if (!weeklyScheduleConfig || weeklyScheduleConfig.length === 0) {
+      setSubjectsCount(null);
+      setLabsCount(null);
+      return;
+    }
+
+    const allSlots: any[] = [];
+    weeklyScheduleConfig.forEach((dayConfig: any) => {
+      if (dayConfig?.slots) {
+        dayConfig.slots.forEach((slot: any) => {
+          if (slot.subjectCode && slot.subjectCode.trim() !== "") {
+            allSlots.push(slot);
+          }
+        });
+      }
+    });
+
+    // Group unique subjects by classType
+    const subjectSet = new Set<string>();
+    const labSet = new Set<string>();
+
+    allSlots.forEach((slot) => {
+      const code = slot.subjectCode.trim().toUpperCase();
+      const type = (slot.classType || "Class").toLowerCase();
+      if (type === "lab") {
+        labSet.add(code);
+      } else {
+        subjectSet.add(code);
+      }
+    });
+
+    console.log(`[DashboardStats] Unique subjects: ${subjectSet.size}, Unique labs: ${labSet.size}`);
+    setSubjectsCount(subjectSet.size);
+    setLabsCount(labSet.size);
+
+    // Faculty count fallback: subjects + labs
+    if (facultyCount === null) {
+      setFacultyCount(subjectSet.size + labSet.size);
+    }
+  }, [weeklyScheduleConfig]);
+
+  // Fetch faculty count from backend
+  useEffect(() => {
+    const fetchFacultyCount = async () => {
+      try {
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+        const res = await fetch(`${apiBaseUrl}/faculty-assignments`);
+        if (res.ok) {
+          const assignments = await res.json();
+          // Count unique facultyId values
+          const uniqueFaculty = new Set(assignments.map((a: any) => a.facultyId));
+          console.log(`[DashboardStats] Unique faculty from API: ${uniqueFaculty.size}`);
+          if (uniqueFaculty.size > 0) {
+            setFacultyCount(uniqueFaculty.size);
+          }
+        }
+      } catch (error) {
+        console.warn("[DashboardStats] Failed to fetch faculty count:", error);
+      }
+    };
+    fetchFacultyCount();
+  }, []);
+
   const stats = [
     {
       label: "Current Semester",
-      value: "VII",
+      value: displaySemester || "--",
       icon: <BarChart3 className="w-4 h-4" />,
       color: "text-orange-500",
     },
     {
       label: "Subjects",
-      value: "5",
+      value: subjectsCount !== null ? String(subjectsCount) : "--",
       icon: <Users className="w-4 h-4" />,
       color: "text-green-500",
     },
     {
       label: "Labs",
-      value: "3",
+      value: labsCount !== null ? String(labsCount) : "--",
       icon: <CalendarIcon className="w-4 h-4" />,
       color: "text-blue-500",
     },
     {
       label: "Faculty",
-      value: "12",
+      value: facultyCount !== null ? String(facultyCount) : "--",
       icon: <Users className="w-4 h-4" />,
       color: "text-purple-500",
     },
   ];
 
-  const upcomingEvents = [
-    {
-      date: "16.06.2025",
-      title: "Commencement of Classwork",
-      timeLeft: "Starts",
-      color: "bg-green-500",
-    },
-    {
-      date: "07.09.2025 to 17.09.2025",
-      title: "I Mid Examinations",
-      timeLeft: "1 Week",
-      color: "bg-blue-500",
-    },
-    {
-      date: "22.10.2025 to 25.10.2025",
-      title: "II Mid Examinations",
-      timeLeft: "4 Days",
-      color: "bg-purple-500",
-    },
-    {
-      date: "27.10.2025 to 01.11.2025",
-      title: "Practical Exams & Preparation Holidays",
-      timeLeft: "1 Week",
-      color: "bg-indigo-500",
-    },
-    {
-      date: "03.11.2025 to 17.11.2025",
-      title: "Dussehra Holidays",
-      timeLeft: "2 Weeks",
-      color: "bg-yellow-500",
-    },
-    {
-      date: "03.11.2025 to 17.11.2025",
-      title: "Semester End Examinations (Main) & Supplementary",
-      timeLeft: "2 Weeks",
-      color: "bg-red-500",
-    },
-  ];
+  const formatDateLabel = (start: string, end: string) => {
+    const sDate = new Date(start);
+    const eDate = new Date(end);
+    if (sDate.toDateString() === eDate.toDateString()) {
+      return format(sDate, "dd.MM.yyyy");
+    }
+    return `${format(sDate, "dd.MM.yyyy")} to ${format(eDate, "dd.MM.yyyy")}`;
+  };
+
+  // Check if current date falls on an Exam or Holiday block
+  const isDateBlockedByAcademicCalendar = (checkDate: Date) => {
+    return academicEvents.some((evt) => {
+      if (evt.type === "Academic") return false;
+      const s = new Date(evt.startDate).setHours(0,0,0,0);
+      const e = new Date(evt.endDate).setHours(23,59,59,999);
+      const c = checkDate.getTime();
+      return c >= s && c <= e;
+    });
+  };
 
   return (
     <StudentLayout>
@@ -874,12 +1019,20 @@ const StudentDashboard = () => {
                   </div>
                 ))}
               </>
+            ) : isDateBlockedByAcademicCalendar(date || serverTime) ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+                <CalendarIcon className="w-12 h-12 mb-4 text-orange-500/50" />
+                <h3 className="text-lg font-medium text-foreground">No Classes Scheduled - Academic Calendar Event</h3>
+                <p>An academic event or holiday is active on this day.</p>
+              </div>
             ) : todaySchedule.length === 0 ? (
               // Empty Schedule State
               <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
-                <CalendarIcon className="w-12 h-12 mb-4 text-muted-foreground/30" />
-                <h3 className="text-lg font-medium text-foreground">No Schedule Found</h3>
-                <p>No classes scheduled for this day.</p>
+                  <>
+                    <CalendarIcon className="w-12 h-12 mb-4 text-muted-foreground/30" />
+                    <h3 className="text-lg font-medium text-foreground">No Schedule Found</h3>
+                    <p>No classes scheduled for this day.</p>
+                  </>
               </div>
             ) : [...todaySchedule]
               .sort((a, b) => {
@@ -1166,15 +1319,56 @@ const StudentDashboard = () => {
         <div className="space-y-6">
           <Card className="border-border/50 shadow-lg">
             <CardContent className="p-4 flex justify-center">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                className="rounded-md border border-border/10"
-                modifiers={{ sunday: (day) => day.getDay() === 0 }}
-                modifiersStyles={{ sunday: { color: 'rgb(156, 163, 175)' } }}
-                disabled={(day) => day.getDay() === 0}
-              />
+              {(() => {
+                const presentDates = Object.entries(calendarAttendance)
+                  .filter(([_, status]) => status === 'present')
+                  .map(([dateStr]) => new Date(dateStr));
+                  
+
+                const absentDates = Object.entries(calendarAttendance)
+                  .filter(([_, status]) => status === 'absent')
+                  .map(([dateStr]) => new Date(dateStr));
+
+                return (
+                  <div className="flex flex-col sm:flex-row gap-8 items-center sm:items-start">
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={setDate}
+                      className="rounded-md"
+                      modifiers={{ 
+                        sunday: (day) => day.getDay() === 0,
+                        present: presentDates,
+                        absent: absentDates
+                      }}
+                      modifiersStyles={{ 
+                        sunday: { color: 'rgb(156, 163, 175)' } 
+                      }}
+                      modifiersClassNames={{
+                        present: "bg-[#22c55e] hover:bg-[#22c55e]/90 text-white font-medium !rounded-full",
+                        absent: "bg-[#ef4444] hover:bg-[#ef4444]/90 text-white font-medium !rounded-full",
+                      }}
+                      disabled={(day) => day.getDay() === 0}
+                    />
+
+                    <div className="flex flex-col gap-4 py-4 sm:border-l border-border/20 sm:pl-8">
+                      <h4 className="font-semibold text-base leading-tight">
+                        Attendence
+                      </h4>
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-4">
+                          <div className="w-4 h-4 rounded-full bg-[#22c55e]"></div>
+                          <span className="text-sm font-medium">Present</span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="w-4 h-4 rounded-full bg-[#ef4444]"></div>
+                          <span className="text-sm font-medium">Absent</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
 
@@ -1183,27 +1377,35 @@ const StudentDashboard = () => {
               <CardTitle className="text-lg">Academic Calendar</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {upcomingEvents.map((event, index) => (
-                <div
-                  key={index}
-                  className="flex items-center space-x-3 p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-                >
-                  <div
-                    className={`w-3 h-3 rounded-full ${event.color}`}
-                  ></div>
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-foreground">
-                      {event.title}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {event.date}
-                    </div>
-                  </div>
-                  <Badge variant="secondary" className="text-xs">
-                    {event.timeLeft}
-                  </Badge>
+              {academicEvents.length === 0 ? (
+                <div className="text-center py-4 text-muted-foreground">
+                  No Academic Events Available
                 </div>
-              ))}
+              ) : (
+                academicEvents.map((event, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center space-x-3 p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                  >
+                    <div
+                      className={`w-3 h-3 rounded-full ${event.color}`}
+                    ></div>
+                    <div className="flex-1 overflow-hidden">
+                      <div className="text-sm font-medium text-foreground truncate">
+                        {event.title}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {formatDateLabel(event.startDate, event.endDate)}
+                      </div>
+                    </div>
+                    {event.tagLabel && (
+                      <Badge variant="secondary" className="text-xs shrink-0">
+                        {event.tagLabel}
+                      </Badge>
+                    )}
+                  </div>
+                ))
+              )}
             </CardContent>
           </Card>
         </div>
