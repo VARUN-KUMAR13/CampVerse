@@ -304,12 +304,13 @@ const validateApiVersion = (supportedVersions = ['v1']) => {
 /**
  * Middleware to handle CORS for specific routes
  */
-const corsHandler = (origins = ['http://localhost:3000']) => {
+const corsHandler = (origins = ['http://localhost:3000', 'http://localhost:5173', 'https://varun-kumar13.github.io']) => {
   return (req, res, next) => {
     const origin = req.headers.origin;
 
-    if (origins.includes(origin)) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
+    // In development or if origin is in list, allow it
+    if (!origin || origins.includes(origin) || origin.includes('github.io')) {
+      res.setHeader('Access-Control-Allow-Origin', origin || '*');
     }
 
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');

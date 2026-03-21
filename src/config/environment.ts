@@ -121,13 +121,13 @@ export const config: Config = {
   API_BASE_URL: getEnvVar(
     'VITE_API_BASE_URL',
     currentEnv === 'production'
-      ? 'https://api.campverse.edu/api'
+      ? 'https://api.campverse.app/api' // Updated from .edu to match CNAME domain
       : 'http://localhost:5000/api'
   ),
   WS_URL: getEnvVar(
     'VITE_WS_URL',
     currentEnv === 'production'
-      ? 'wss://api.campverse.edu'
+      ? 'wss://api.campverse.app'
       : 'ws://localhost:5000'
   ),
 
