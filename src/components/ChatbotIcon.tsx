@@ -22,24 +22,38 @@ export const ChatbotIcon: React.FC<ChatbotIconProps> = ({ onClick, isOpen, hasNe
         hover:scale-105 active:scale-95
         group
       `}
+      style={{
+        animation: isOpen ? "none" : "float 3s ease-in-out infinite",
+      }}
       aria-label={isOpen ? 'Close chat' : 'Open chat'}
     >
+      {/* Pulse ring decoration */}
+      {!isOpen && (
+        <div 
+          className="absolute inset-0 rounded-full bg-blue-400" 
+          style={{ animation: "pulse-ring 2s ease-out infinite" }}
+        />
+      )}
+
       {/* Sparkle decoration - positioned at top right */}
       <Sparkles
-        className="absolute -top-0.5 -right-0.5 w-4 h-4 text-yellow-400 drop-shadow-md"
+        className="absolute -top-0.5 -right-0.5 w-4 h-4 text-yellow-400 drop-shadow-md z-10"
         fill="currentColor"
+        style={{
+          animation: isOpen ? "none" : "sparkle 2s ease-in-out infinite",
+        }}
       />
 
       {/* Pulse animation for new message */}
       {hasNewMessage && !isOpen && (
-        <span className="absolute -top-1 -right-1 flex h-3 w-3">
+        <span className="absolute -top-1 -right-1 flex h-3 w-3 z-20">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
           <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
         </span>
       )}
 
       {/* Icon */}
-      <div className={`transition-transform duration-300 ${isOpen ? 'rotate-90' : 'rotate-0'}`}>
+      <div className={`relative z-10 transition-transform duration-300 ${isOpen ? 'rotate-90' : 'rotate-0'}`}>
         {isOpen ? (
           <X className="w-6 h-6" />
         ) : (

@@ -1,186 +1,118 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { ChatbotIcon } from './ChatbotIcon';
-import { ChatModal } from './ChatModal';
-import { useAI } from '../hooks/useAI';
-import { ChatMessage, ChatSuggestion, ChatState } from '../types/chatbot';
 import { useAuth } from '../contexts/AuthContext';
+import { api } from '../lib/api';
+
+declare global {
+  interface Window {
+    chatbase?: any;
+  }
+}
 
 export const AIChatbot: React.FC = () => {
-  const { userData } = useAuth();
-  const {
-    getAIResponse,
-    isLoading,
-    initialSuggestions,
-    growthData,
-    clearHistory,
-    submitFeedback
-  } = useAI();
+  const { userData, currentUser } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
 
-  const [chatState, setChatState] = useState<ChatState>({
-    isOpen: false,
-    messages: [],
-    isTyping: false,
-    sessionId: '',
-    isInitialized: false,
-  });
-  const [inputValue, setInputValue] = useState('');
-  const [currentSuggestions, setCurrentSuggestions] = useState<ChatSuggestion[]>([]);
-
-  // Initialize suggestions when they're loaded
+  // Initialize Chatbase Script
   useEffect(() => {
-    if (initialSuggestions.length > 0 && currentSuggestions.length === 0) {
-      setCurrentSuggestions(initialSuggestions);
+    if (!window.chatbase) {
+      (function(){
+        const chatbot = (...args: any[]) => {
+          if (!chatbot.q) { chatbot.q = []; }
+          chatbot.q.push(args);
+        };
+        chatbot.q = [] as any[];
+        window.chatbase = new Proxy(chatbot, {
+          get(target, prop) {
+            if (prop === "q") { return target.q; }
+            return (...args: any[]) => (target as any)[prop](...args);
+          }
+        });
+        const onLoad = function() {
+          const script = document.createElement("script");
+          script.src = "https://www.chatbase.co/embed.min.js";
+          script.id = "hT0ZVaHT1raLPftpo9ddq";
+          script.setAttribute("domain", "www.chatbase.co");
+          document.body.appendChild(script);
+        };
+        if (document.readyState === "complete") {
+          onLoad();
+        } else {
+          window.addEventListener("load", onLoad);
+        }
+      })();
     }
-  }, [initialSuggestions, currentSuggestions.length]);
+  }, []);
 
-  // Get user greeting based on role
-  const getWelcomeMessage = useCallback(() => {
-    const name = userData?.name || 'there';
-    const role = userData?.role || 'guest';
-
-    const greetings: Record<string, string> = {
-      student: `Hi ${name}! 👋 I'm your CampVerse AI Assistant. I can help you with:\n\n• 📱 Navigating the portal\n• 📚 Academic queries & assignments\n• 💻 Coding & DSA help\n• 🎯 Career guidance\n• 💰 Fee payments\n\nHow can I help you today?`,
-      faculty: `Hello ${name}! 👋 I'm here to assist you with course management, student tracking, and platform features. What do you need help with?`,
-      admin: `Welcome back ${name}! 👋 I can help you with system administration, reports, and managing the platform. How can I assist you?`,
-      guest: `Hello! 👋 Welcome to CVR College of Engineering. I'm CampVerse AI Assistant. I can tell you about our college, courses, admissions, and facilities. What would you like to know?`,
+  // Handle Identity Verification
+  useEffect(() => {
+    const identifyUser = async () => {
+      if (currentUser && window.chatbase) {
+        try {
+          const response = await api.get('/chatbot/token');
+          if (response.token) {
+            window.chatbase('identify', { token: response.token });
+          }
+        } catch (error) {
+          console.error('Failed to identify user for chatbot:', error);
+        }
+      }
     };
-
-    return greetings[role] || greetings.guest;
-  }, [userData]);
+    
+    if (currentUser && window.chatbase) {
+        identifyUser();
+    }
+  }, [currentUser]);
 
   const toggleChat = useCallback(() => {
-    setChatState(prev => {
-      const newIsOpen = !prev.isOpen;
-
-      // Add welcome message when opening chat for the first time
-      if (newIsOpen && prev.messages.length === 0) {
-        const welcomeMessage: ChatMessage = {
-          id: 'welcome_' + Date.now(),
-          content: getWelcomeMessage(),
-          isBot: true,
-          timestamp: new Date(),
-        };
-        return {
-          ...prev,
-          isOpen: newIsOpen,
-          messages: [welcomeMessage],
-        };
+    if (window.chatbase) {
+      if (isOpen) {
+        window.chatbase('close');
+      } else {
+        window.chatbase('open');
       }
+      setIsOpen(!isOpen);
+    }
+  }, [isOpen]);
 
-      return { ...prev, isOpen: newIsOpen };
-    });
-  }, [getWelcomeMessage]);
+  // Sync state with widget visibility
+  useEffect(() => {
+    const checkState = setInterval(() => {
+      if (window.chatbase) {
+        try {
+          const state = window.chatbase('getState');
+          if (state === 'closed' && isOpen) setIsOpen(false);
+          if (state === 'open' && !isOpen) setIsOpen(true);
+        } catch (e) {
+          // Some versions of Chatbase might not support getState
+        }
+      }
+    }, 500);
+    return () => clearInterval(checkState);
+  }, [isOpen]);
 
-  const addMessage = useCallback((content: string, isBot: boolean = false, metadata?: ChatMessage['metadata']): ChatMessage => {
-    const message: ChatMessage = {
-      id: Date.now().toString() + Math.random(),
-      content,
-      isBot,
-      timestamp: new Date(),
-      metadata,
-    };
-
-    setChatState(prev => ({
-      ...prev,
-      messages: [...prev.messages, message],
-    }));
-
-    return message;
-  }, []);
-
-  const handleSendMessage = useCallback(async (content: string) => {
-    // Add user message
-    addMessage(content, false);
-
-    // Set typing state
-    setChatState(prev => ({ ...prev, isTyping: true }));
-
-    try {
-      // Get AI response
-      const aiResponse = await getAIResponse(content);
-
-      // Add bot message with metadata
-      addMessage(aiResponse.content, true, {
-        navigationTarget: aiResponse.navigationTarget?.path,
-        suggestions: aiResponse.suggestions,
+  // Manage body class for animations and hide default launcher via config
+  useEffect(() => {
+    if (window.chatbase) {
+      // Try to disable default launcher via config as well
+      window.chatbase('setConfig', {
+        launcher: false,
+        autoShow: false
       });
-
-      // Update suggestions
-      if (aiResponse.suggestions && aiResponse.suggestions.length > 0) {
-        setCurrentSuggestions(aiResponse.suggestions);
-      }
-    } catch (error) {
-      console.error('Error getting AI response:', error);
-      addMessage('I apologize, but I encountered an error. Please try again or rephrase your question.', true);
-    } finally {
-      setChatState(prev => ({ ...prev, isTyping: false }));
     }
-  }, [addMessage, getAIResponse]);
 
-  const handleSuggestionClick = useCallback((suggestion: ChatSuggestion) => {
-    if (suggestion.action) {
-      suggestion.action();
+    if (isOpen) {
+      document.body.classList.add('chat-widget-open');
     } else {
-      handleSendMessage(suggestion.text);
+      document.body.classList.remove('chat-widget-open');
     }
-  }, [handleSendMessage]);
-
-  const handleInputChange = useCallback((value: string) => {
-    setInputValue(value);
-  }, []);
-
-  const handleCloseChat = useCallback(() => {
-    setChatState(prev => ({ ...prev, isOpen: false }));
-  }, []);
-
-  const handleClearChat = useCallback(() => {
-    setChatState(prev => ({
-      ...prev,
-      messages: [{
-        id: 'welcome_new_' + Date.now(),
-        content: getWelcomeMessage(),
-        isBot: true,
-        timestamp: new Date(),
-      }],
-    }));
-    setCurrentSuggestions(initialSuggestions);
-    clearHistory();
-  }, [getWelcomeMessage, initialSuggestions, clearHistory]);
-
-  const handleNavigate = useCallback((path: string) => {
-    // Use window.location for navigation instead of useNavigate
-    window.location.href = path;
-  }, []);
-
-  const handleFeedback = useCallback((messageId: string, isPositive: boolean) => {
-    submitFeedback(messageId, isPositive ? 5 : 1);
-  }, [submitFeedback]);
+  }, [isOpen]);
 
   return (
-    <>
-      <ChatbotIcon
-        onClick={toggleChat}
-        isOpen={chatState.isOpen}
-        hasNewMessage={false}
-      />
-
-      <ChatModal
-        isOpen={chatState.isOpen}
-        onClose={handleCloseChat}
-        messages={chatState.messages}
-        onSendMessage={handleSendMessage}
-        onSuggestionClick={handleSuggestionClick}
-        suggestions={currentSuggestions}
-        isTyping={chatState.isTyping || isLoading}
-        inputValue={inputValue}
-        onInputChange={handleInputChange}
-        onClearChat={handleClearChat}
-        onNavigate={handleNavigate}
-        onFeedback={handleFeedback}
-        userRole={userData?.role || 'guest'}
-        userName={userData?.name}
-        growthData={growthData}
-      />
-    </>
+    <ChatbotIcon
+      onClick={toggleChat}
+      isOpen={isOpen}
+      hasNewMessage={false}
+    />
   );
 };

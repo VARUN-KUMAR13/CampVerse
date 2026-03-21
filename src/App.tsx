@@ -105,7 +105,7 @@ const AppContent = () => {
   }
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
         {/* Dynamic Homepage - shows landing page or dashboard based on auth */}
         <Route path="/" element={<DynamicHomepage />} />

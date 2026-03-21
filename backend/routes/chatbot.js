@@ -283,6 +283,43 @@ router.get("/navigation", async (req, res) => {
     }
 });
 
+const jwt = require("jsonwebtoken");
+const { authenticateToken } = require("../middleware/auth");
+
+/**
+ * @route   GET /api/chatbot/token
+ * @desc    Get identity verification token for Chatbase
+ * @access  Private
+ */
+router.get("/token", authenticateToken, async (req, res) => {
+    try {
+        const user = req.user;
+        const secret = process.env.CHATBOT_IDENTITY_SECRET;
+
+        if (!secret) {
+            console.error("CHATBOT_IDENTITY_SECRET is not defined");
+            return res.status(500).json({ error: "Identity verification not configured" });
+        }
+
+        const token = jwt.sign(
+            {
+                user_id: user._id.toString(),
+                email: user.email,
+                name: user.name,
+                role: user.role,
+                college_id: user.collegeId
+            },
+            secret,
+            { expiresIn: "1h" }
+        );
+
+        res.json({ success: true, token });
+    } catch (error) {
+        console.error("Chatbot token error:", error);
+        res.status(500).json({ error: "Failed to generate chatbot token" });
+    }
+});
+
 /**
  * @route   GET /api/chatbot/suggestions/:userRole
  * @desc    Get role-based suggestions

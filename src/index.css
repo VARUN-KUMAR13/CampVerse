@@ -150,4 +150,83 @@
       0 3px 5px rgba(0, 0, 0, 0.2),
       0 5px 10px rgba(0, 0, 0, 0.25);
   }
+
+  /* Chatbase Widget Customization */
+  #chatbase-bubble-button, 
+  #chatbase-bubble-window-button {
+    display: none !important;
+  }
+
+  /* Professional Widget container overrides with animations */
+  div[id^="chatbase-bubble-window"] {
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    bottom: 90px !important; 
+    right: 24px !important;
+    width: 400px !important;
+    max-width: calc(100vw - 48px) !important;
+    height: 600px !important;
+    max-height: calc(100vh - 120px) !important;
+    background-color: hsl(222, 47%, 7%) !important;
+    
+    /* Animation base - starts hidden */
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transform: translateY(30px) scale(0.95) !important;
+    transform-origin: bottom right !important;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    pointer-events: none !important;
+    z-index: 100 !important;
+  }
+
+  /* OPEN state - Triggered by React */
+  body.chat-widget-open div[id^="chatbase-bubble-window"] {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: translateY(0) scale(1) !important;
+    pointer-events: auto !important;
+  }
+  
+  /* Ensuring Iframe matches radius */
+  div[id^="chatbase-bubble-window"] iframe {
+    border-radius: 16px !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+}
+
+/* Chatbot animations */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes sparkle {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2) rotate(180deg);
+    opacity: 0.8;
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
 }

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CampVerse</title>
+    <!-- GitHub Pages 404 Hack for Single Page Apps (SPA) -->
+    <script type="text/javascript">
+      // This script checks if the page was redirected here from a 404
+      // and rewrites the URL so React Router can handle it.
+      var path = window.location.pathname;
+      var repoName = '/CampVerse';
+      if (path.startsWith(repoName) && path !== repoName && path !== repoName + '/') {
+        // We're at a sub-path that doesn't exist as a file
+        // For simple SPA hosting on GH Pages, we'll just redirect to the root with the path as query
+        // or just let the script load if it's a copy of index.html
+      }
+    </script>
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <!-- Point to the same src as index.html. Vite will update this during build. -->
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
