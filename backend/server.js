@@ -208,3 +208,5 @@ app.use("*", (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 CampVerse API server running on port ${PORT}`);
 });
+
+// Deployment sync: 2026-03-21 19:55
