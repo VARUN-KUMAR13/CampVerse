@@ -9,7 +9,7 @@ interface FacultyLayoutProps {
 const FacultyLayout = ({ children }: FacultyLayoutProps) => {
     return (
         <DashboardLayout
-            topbar={<FacultyTopbar />}
+            topbar={({ toggleSidebar }) => <FacultyTopbar onMenuClick={toggleSidebar} />}
             sidebar={({ closeSidebar }) => <FacultySidebar onNavigate={closeSidebar} />}
         >
             {children}

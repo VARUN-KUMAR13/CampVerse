@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Shield } from "lucide-react";
+import { Menu, Shield } from "lucide-react";
 import AdminSidebar from "@/components/AdminSidebar";
 import DashboardLayout from "@/components/DashboardLayout";
 import SystemHealthIndicator from "@/components/SystemHealthIndicator";
@@ -11,7 +11,7 @@ interface AdminLayoutProps {
     children: React.ReactNode;
 }
 
-const AdminTopbar = () => {
+const AdminTopbar = ({ onMenuClick }: { onMenuClick?: () => void }) => {
     const navigate = useNavigate();
     const { userData, logout } = useAuth();
 
@@ -27,7 +27,15 @@ const AdminTopbar = () => {
     return (
         <header className="bg-card w-full px-6 py-2.5 border-b border-border shadow-sm">
             <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 md:space-x-4">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="md:hidden"
+                        onClick={onMenuClick}
+                    >
+                        <Menu className="w-5 h-5" />
+                    </Button>
                     <div className="flex items-center space-x-3">
                         <button
                             onClick={handleLogout}
@@ -66,7 +74,7 @@ const AdminTopbar = () => {
 const AdminLayout = ({ children }: AdminLayoutProps) => {
     return (
         <DashboardLayout
-            topbar={<AdminTopbar />}
+            topbar={({ toggleSidebar }) => <AdminTopbar onMenuClick={toggleSidebar} />}
             sidebar={({ closeSidebar, isSidebarOpen }) => (
                 <AdminSidebar onClose={closeSidebar} isOpen={isSidebarOpen} />
             )}

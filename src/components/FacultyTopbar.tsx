@@ -23,7 +23,7 @@ const EducatorIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-const FacultyTopbar = () => {
+const FacultyTopbar = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const { userData, logout } = useAuth();
   const navigate = useNavigate();
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
@@ -53,15 +53,25 @@ const FacultyTopbar = () => {
       <div className="flex items-center justify-between">
         {/* Left side - CampVerse branding */}
         <div className="flex items-center space-x-2.5">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center p-1.5">
-            <EducatorIcon className="w-full h-full text-primary-foreground" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={onMenuClick}
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
+          <div className="flex items-center space-x-2.5">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center p-1.5">
+              <EducatorIcon className="w-full h-full text-primary-foreground" />
+            </div>
+            <span className="font-bold text-foreground text-base sm:text-lg">CampVerse</span>
           </div>
-          <span className="font-bold text-foreground text-lg">CampVerse</span>
         </div>
 
         {/* Right side */}
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center gap-6">
+        <div className="flex items-center space-x-2 md:space-x-4">
+          <div className="hidden md:flex items-center gap-6">
             <div className="text-lg font-semibold text-foreground">
               {format(currentDateTime, "h:mm a")}
             </div>
@@ -77,10 +87,10 @@ const FacultyTopbar = () => {
 
           <NotificationBell />
 
-          <div className="flex items-center space-x-2">
+          <div className="hidden sm:flex items-center space-x-2">
             <div className="text-right">
-              <div className="text-sm font-medium text-foreground">
-                User ID : {facultyId}
+              <div className="text-xs font-medium text-muted-foreground">
+                ID: {facultyId}
               </div>
             </div>
           </div>

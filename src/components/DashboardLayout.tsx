@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface DashboardLayoutProps {
     sidebar: (props: { closeSidebar: () => void; isSidebarOpen: boolean }) => React.ReactNode;
-    topbar: (props: { toggleSidebar: () => void }) => React.ReactNode;
+    topbar: React.ReactNode | ((props: { toggleSidebar: () => void }) => React.ReactNode);
     children: React.ReactNode;
 }
 
@@ -36,7 +36,7 @@ const DashboardLayout = ({ sidebar, topbar, children }: DashboardLayoutProps) =>
         <div className="h-screen flex flex-col bg-background overflow-hidden relative">
             {/* Top Bar - Fixed height constraints */}
             <div className="flex-none z-30 border-b border-border shadow-sm bg-background">
-                {topbar({ toggleSidebar })}
+                {typeof topbar === 'function' ? topbar({ toggleSidebar }) : (topbar as React.ReactNode)}
             </div>
 
             {/* Main layout — flex container */}

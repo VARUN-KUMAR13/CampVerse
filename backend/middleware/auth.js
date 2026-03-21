@@ -304,7 +304,7 @@ const validateApiVersion = (supportedVersions = ['v1']) => {
 /**
  * Middleware to handle CORS for specific routes
  */
-const corsHandler = (origins = ['http://localhost:3000', 'http://localhost:5173', 'https://varun-kumar13.github.io']) => {
+const corsHandler = (origins = ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:8080', 'https://varun-kumar13.github.io']) => {
   return (req, res, next) => {
     const origin = req.headers.origin;
 
