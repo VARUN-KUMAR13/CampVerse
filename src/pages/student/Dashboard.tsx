@@ -976,11 +976,11 @@ const StudentDashboard = () => {
   return (
     <StudentLayout>
       {/* Welcome Section */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          Hello <span className="text-primary">{studentName || userData?.collegeId}</span> <span className="text-2xl">👋</span>
+      <div className="mb-4">
+        <h1 className="text-xl md:text-2xl font-bold text-foreground flex flex-wrap items-center gap-2">
+          Hello <span className="text-primary truncate max-w-[200px] md:max-w-none">{studentName || userData?.collegeId}</span> <span className="text-xl">👋</span>
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-sm md:text-base text-muted-foreground">
           Let's learn something new today!
         </p>
       </div>
@@ -1093,7 +1093,7 @@ const StudentDashboard = () => {
                 <div
                   key={item.slotId}
                   className={cn(
-                    "flex items-center justify-between p-4 rounded-lg transition-all duration-300",
+                    "flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-lg transition-all duration-300 gap-4",
                     bgClass,
                     borderClass
                   )}
@@ -1120,9 +1120,9 @@ const StudentDashboard = () => {
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-6">
+                  <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 sm:gap-6">
                     {item.time && (
-                      <div className="text-base font-medium text-foreground tracking-wide whitespace-nowrap">
+                      <div className="text-sm sm:text-base font-medium text-foreground tracking-wide whitespace-nowrap">
                         {item.time}
                       </div>
                     )}
@@ -1156,32 +1156,32 @@ const StudentDashboard = () => {
             const percentage = totalClasses > 0 ? Math.round((totalPresent / totalClasses) * 100) : 0;
 
             return (
-              <div className="grid grid-cols-5 gap-4">
-                <div className="text-center p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                  <div className="text-2xl font-bold text-blue-500">{totalClasses}</div>
-                  <div className="text-xs text-muted-foreground">Total Classes</div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                <div className="text-center p-2 sm:p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                  <div className="text-xl sm:text-2xl font-bold text-blue-500">{totalClasses}</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground">Total Classes</div>
                 </div>
-                <div className="text-center p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                  <div className="text-2xl font-bold text-green-500">{totalPresent}</div>
-                  <div className="text-xs text-muted-foreground">Present</div>
+                <div className="text-center p-2 sm:p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                  <div className="text-xl sm:text-2xl font-bold text-green-500">{totalPresent}</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground">Present</div>
                 </div>
-                <div className="text-center p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                  <div className="text-2xl font-bold text-red-500">{totalAbsent}</div>
-                  <div className="text-xs text-muted-foreground">Absent</div>
+                <div className="text-center p-2 sm:p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                  <div className="text-xl sm:text-2xl font-bold text-red-500">{totalAbsent}</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground">Absent</div>
                 </div>
-                <div className="text-center p-3 rounded-lg bg-gray-500/10 border border-gray-500/20">
-                  <div className="text-2xl font-bold text-gray-500">{totalNotMarked}</div>
-                  <div className="text-xs text-muted-foreground">Not Marked</div>
+                <div className="text-center p-2 sm:p-3 rounded-lg bg-gray-500/10 border border-gray-500/20">
+                  <div className="text-xl sm:text-2xl font-bold text-gray-500">{totalNotMarked}</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground">Not Marked</div>
                 </div>
-                <div className="text-center p-3 rounded-lg bg-primary/10 border border-primary/20">
+                <div className="text-center p-2 sm:p-3 rounded-lg bg-primary/10 border border-primary/20 col-span-2 sm:col-span-1">
                   <div className={cn(
-                    "text-2xl font-bold",
+                    "text-xl sm:text-2xl font-bold",
                     percentage >= 76 ? "text-green-500" :
                       percentage >= 65 ? "text-orange-500" : "text-red-500"
                   )}>
                     {percentage}%
                   </div>
-                  <div className="text-xs text-muted-foreground">Attendance</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground">Attendance</div>
                 </div>
               </div>
             );
@@ -1193,14 +1193,14 @@ const StudentDashboard = () => {
         {/* Stats Cards */}
         <div className="lg:col-span-2 space-y-6">
           {/* Quick Stats */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {stats.map((stat, index) => (
               <Card key={index} className="text-center border-border/50 hover:border-primary/50 transition-colors">
                 <CardContent className="p-4">
-                  <div className={`text-2xl font-bold ${stat.color} mb-2`}>
+                  <div className={`text-xl sm:text-2xl font-bold ${stat.color} mb-1 sm:mb-2`}>
                     {stat.value}
                   </div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-[10px] sm:text-xs text-muted-foreground">
                     {stat.label}
                   </div>
                 </CardContent>

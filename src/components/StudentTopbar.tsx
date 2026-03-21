@@ -16,9 +16,10 @@ import NotificationBell from "./NotificationBell";
 
 interface StudentTopbarProps {
   studentId: string;
+  onMenuClick?: () => void;
 }
 
-const StudentTopbar = ({ studentId }: StudentTopbarProps) => {
+const StudentTopbar = ({ studentId, onMenuClick }: StudentTopbarProps) => {
   const { userData, logout } = useAuth();
   const navigate = useNavigate();
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
@@ -44,15 +45,25 @@ const StudentTopbar = ({ studentId }: StudentTopbarProps) => {
       <div className="flex items-center justify-between">
         {/* Left side - CampVerse branding */}
         <div className="flex items-center space-x-2.5">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <GraduationCap className="w-5 h-5 text-primary-foreground" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={onMenuClick}
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
+          <div className="flex items-center space-x-2.5">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <GraduationCap className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <span className="font-bold text-foreground text-base sm:text-lg">CampVerse</span>
           </div>
-          <span className="font-bold text-foreground text-lg">CampVerse</span>
         </div>
 
         {/* Right side - Time, Notifications, Student ID, and Avatar */}
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center gap-6">
+        <div className="flex items-center space-x-2 md:space-x-4">
+          <div className="hidden md:flex items-center gap-6">
             <div className="text-lg font-semibold text-foreground">
               {format(currentDateTime, "h:mm a")}
             </div>
@@ -69,10 +80,10 @@ const StudentTopbar = ({ studentId }: StudentTopbarProps) => {
           {/* Notification Bell */}
           <NotificationBell />
 
-          <div className="flex items-center space-x-2">
+          <div className="hidden sm:flex items-center space-x-2">
             <div className="text-right">
-              <div className="text-sm font-medium text-foreground">
-                User ID : {userData?.collegeId || studentId}
+              <div className="text-xs font-medium text-muted-foreground">
+                ID: {userData?.collegeId || studentId}
               </div>
             </div>
           </div>

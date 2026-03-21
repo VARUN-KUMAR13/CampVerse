@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface DashboardLayoutProps {
     sidebar: (props: { closeSidebar: () => void; isSidebarOpen: boolean }) => React.ReactNode;
-    topbar: React.ReactNode;
+    topbar: (props: { toggleSidebar: () => void }) => React.ReactNode;
     children: React.ReactNode;
 }
 
@@ -36,7 +36,7 @@ const DashboardLayout = ({ sidebar, topbar, children }: DashboardLayoutProps) =>
         <div className="h-screen flex flex-col bg-background overflow-hidden relative">
             {/* Top Bar - Fixed height constraints */}
             <div className="flex-none z-30 border-b border-border shadow-sm bg-background">
-                {topbar}
+                {topbar({ toggleSidebar })}
             </div>
 
             {/* Main layout — flex container */}
@@ -51,10 +51,10 @@ const DashboardLayout = ({ sidebar, topbar, children }: DashboardLayoutProps) =>
                     </div>
                 </div>
 
-                {/* Blue edge toggle button */}
+                {/* Blue edge toggle button - Hidden on mobile, only on desktop */}
                 <button
                     onClick={toggleSidebar}
-                    className={`absolute top-1/2 -translate-y-1/2 z-50 w-6 h-16 bg-blue-600 hover:bg-blue-700 rounded-r-full flex items-center justify-center transition-all duration-300 shadow-lg ${isSidebarOpen ? "md:left-[260px] left-[260px]" : "left-0"
+                    className={`hidden md:flex absolute top-1/2 -translate-y-1/2 z-50 w-6 h-16 bg-blue-600 hover:bg-blue-700 rounded-r-full items-center justify-center transition-all duration-300 shadow-lg ${isSidebarOpen ? "left-[260px]" : "left-0"
                         }`}
                     aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
                 >

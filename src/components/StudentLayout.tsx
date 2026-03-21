@@ -13,7 +13,7 @@ const StudentLayout = ({ children }: StudentLayoutProps) => {
 
     return (
         <DashboardLayout
-            topbar={<StudentTopbar studentId={studentId} />}
+            topbar={({ toggleSidebar }) => <StudentTopbar studentId={studentId} onMenuClick={toggleSidebar} />}
             sidebar={({ closeSidebar }) => <StudentSidebar onNavigate={closeSidebar} />}
         >
             {children}

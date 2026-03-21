@@ -12,8 +12,8 @@ export const ChatbotIcon: React.FC<ChatbotIconProps> = ({ onClick, isOpen, hasNe
     <button
       onClick={onClick}
       className={`
-        fixed bottom-6 right-6 z-50
-        w-14 h-14 rounded-full
+        fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50
+        w-12 h-12 md:w-14 md:h-14 rounded-full
         bg-blue-400 hover:bg-blue-500
         text-white
         shadow-lg hover:shadow-xl
