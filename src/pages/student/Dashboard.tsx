@@ -419,14 +419,14 @@ const StudentDashboard = () => {
 
     const targetDate = date || serverTime;
     const today = formatDate(targetDate);
-    const section = "B";
-    const branch = "05";
-    const year = "25"; // Update to match faculty generic filter (IV Year)
+    const section = studentSection || "B";
+    const branch = userData.collegeId.substring(6, 8) || "05";
+    const year = userData.collegeId.substring(0, 2) || "22";
     const degree = "Major";
     const semester = "I";
     const studentId = userData.collegeId;
 
-    console.log(`[Attendance] Checking for student: ${studentId}, Section: B, Date: ${today}`);
+    console.log(`[Attendance] Checking for student: ${studentId}, Section: ${section}, Branch: ${branch}, Year: ${year}, Date: ${today}`);
 
     // Function to check localStorage for attendance (fallback when Firebase fails)
     const checkLocalStorage = () => {
@@ -446,7 +446,8 @@ const StudentDashboard = () => {
             if (saved) {
               try {
                 const record: AttendanceRecord = JSON.parse(saved);
-                if (record.studentId === studentId && record.slotId === item.slotId) {
+                const slotNumMatch = item.slotId.replace('slot_', '');
+                if (record.studentId === studentId && (record.slotId === item.slotId || record.slotId.startsWith(`slot_${slotNumMatch}_`))) {
                   console.log(`[Attendance] Found in localStorage: ${item.slotId} = ${record.status}, markedBy: ${record.markedByRole}`);
                   foundAny = true;
                   markedByMap[item.slotId] = record.markedByRole;
@@ -464,7 +465,8 @@ const StudentDashboard = () => {
                 const saved = localStorage.getItem(key);
                 if (saved) {
                   const record: AttendanceRecord = JSON.parse(saved);
-                  if (record.studentId === studentId && record.slotId === item.slotId) {
+                  const slotNumMatch = item.slotId.replace('slot_', '');
+                  if (record.studentId === studentId && (record.slotId === item.slotId || record.slotId.startsWith(`slot_${slotNumMatch}_`))) {
                     console.log(`[Attendance] Found matching record: ${record.status}, markedBy: ${record.markedByRole}`);
                     foundAny = true;
                     markedByMap[item.slotId] = record.markedByRole;
@@ -502,7 +504,9 @@ const StudentDashboard = () => {
 
           setTodaySchedule((prev) =>
             prev.map((item) => {
-              const record = records.find((r) => r.slotId === item.slotId);
+              // Match by exact slotId OR by slot number prefix (faculty uses slot_1_<mongoId> format)
+              const slotNum = item.slotId.replace('slot_', '');
+              const record = records.find((r) => r.slotId === item.slotId || r.slotId.startsWith(`slot_${slotNum}_`));
               if (record) {
                 markedByMap[item.slotId] = record.markedByRole;
                 return { ...item, status: record.status, markedBy: record.markedBy, markedByRole: record.markedByRole };
@@ -528,9 +532,9 @@ const StudentDashboard = () => {
 
     const targetDate = date || serverTime;
     const today = formatDate(targetDate);
-    const section = "B";
-    const branch = "05";
-    const year = "25";
+    const section = studentSection || "B";
+    const branch = userData.collegeId.substring(6, 8) || "05";
+    const year = userData.collegeId.substring(0, 2) || "22";
     const studentId = userData.collegeId;
 
     const unsubscribe = subscribeToPerformanceMetrics(

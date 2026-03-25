@@ -119,18 +119,6 @@ const AdminSidebar = ({ onClose, isOpen }: AdminSidebarProps) => {
           </Link>
         ))}
       </nav>
-
-      {/* Logout Button */}
-      <div className="p-4 border-t border-sidebar-border">
-        <Button
-          onClick={handleLogout}
-          variant="ghost"
-          className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-500/10"
-        >
-          <LogOut className="w-5 h-5 mr-3" />
-          Sign Out
-        </Button>
-      </div>
     </div>
   );
 };
