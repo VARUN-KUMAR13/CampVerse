@@ -43,7 +43,7 @@ const StudentSidebar = ({ onNavigate }: StudentSidebarProps) => {
     },
     {
       icon: <BarChart3 className="w-5 h-5" />,
-      label: "Results Summary",
+      label: "Results",
       path: "/student/results",
     },
     {

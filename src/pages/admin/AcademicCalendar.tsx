@@ -29,6 +29,8 @@ interface AcademicEvent {
   _id: string;
   title: string;
   semester: string;
+  degree?: string;
+  year?: string;
   type: string;
   startDate: string;
   endDate: string;
@@ -36,21 +38,32 @@ interface AcademicEvent {
   tagLabel: string;
 }
 
+const DEGREES = [
+  { value: "All", label: "All Degrees" },
+  { value: "Major", label: "Major" },
+  { value: "Minor", label: "Minor" },
+];
+
+const YEARS = [
+  { value: "All", label: "All Years" },
+  { value: "I Year", label: "I Year" },
+  { value: "II Year", label: "II Year" },
+  { value: "III Year", label: "III Year" },
+  { value: "IV Year", label: "IV Year" },
+];
+
 const SEMESTERS = [
+  { value: "All", label: "All Semesters" },
   { value: "1", label: "Semester I" },
   { value: "2", label: "Semester II" },
-  { value: "3", label: "Semester III" },
-  { value: "4", label: "Semester IV" },
-  { value: "5", label: "Semester V" },
-  { value: "6", label: "Semester VI" },
-  { value: "7", label: "Semester VII" },
-  { value: "8", label: "Semester VIII" },
 ];
 
 const AdminAcademicCalendar = () => {
   const { userData } = useAuth();
   const [events, setEvents] = useState<AcademicEvent[]>([]);
-  const [selectedSemester, setSelectedSemester] = useState<string>("1");
+  const [selectedDegree, setSelectedDegree] = useState<string>("All");
+  const [selectedYear, setSelectedYear] = useState<string>("All");
+  const [selectedSemester, setSelectedSemester] = useState<string>("All");
   
   // Dialog State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -59,7 +72,9 @@ const AdminAcademicCalendar = () => {
   // Form State
   const [formData, setFormData] = useState({
     title: "",
-    semester: "1",
+    degree: "All",
+    year: "All",
+    semester: "All",
     type: "Academic",
     startDate: "",
     endDate: "",
@@ -71,7 +86,7 @@ const AdminAcademicCalendar = () => {
     if (!userData?.collegeId) return;
     try {
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
-      const res = await fetch(`${apiBaseUrl}/academic-calendar?collegeId=${userData.collegeId}&semester=${selectedSemester}`);
+      const res = await fetch(`${apiBaseUrl}/academic-calendar?collegeId=${userData.collegeId}&semester=${selectedSemester}&degree=${selectedDegree}&year=${selectedYear}`);
       if (res.ok) {
         const data = await res.json();
         setEvents(data);
@@ -84,7 +99,7 @@ const AdminAcademicCalendar = () => {
 
   useEffect(() => {
     fetchEvents();
-  }, [userData?.collegeId, selectedSemester]);
+  }, [userData?.collegeId, selectedSemester, selectedDegree, selectedYear]);
 
   const handleSave = async () => {
     if (!formData.title || !formData.startDate || !formData.endDate || !formData.semester || !formData.type) {
@@ -125,7 +140,7 @@ const AdminAcademicCalendar = () => {
         toast.success(editingId ? "Event updated successfully" : "Event created successfully");
         setIsDialogOpen(false);
         setEditingId(null);
-        setFormData({ title: "", semester: "1", type: "Academic", startDate: "", endDate: "", color: "", tagLabel: "" });
+        setFormData({ title: "", degree: "All", year: "All", semester: "All", type: "Academic", startDate: "", endDate: "", color: "", tagLabel: "" });
         fetchEvents();
       } else {
         const err = await res.json();
@@ -158,7 +173,9 @@ const AdminAcademicCalendar = () => {
     setEditingId(event._id);
     setFormData({
       title: event.title,
-      semester: event.semester,
+      degree: event.degree || "All",
+      year: event.year || "All",
+      semester: event.semester || "All",
       type: event.type,
       startDate: format(new Date(event.startDate), "yyyy-MM-dd"),
       endDate: format(new Date(event.endDate), "yyyy-MM-dd"),
@@ -170,7 +187,7 @@ const AdminAcademicCalendar = () => {
 
   const resetForm = () => {
     setEditingId(null);
-    setFormData({ title: "", semester: selectedSemester, type: "Academic", startDate: "", endDate: "", color: "", tagLabel: "" });
+    setFormData({ title: "", degree: selectedDegree, year: selectedYear, semester: selectedSemester, type: "Academic", startDate: "", endDate: "", color: "", tagLabel: "" });
   };
 
   const formatDateLabel = (start: string, end: string) => {
@@ -202,6 +219,34 @@ const AdminAcademicCalendar = () => {
         <Card>
           <CardContent className="p-4 flex flex-col sm:flex-row gap-4 justify-between items-center">
             <div className="flex items-center gap-4 w-full sm:w-auto">
+              <div className="w-32">
+                <Label className="sr-only">Filter by Degree</Label>
+                <Select value={selectedDegree} onValueChange={setSelectedDegree}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Degree" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DEGREES.map(deg => (
+                      <SelectItem key={deg.value} value={deg.value}>{deg.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="w-32">
+                <Label className="sr-only">Filter by Year</Label>
+                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {YEARS.map(yr => (
+                      <SelectItem key={yr.value} value={yr.value}>{yr.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="w-48">
                 <Label className="sr-only">Filter by Semester</Label>
                 <Select value={selectedSemester} onValueChange={setSelectedSemester}>
@@ -235,7 +280,29 @@ const AdminAcademicCalendar = () => {
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label>Degree</Label>
+                      <Select value={formData.degree} onValueChange={(v) => setFormData({ ...formData, degree: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {DEGREES.map(deg => (
+                            <SelectItem key={deg.value} value={deg.value}>{deg.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Year</Label>
+                      <Select value={formData.year} onValueChange={(v) => setFormData({ ...formData, year: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {YEARS.map(yr => (
+                            <SelectItem key={yr.value} value={yr.value}>{yr.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="space-y-2">
                       <Label>Semester</Label>
                       <Select value={formData.semester} onValueChange={(v) => setFormData({ ...formData, semester: v })}>

@@ -188,6 +188,8 @@ router.put("/:uid", verifyToken, async (req, res) => {
       "github",
       "portfolio",
       "twitter",
+      "designation",
+      "availability",
     ];
     const updates = {};
 
@@ -202,9 +204,12 @@ router.put("/:uid", verifyToken, async (req, res) => {
     }
 
     // Try to find and update existing user
+    // Note: runValidators is disabled because Mongoose update validators use
+    // query context (not document context) for 'this', breaking validators
+    // that reference other fields like this.role in the section validator.
     let user = await User.findOneAndUpdate({ uid: req.params.uid }, updates, {
       new: true,
-      runValidators: true,
+      runValidators: false,
     }).select("-_id -__v");
 
     // If user doesn't exist, create them (for development mode)

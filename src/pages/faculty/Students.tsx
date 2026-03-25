@@ -115,13 +115,7 @@ const FacultyStudents = () => {
   ];
   const SEMESTERS = [
     { value: "I", label: "Semester I" },
-    { value: "II", label: "Semester II" },
-    { value: "III", label: "Semester III" },
-    { value: "IV", label: "Semester IV" },
-    { value: "V", label: "Semester V" },
-    { value: "VI", label: "Semester VI" },
-    { value: "VII", label: "Semester VII" },
-    { value: "VIII", label: "Semester VIII" }
+    { value: "II", label: "Semester II" }
   ];
   const SECTIONS = ["A", "B", "C", "D", "E", "F", "G"];
 

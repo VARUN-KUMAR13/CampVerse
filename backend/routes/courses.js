@@ -5,8 +5,35 @@ const Course = require("../models/Course");
 // ─── GET all courses ─────────────────────────────────────────────────────────
 router.get("/", async (req, res) => {
     try {
-        const { facultyId } = req.query;
-        const filter = facultyId ? { facultyId } : {};
+        const { facultyId, section, studentId } = req.query;
+        const filter = {};
+
+        // Faculty-specific: only their courses
+        if (facultyId) {
+            filter.facultyId = facultyId;
+        }
+
+        // Student-specific: filter by section or assigned student
+        if (section || studentId) {
+            const orConditions = [];
+
+            // Course has no section restriction (legacy/open courses)
+            orConditions.push({ sections: { $exists: true, $size: 0 } });
+            orConditions.push({ sections: { $exists: false } });
+
+            // Student's section matches one of the course sections
+            if (section) {
+                orConditions.push({ sections: section });
+            }
+
+            // Student is individually assigned
+            if (studentId) {
+                orConditions.push({ assignedStudents: studentId });
+            }
+
+            filter.$or = orConditions;
+        }
+
         const courses = await Course.find(filter).select("-resources.fileData").sort({ createdAt: -1 });
         res.json(courses);
     } catch (error) {
@@ -14,6 +41,7 @@ router.get("/", async (req, res) => {
         res.status(500).json({ error: "Failed to fetch courses" });
     }
 });
+
 
 // ─── GET single course by ID ─────────────────────────────────────────────────
 router.get("/:id", async (req, res) => {
@@ -42,6 +70,11 @@ router.post("/", async (req, res) => {
             facultyId,
             facultyName,
             color,
+            department,
+            year,
+            semester,
+            sections,
+            assignedStudents,
         } = req.body;
 
         // Check for duplicate course code
@@ -53,8 +86,11 @@ router.post("/", async (req, res) => {
         const course = new Course({
             courseCode: courseCode.toUpperCase(),
             courseName,
-            credits: Number(credits),
-            maxStudents: Number(maxStudents),
+            department: department || "CSE",
+            year: year || "IV Year",
+            semester: semester || "Semester I",
+            credits: Number(credits) || 3,
+            maxStudents: Number(maxStudents) || 0,
             description: description || "",
             objectives: objectives || [],
             syllabus: syllabus || [],
@@ -63,13 +99,15 @@ router.post("/", async (req, res) => {
             facultyName,
             status: "Active",
             color: color || "bg-blue-500",
+            sections: sections || [],
+            assignedStudents: assignedStudents || [],
         });
 
         await course.save();
         res.status(201).json(course);
     } catch (error) {
-        console.error("Error creating course:", error);
-        res.status(500).json({ error: "Failed to create course" });
+        console.error("Error creating course:", error.message);
+        res.status(500).json({ error: error.message || "Failed to create course" });
     }
 });
 
@@ -83,8 +121,8 @@ router.put("/:id", async (req, res) => {
         if (!course) return res.status(404).json({ error: "Course not found" });
         res.json(course);
     } catch (error) {
-        console.error("Error updating course:", error);
-        res.status(500).json({ error: "Failed to update course" });
+        console.error("Error updating course:", error.message);
+        res.status(500).json({ error: error.message || "Failed to update course" });
     }
 });
 
@@ -95,8 +133,8 @@ router.delete("/:id", async (req, res) => {
         if (!course) return res.status(404).json({ error: "Course not found" });
         res.json({ message: "Course deleted successfully" });
     } catch (error) {
-        console.error("Error deleting course:", error);
-        res.status(500).json({ error: "Failed to delete course" });
+        console.error("Error deleting course:", error.message);
+        res.status(500).json({ error: error.message || "Failed to delete course" });
     }
 });
 

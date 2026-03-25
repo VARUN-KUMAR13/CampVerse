@@ -34,10 +34,10 @@ import {
   FileText,
   X,
   Loader2,
-  Sparkles,
   Calendar,
   Clock,
   Edit2,
+  CheckSquare,
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -54,6 +54,8 @@ const COURSE_COLORS = [
   "bg-teal-500",
   "bg-amber-500",
 ];
+
+const ALL_SECTIONS = ["A", "B", "C", "D", "E", "F", "G"];
 
 interface CourseResource {
   _id?: string;
@@ -75,6 +77,8 @@ interface Course {
   courseCode: string;
   courseName: string;
   department: string;
+  degree?: string;
+  classType?: string;
   year: string;
   semester: string;
   credits: number;
@@ -88,6 +92,14 @@ interface Course {
   status: string;
   color: string;
   createdAt: string;
+  sections?: string[];
+  assignedStudents?: string[];
+}
+
+interface StudentInfo {
+  rollNumber: string;
+  name: string;
+  section: string;
 }
 
 const FacultyCourses = () => {
@@ -106,10 +118,11 @@ const FacultyCourses = () => {
   const [courseCode, setCourseCode] = useState("");
   const [courseName, setCourseName] = useState("");
   const [department, setDepartment] = useState("CSE");
+  const [degree, setDegree] = useState("Major");
+  const [classType, setClassType] = useState("Theory");
   const [year, setYear] = useState("IV Year");
   const [semester, setSemester] = useState("Semester I");
   const [credits, setCredits] = useState("3");
-  const [maxStudents, setMaxStudents] = useState("60");
   const [description, setDescription] = useState("");
   const [objectives, setObjectives] = useState("");
   const [syllabus, setSyllabus] = useState<SyllabusTopic[]>([
@@ -120,6 +133,13 @@ const FacultyCourses = () => {
   >([]);
   const [courseColor, setCourseColor] = useState("bg-blue-500");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sections & Students state
+  const [selectedSections, setSelectedSections] = useState<string[]>([]);
+  const [sectionStudents, setSectionStudents] = useState<StudentInfo[]>([]);
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
+  const [studentSearchQuery, setStudentSearchQuery] = useState("");
+  const [loadingStudents, setLoadingStudents] = useState(false);
 
   // Fetch courses
   const fetchCourses = async () => {
@@ -144,6 +164,92 @@ const FacultyCourses = () => {
     }
   }, [userData?.collegeId]);
 
+  // Fetch students when sections change
+  useEffect(() => {
+    if (selectedSections.length === 0) {
+      setSectionStudents([]);
+      return;
+    }
+
+    const fetchStudents = async () => {
+      setLoadingStudents(true);
+      try {
+        const allStudents: StudentInfo[] = [];
+        const yearCode = userData?.year || "22";
+        const branchCode = userData?.branch || "05";
+
+        for (const section of selectedSections) {
+          try {
+            const res = await fetch(
+              `${API_BASE}/students/section/${yearCode}/${branchCode}/${section}`
+            );
+            if (res.ok) {
+              const data = await res.json();
+              if (data.students) {
+                data.students.forEach((s: any) => {
+                  if (!allStudents.some((existing) => existing.rollNumber === s.rollNumber)) {
+                    allStudents.push({
+                      rollNumber: s.rollNumber,
+                      name: s.name || s.rollNumber,
+                      section: s.section || section,
+                    });
+                  }
+                });
+              }
+            }
+          } catch (err) {
+            console.warn(`Failed to fetch students for section ${section}:`, err);
+          }
+        }
+
+        setSectionStudents(allStudents.sort((a, b) => a.rollNumber.localeCompare(b.rollNumber)));
+      } catch (error) {
+        console.error("Error fetching students:", error);
+      } finally {
+        setLoadingStudents(false);
+      }
+    };
+
+    fetchStudents();
+  }, [selectedSections, userData?.year, userData?.branch]);
+
+  // Toggle section selection
+  const toggleSection = (section: string) => {
+    setSelectedSections((prev) =>
+      prev.includes(section) ? prev.filter((s) => s !== section) : [...prev, section]
+    );
+  };
+
+  // Toggle student selection
+  const toggleStudent = (rollNumber: string) => {
+    setSelectedStudents((prev) =>
+      prev.includes(rollNumber)
+        ? prev.filter((r) => r !== rollNumber)
+        : [...prev, rollNumber]
+    );
+  };
+
+  // Select/Deselect all filtered students
+  const toggleAllFilteredStudents = () => {
+    const filtered = filteredStudents.map((s) => s.rollNumber);
+    const allSelected = filtered.every((r) => selectedStudents.includes(r));
+    if (allSelected) {
+      setSelectedStudents((prev) => prev.filter((r) => !filtered.includes(r)));
+    } else {
+      setSelectedStudents((prev) => [...new Set([...prev, ...filtered])]);
+    }
+  };
+
+  // Filter students for search (restricted to Section B only dynamically)
+  const isOnlySectionB = selectedSections.length > 0 && selectedSections.every(s => s === "B");
+  const filteredStudents = isOnlySectionB
+    ? sectionStudents.filter(
+        (s) =>
+          s.rollNumber.toLowerCase().includes(studentSearchQuery.toLowerCase()) ||
+          s.name.toLowerCase().includes(studentSearchQuery.toLowerCase())
+      )
+    : [];
+
   // Reset form
   const resetForm = () => {
     setIsEditing(false);
@@ -151,15 +257,20 @@ const FacultyCourses = () => {
     setCourseCode("");
     setCourseName("");
     setDepartment("CSE");
+    setDegree("Major");
+    setClassType("Theory");
     setYear("IV Year");
     setSemester("Semester I");
     setCredits("3");
-    setMaxStudents("60");
     setDescription("");
     setObjectives("");
     setSyllabus([{ topic: "", duration: "" }]);
     setPendingFiles([]);
     setCourseColor(COURSE_COLORS[Math.floor(Math.random() * COURSE_COLORS.length)]);
+    setSelectedSections([]);
+    setSelectedStudents([]);
+    setSectionStudents([]);
+    setStudentSearchQuery("");
   };
 
   // Handle file upload
@@ -185,7 +296,6 @@ const FacultyCourses = () => {
       };
       reader.readAsDataURL(file);
     });
-    // Reset input
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -224,10 +334,12 @@ const FacultyCourses = () => {
         courseCode: courseCode.trim(),
         courseName: courseName.trim(),
         department: department,
+        degree: degree,
+        classType: classType,
         year: year,
         semester: semester,
-        credits: Number(credits),
-        maxStudents: Number(maxStudents),
+        credits: Number(credits) || 3,
+        maxStudents: selectedStudents.length || 0,
         description: description.trim(),
         objectives: objectives
           .split("\n")
@@ -237,6 +349,8 @@ const FacultyCourses = () => {
         facultyId: userData?.collegeId || "",
         facultyName: userData?.name || "Faculty",
         color: courseColor,
+        sections: selectedSections,
+        assignedStudents: selectedStudents,
       };
 
       let url = `${API_BASE}/courses`;
@@ -288,15 +402,18 @@ const FacultyCourses = () => {
     setCourseCode(course.courseCode);
     setCourseName(course.courseName);
     setDepartment(course.department || "CSE");
+    setDegree(course.degree || "Major");
+    setClassType(course.classType || "Theory");
     setYear(course.year || "IV Year");
     setSemester(course.semester || "Semester I");
     setCredits(String(course.credits));
-    setMaxStudents(String(course.maxStudents));
     setDescription(course.description || "");
     setObjectives((course.objectives || []).join("\n"));
     setSyllabus(course.syllabus?.length > 0 ? course.syllabus : [{ topic: "", duration: "" }]);
     setCourseColor(course.color || COURSE_COLORS[0]);
     setPendingFiles([]);
+    setSelectedSections(course.sections || []);
+    setSelectedStudents(course.assignedStudents || []);
     setAddDialogOpen(true);
   };
 
@@ -347,7 +464,7 @@ const FacultyCourses = () => {
   };
 
   // Calculate stats
-  const totalStudents = courses.reduce((sum, c) => sum + c.maxStudents, 0);
+  const totalStudents = courses.reduce((sum, c) => sum + (c.assignedStudents?.length || c.maxStudents || 0), 0);
   const totalCredits = courses.reduce((sum, c) => sum + c.credits, 0);
 
   // Filter courses
@@ -398,7 +515,7 @@ const FacultyCourses = () => {
             <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-primary" />
+                  <BookOpen className="w-5 h-5 text-primary" />
                   {isEditing ? "Edit Course" : "Add New Course"}
                 </DialogTitle>
               </DialogHeader>
@@ -426,8 +543,8 @@ const FacultyCourses = () => {
                   </div>
                 </div>
 
-                {/* Row 1.5: Department, Year, Semester */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Row 1.5: Department, Degree, Year, Semester */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="department">Department *</Label>
                     <Select value={department} onValueChange={setDepartment}>
@@ -437,6 +554,19 @@ const FacultyCourses = () => {
                       <SelectContent>
                         {["CSE", "CSE (AI & ML)", "CSE (Data Science)", "ECE", "EEE", "Mechanical", "Civil", "IT"].map((dept) => (
                           <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="degree">Degree *</Label>
+                    <Select value={degree} onValueChange={setDegree}>
+                      <SelectTrigger id="degree">
+                        <SelectValue placeholder="Select Degree" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {["Major", "Minor"].map((deg) => (
+                          <SelectItem key={deg} value={deg}>{deg}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -461,7 +591,7 @@ const FacultyCourses = () => {
                         <SelectValue placeholder="Select Semester" />
                       </SelectTrigger>
                       <SelectContent>
-                        {["Semester I", "Semester II", "Semester III", "Semester IV", "Semester V", "Semester VI", "Semester VII", "Semester VIII"].map((sem) => (
+                        {["Semester I", "Semester II"].map((sem) => (
                           <SelectItem key={sem} value={sem}>{sem}</SelectItem>
                         ))}
                       </SelectContent>
@@ -469,37 +599,37 @@ const FacultyCourses = () => {
                   </div>
                 </div>
 
-                {/* Row 2: Credits + Students + Color */}
+                {/* Row 2: Class Type, Credits, Color */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="credits">Credits</Label>
-                    <Select value={credits} onValueChange={setCredits}>
-                      <SelectTrigger id="credits">
-                        <SelectValue placeholder="Credits" />
+                    <Label htmlFor="classType">Class Type *</Label>
+                    <Select value={classType} onValueChange={setClassType}>
+                      <SelectTrigger id="classType">
+                        <SelectValue placeholder="Select Type" />
                       </SelectTrigger>
                       <SelectContent>
-                        {[1, 2, 3, 4, 5, 6].map((c) => (
-                          <SelectItem key={c} value={String(c)}>
-                            {c} Credits
-                          </SelectItem>
+                        {["Theory", "Lab"].map((t) => (
+                          <SelectItem key={t} value={t}>{t}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="maxStudents">Max Students</Label>
+                    <Label htmlFor="credits">Credits</Label>
                     <Input
-                      id="maxStudents"
+                      id="credits"
                       type="number"
-                      placeholder="60"
-                      value={maxStudents}
-                      onChange={(e) => setMaxStudents(e.target.value)}
+                      min="1"
+                      max="10"
+                      placeholder="e.g. 3"
+                      value={credits}
+                      onChange={(e) => setCredits(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>Card Color</Label>
-                    <div className="flex gap-1.5 flex-wrap">
-                      {COURSE_COLORS.map((color) => (
+                    <div className="flex gap-1.5 flex-wrap mt-1">
+                      {[...new Set(COURSE_COLORS)].map((color) => (
                         <button
                           key={color}
                           className={`w-7 h-7 rounded-full ${color} border-2 transition-all ${courseColor === color
@@ -513,6 +643,170 @@ const FacultyCourses = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* ─── SECTIONS DROPDOWN ──────────────────────────────── */}
+                <div className="space-y-3">
+                  <Label className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    Assign Sections
+                    <span className="text-xs text-muted-foreground font-normal ml-1">(select one or more)</span>
+                  </Label>
+                  <Select
+                    key={selectedSections.join(",")}
+                    onValueChange={(value) => {
+                      if (!selectedSections.includes(value)) {
+                        setSelectedSections((prev) => [...prev, value]);
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={selectedSections.length > 0 ? `${selectedSections.length} section(s) selected` : "Select sections..."} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ALL_SECTIONS.map((section) => {
+                        const isSelected = selectedSections.includes(section);
+                        return (
+                          <SelectItem
+                            key={section}
+                            value={section}
+                            disabled={isSelected}
+                            className={isSelected ? "opacity-50" : ""}
+                          >
+                            <span className="flex items-center gap-2">
+                              {isSelected && (
+                                <svg className="w-3.5 h-3.5 text-primary" viewBox="0 0 12 12" fill="none">
+                                  <path d="M2 6L5 9L10 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              )}
+                              Section {section}
+                            </span>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                  {selectedSections.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {selectedSections.sort().map((s) => (
+                        <Badge
+                          key={s}
+                          variant="secondary"
+                          className="bg-primary/10 text-primary border-primary/20 text-xs gap-1 px-3 py-1"
+                        >
+                          Section {s}
+                          <button
+                            type="button"
+                            onClick={() => toggleSection(s)}
+                            className="hover:text-red-500 transition-colors ml-1"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* ─── STUDENTS ASSIGNMENT ───────────────────────────── */}
+                {selectedSections.length > 0 && (
+                  <div className="space-y-3">
+                    <Label className="flex items-center gap-2">
+                      <CheckSquare className="w-4 h-4 text-muted-foreground" />
+                      Assign Students
+                      <span className="text-xs text-muted-foreground font-normal ml-1">
+                        ({selectedStudents.length} selected)
+                      </span>
+                    </Label>
+
+                    {/* Search + Select All */}
+                    <div className="flex gap-2 items-center">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5" />
+                        <Input
+                          placeholder="Search by name or roll number..."
+                          className="pl-9 h-9 text-sm"
+                          value={studentSearchQuery}
+                          onChange={(e) => setStudentSearchQuery(e.target.value)}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={toggleAllFilteredStudents}
+                        className="shrink-0 text-xs h-9"
+                      >
+                        {filteredStudents.length > 0 &&
+                         filteredStudents.every((s) => selectedStudents.includes(s.rollNumber))
+                          ? "Deselect All"
+                          : "Select All"}
+                      </Button>
+                    </div>
+
+                    {/* Students list */}
+                    <div className="border border-border/50 rounded-lg max-h-48 overflow-y-auto bg-muted/10">
+                      {loadingStudents ? (
+                        <div className="flex items-center justify-center py-8">
+                          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                          <span className="ml-2 text-sm text-muted-foreground">Loading students...</span>
+                        </div>
+                      ) : filteredStudents.length === 0 ? (
+                        <div className="py-6 text-center text-sm text-muted-foreground">
+                          {sectionStudents.length === 0
+                            ? "No students found in selected sections"
+                            : "No students match your search"}
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-border/30">
+                          {filteredStudents.map((student) => {
+                            const isChecked = selectedStudents.includes(student.rollNumber);
+                            return (
+                              <button
+                                key={student.rollNumber}
+                                type="button"
+                                onClick={() => toggleStudent(student.rollNumber)}
+                                className={`
+                                  w-full flex items-center gap-3 px-3 py-2.5 text-left transition-all text-sm
+                                  ${isChecked
+                                    ? "bg-primary/5 hover:bg-primary/10"
+                                    : "hover:bg-muted/30"
+                                  }
+                                `}
+                              >
+                                <div
+                                  className={`
+                                    w-4.5 h-4.5 rounded-[4px] border-2 flex items-center justify-center shrink-0 transition-all
+                                    ${isChecked
+                                      ? "bg-primary border-primary"
+                                      : "border-border"
+                                    }
+                                  `}
+                                >
+                                  {isChecked && (
+                                    <svg className="w-3 h-3 text-primary-foreground" viewBox="0 0 12 12" fill="none">
+                                      <path d="M2 6L5 9L10 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <span className="font-medium text-foreground truncate block">
+                                    {student.name !== student.rollNumber ? student.name : student.rollNumber}
+                                  </span>
+                                </div>
+                                <span className="text-xs text-muted-foreground font-mono shrink-0">
+                                  {student.rollNumber}
+                                </span>
+                                <Badge variant="outline" className="text-[10px] h-5 shrink-0">
+                                  Sec {student.section}
+                                </Badge>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Description */}
                 <div className="space-y-2">
@@ -741,7 +1035,7 @@ const FacultyCourses = () => {
                     <div>Course Code</div>
                     <div>Course Name</div>
                     <div>Credits</div>
-                    <div>Students</div>
+                    <div>Sections</div>
                     <div>Status</div>
                     <div>Actions</div>
                   </div>
@@ -752,11 +1046,29 @@ const FacultyCourses = () => {
                       className="grid grid-cols-6 gap-4 py-3 items-center hover:bg-muted/30 rounded-lg transition-colors"
                     >
                       <div className="font-medium text-foreground">{course.courseCode}</div>
-                      <div className="text-foreground truncate">{course.courseName}</div>
+                      <div className="flex items-center gap-2 pr-2 text-foreground truncate max-w-full">
+                        <span className="truncate">{course.courseName}</span>
+                        {(!course.classType || course.classType === "Theory") ? (
+                          <Badge variant="outline" className="text-[9px] bg-orange-500/10 text-orange-500 border-orange-500/20 uppercase tracking-tighter shrink-0 cursor-default shadow-none">
+                            Theory
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-[9px] bg-blue-500/10 text-blue-500 border-blue-500/20 uppercase tracking-tighter shrink-0 cursor-default shadow-none">
+                            Lab
+                          </Badge>
+                        )}
+                      </div>
                       <div className="text-muted-foreground">{course.credits}</div>
-                      <div className="flex items-center space-x-2">
-                        <Users className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">{course.maxStudents}</span>
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {course.sections && course.sections.length > 0 ? (
+                          course.sections.map((s) => (
+                            <Badge key={s} variant="outline" className="text-[10px] h-5">
+                              {s}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-muted-foreground">All</span>
+                        )}
                       </div>
                       <div>
                         <Badge variant={course.status === "Active" ? "default" : "secondary"}>
@@ -820,6 +1132,22 @@ const FacultyCourses = () => {
                       <p className="text-muted-foreground">{selectedCourse.description}</p>
                     </div>
                   )}
+
+                  {/* Sections & Students */}
+                  {(selectedCourse.sections?.length || 0) > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-foreground mb-2">Assigned Sections</h4>
+                      <div className="flex gap-2 flex-wrap">
+                        {selectedCourse.sections?.map((s) => (
+                          <Badge key={s} className="bg-primary/10 text-primary border-primary/20">
+                            Section {s}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+
 
                   {/* Objectives */}
                   {selectedCourse.objectives.length > 0 && (
@@ -901,7 +1229,7 @@ const FacultyCourses = () => {
                     </span>
                     <span className="flex items-center gap-1">
                       <Users className="w-3 h-3" />
-                      {selectedCourse.maxStudents} students
+                      {selectedCourse.assignedStudents?.length || selectedCourse.maxStudents} students
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />

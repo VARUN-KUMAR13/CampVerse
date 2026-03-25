@@ -87,12 +87,6 @@ export const AdminClassAttendance = ({
   const SEMESTERS = [
     { value: "I", label: "Semester I" },
     { value: "II", label: "Semester II" },
-    { value: "III", label: "Semester III" },
-    { value: "IV", label: "Semester IV" },
-    { value: "V", label: "Semester V" },
-    { value: "VI", label: "Semester VI" },
-    { value: "VII", label: "Semester VII" },
-    { value: "VIII", label: "Semester VIII" },
   ];
   const SECTIONS = ["A", "B", "C", "D", "E", "F", "G"];
 
@@ -598,19 +592,6 @@ export const AdminClassAttendance = ({
                            )}
                         >
                            <XCircle className="w-4 h-4" /> Absent
-                        </Button>
-                         <Button
-                           variant={student.status === "LATE" ? "default" : "outline"}
-                           size="sm"
-                           onClick={() => markIndividual(student.studentId, "LATE")}
-                           className={cn(
-                              "w-20 gap-1.5 transition-all text-xs",
-                              student.status === "LATE" 
-                              ? "bg-yellow-500 hover:bg-yellow-600 shadow-yellow-500/20 shadow-lg border-transparent text-white" 
-                              : "hover:border-yellow-500/50 hover:bg-yellow-500/10 hover:text-yellow-600"
-                           )}
-                        >
-                           <Clock className="w-3.5 h-3.5" /> Late
                         </Button>
                      </div>
                   </div>

@@ -31,6 +31,42 @@ const StudentResults = () => {
   const [year, setYear] = useState("IV Year");
   const [semester, setSemester] = useState("Semester-I");
 
+  // Dynamically configure dropdown defaults mapping exactly to the backend student Current Semester logic
+  useEffect(() => {
+    if (!userData?.uid) return;
+    const fetchProfileSemester = async () => {
+      try {
+        const apiBaseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+        const res = await fetch(`${apiBaseUrl}/users/${userData.uid}`);
+        if (res.ok) {
+          const profile = await res.json();
+          const currentSem = profile.academicInformation?.currentSemester || profile.semester;
+          if (currentSem) {
+            const romanMap: Record<string, { year: string; semLabel: string }> = {
+              "I": { year: "I Year", semLabel: "Semester-I" },
+              "II": { year: "I Year", semLabel: "Semester-II" },
+              "III": { year: "II Year", semLabel: "Semester-I" },
+              "IV": { year: "II Year", semLabel: "Semester-II" },
+              "V": { year: "III Year", semLabel: "Semester-I" },
+              "VI": { year: "III Year", semLabel: "Semester-II" },
+              "VII": { year: "IV Year", semLabel: "Semester-I" },
+              "VIII": { year: "IV Year", semLabel: "Semester-II" }
+            };
+            const mapping = romanMap[String(currentSem).toUpperCase()];
+            if (mapping) {
+              setDegree("Major");
+              setYear(mapping.year);
+              setSemester(mapping.semLabel);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to initialize results mapping defaults:", err);
+      }
+    };
+    fetchProfileSemester();
+  }, [userData?.uid]);
+
   // Fetch student results
   const fetchResults = async () => {
     try {

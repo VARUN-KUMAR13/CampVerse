@@ -12,6 +12,7 @@ import { BookOpen, Users, FileText, Calendar, Clock, Loader2, MapPin, Megaphone 
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 const FacultyDashboard = () => {
   const { userData } = useAuth();
@@ -27,6 +28,15 @@ const FacultyDashboard = () => {
 
   // Announcements
   const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [expandedAnnouncements, setExpandedAnnouncements] = useState<Record<string, boolean>>({});
+  
+  // Upcoming Events
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+
+  const toggleAnnouncement = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedAnnouncements(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   // Fetch announcements
   useEffect(() => {
@@ -168,24 +178,79 @@ const FacultyDashboard = () => {
     fetchFacultySchedule();
   }, [userData?.collegeId]);
 
-  const upcomingEvents = [
-    {
-      date: "15",
-      month: "FEB",
-      title: "Mid-Term Examinations Begin",
-      time: "Duration: Feb 15 - Feb 23, 2025",
-      type: "Exams",
-      color: "text-blue-500",
-    },
-    {
-      date: "26",
-      month: "FEB",
-      title: "Lab Assessment Week",
-      time: "Practical evaluations for all lab courses",
-      type: "Labs",
-      color: "text-orange-500",
-    },
-  ];
+  // Fetch Academic Calendar (Upcoming Events)
+  useEffect(() => {
+    const fetchAcademicCalendar = async () => {
+      try {
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+        const res = await fetch(`${apiBaseUrl}/academic-calendar`);
+        if (res.ok) {
+          const events = await res.json();
+          // Filter relevant events for faculty
+          const filtered = events.filter((e: any) => {
+            const txt = `${e.title} ${e.type} ${e.description || ""}`.toLowerCase();
+            
+            // Target Faculty teaching 4th Year, Semester 2 (representing semester 8 conventionally or explicitly via string)
+            const is42 = String(e.semester) === "8" || txt.includes("4-2") || txt.includes("semester 8") || txt.includes("iv-ii");
+            
+            // Events must relate to Exams or Project Vivas/Reviews
+            const isRelevantAction = txt.includes("exam") || txt.includes("viva") || txt.includes("review");
+            
+            return is42 && isRelevantAction;
+          });
+
+          // Sort by start date (ascending -> closest upcoming)
+          filtered.sort((a: any, b: any) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+          
+          const uniqueEvents: any[] = [];
+          const seen = new Set();
+          
+          let count = 0;
+          for (const ev of filtered) {
+             const key = ev.title.trim().toLowerCase();
+             
+             // Check to ensure we only render future or current events
+             const eDate = new Date(ev.endDate);
+             // allow viewing events completed very recently (yesterday) to not prematurely cut
+             if (eDate < new Date(Date.now() - 86400000)) continue;
+
+             if (!seen.has(key)) {
+                seen.add(key);
+                
+                const sDate = new Date(ev.startDate);
+                let typeLabel = "Event";
+                let color = "text-primary";
+                
+                if (key.includes("exam") || key.includes("mid") || key.includes("end")) {
+                  typeLabel = "Exams";
+                  color = "text-red-500";
+                } else if (key.includes("viva") || key.includes("review") || key.includes("project")) {
+                  typeLabel = "Project Viva";
+                  color = "text-purple-500";
+                }
+
+                uniqueEvents.push({
+                  date: sDate.getDate().toString().padStart(2, '0'),
+                  month: sDate.toLocaleString("default", { month: "short" }).toUpperCase(),
+                  title: ev.title,
+                  time: `Duration: ${sDate.toLocaleDateString("en-IN", { month: "short", day: "numeric" })} - ${eDate.toLocaleDateString("en-IN", { month: "short", day: "numeric" })}, ${eDate.getFullYear()}`,
+                  type: typeLabel,
+                  color: color,
+                });
+                
+                count++;
+                if (count >= 5) break; 
+             }
+          }
+          setUpcomingEvents(uniqueEvents);
+        }
+      } catch (err) {
+        console.error("Failed to fetch academic calendar", err);
+      }
+    };
+    
+    fetchAcademicCalendar();
+  }, []);
 
   const getTypeColor = (type: string) => {
     switch (type) {
@@ -278,138 +343,182 @@ const FacultyDashboard = () => {
         </CardContent>
       </Card>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Upcoming Events */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Upcoming Events</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {upcomingEvents.map((event, index) => (
-              <div
-                key={index}
-                className="flex items-start space-x-4 p-4 bg-muted/30 rounded-lg"
-              >
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-foreground">
-                    {event.date}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {event.month}
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <div className="font-medium text-foreground">
-                    {event.title}
-                  </div>
-                  <div className="text-sm text-muted-foreground mt-1">
-                    <Clock className="w-4 h-4 inline mr-1" />
-                    {event.time}
-                  </div>
-                  <Badge variant="outline" className="mt-2">
-                    {event.type}
-                  </Badge>
-                </div>
+      <div className="grid lg:grid-cols-2 gap-6 mt-6">
+        {/* LEFT COLUMN */}
+        <div className="flex flex-col gap-6">
+          {/* Active Courses */}
+          <Card className="flex flex-col h-[340px]">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-primary" />
+                  Active Courses
+                </CardTitle>
               </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Announcements Section */}
-        <Card className="flex flex-col">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Megaphone className="w-5 h-5 text-primary" />
-              Announcements
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 flex-1 overflow-y-auto max-h-[400px]">
-            {announcements.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center h-full">
-                <Megaphone className="w-8 h-8 text-muted-foreground/30 mb-2" />
-                <p className="text-sm text-muted-foreground">No active announcements</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {announcements.map((ann) => (
-                  <div key={ann._id} className="p-4 rounded-xl border border-border/50 bg-muted/10 hover:bg-muted/30 transition-colors">
-                    <div className="flex justify-between items-start gap-4 mb-2">
-                      <h4 className="font-semibold text-foreground text-sm leading-tight">{ann.title}</h4>
-                      {ann.priority === "Important" && (
-                        <Badge variant="destructive" className="shrink-0 text-[10px] px-1.5 py-0 h-4">Important</Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground">{ann.message}</p>
-                    <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
-                      <span className="font-medium">By {ann.createdBy}</span>
-                      <span>•</span>
-                      <span>{new Date(ann.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Active Courses */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Active Courses</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+          {loadingCourses ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {loadingCourses ? (
-              <div className="flex justify-center py-4">
-                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : courses.length === 0 ? (
-              <div className="text-center py-4 text-sm text-muted-foreground">
-                No active courses. Add courses from the Courses tab.
-              </div>
-            ) : (
-              courses.map((course) => (
+          ) : courses.length === 0 ? (
+            <div className="text-center py-4 text-sm text-muted-foreground">
+              No active courses. Add courses from the Courses tab.
+            </div>
+          ) : (
+            courses.map((course) => (
+              <div
+                key={course._id}
+                className="flex items-center space-x-4 p-4 bg-muted/30 rounded-lg pr-5"
+              >
                 <div
-                  key={course._id}
-                  className="flex items-center space-x-4 p-4 bg-muted/30 rounded-lg pr-5"
+                  className={`shrink-0 h-12 w-auto min-w-[3rem] px-3 ${course.color || "bg-blue-500"} rounded-lg flex items-center justify-center text-white font-bold text-sm`}
                 >
-                  <div
-                    className={`shrink-0 h-12 w-auto min-w-[3rem] px-3 ${course.color || "bg-blue-500"} rounded-lg flex items-center justify-center text-white font-bold text-sm`}
-                  >
-                    {course.courseCode}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-foreground truncate">
-                      {course.courseName}
-                    </div>
-                    <div className="text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5">
-                      <Users className="w-3.5 h-3.5" />
-                      {course.maxStudents} Students
-                    </div>
-                  </div>
-                  <div className="hidden sm:flex items-center space-x-2 mr-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-xs text-muted-foreground font-medium">
-                      active
-                    </span>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="shrink-0"
-                    onClick={() => {
-                      setSelectedCourse(course);
-                      setViewDialogOpen(true);
-                    }}
-                  >
-                    View Details
-                  </Button>
+                  {course.courseCode}
                 </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-foreground truncate">
+                    {course.courseName}
+                  </div>
+                  <div className="text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                    <Users className="w-3.5 h-3.5" />
+                    {course.maxStudents} Students
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={() => {
+                    setSelectedCourse(course);
+                    setViewDialogOpen(true);
+                  }}
+                >
+                  View Details
+                </Button>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
+          {/* Upcoming Events */}
+          <Card className="flex flex-col h-[340px]">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-primary" />
+                Upcoming Events
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+          {upcomingEvents.map((event, index) => (
+            <div
+              key={index}
+              className="flex items-start space-x-4 p-4 bg-muted/30 rounded-lg shadow-sm"
+            >
+              <div className="text-center">
+                <div className="text-2xl font-bold text-foreground">
+                  {event.date}
+                </div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
+                  {event.month}
+                </div>
+              </div>
+              <div className="flex-1">
+                <div className="font-semibold text-foreground">
+                  {event.title}
+                </div>
+                <div className="text-sm text-muted-foreground mt-1.5 flex items-center">
+                  <Clock className="w-3.5 h-3.5 mr-1.5 opacity-70" />
+                  {event.time}
+                </div>
+                <Badge variant="secondary" className="mt-2.5 font-medium border-border/50">
+                  {event.type}
+                </Badge>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+
+    {/* RIGHT COLUMN */}
+    {/* Announcements Section */}
+    <Card className="flex flex-col h-[704px]">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Megaphone className="w-5 h-5 text-primary" />
+          System Announcements
+        </CardTitle>
+      </CardHeader>
+      
+      <CardContent className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+        {announcements.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center h-full">
+            <Megaphone className="w-10 h-10 text-muted-foreground/30 mb-3" />
+            <p className="text-sm text-muted-foreground font-medium">No system notifications at this time</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {announcements.map((ann) => {
+              const isExpanded = expandedAnnouncements[ann._id];
+              return (
+                <Card 
+                  key={ann._id} 
+                  className="border-border/40 bg-muted/10 transition-all duration-300 relative overflow-hidden"
+                >
+                  <CardContent className="p-4 sm:p-5">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex justify-between items-start gap-3">
+                        <h4 className="font-bold text-base sm:text-lg text-foreground leading-tight">
+                          {ann.title}
+                         </h4>
+                              {ann.priority === "Important" && (
+                                <Badge className="bg-red-500/10 text-red-500 border-red-500/20 shrink-0 text-[10px] px-2 py-0.5 uppercase tracking-wider font-bold">
+                                  Priority
+                                </Badge>
+                              )}
+                            </div>
+                            
+                            <div className="relative">
+                              <p className={cn(
+                                "text-sm text-muted-foreground leading-relaxed transition-all duration-500 ease-in-out",
+                                isExpanded ? "opacity-100" : "line-clamp-3 opacity-90"
+                              )}>
+                                {ann.message}
+                              </p>
+                              
+                              {ann.message && ann.message.length > 150 && (
+                                <button
+                                  onClick={(e) => toggleAnnouncement(ann._id, e)}
+                                  className="text-primary text-xs font-semibold hover:underline mt-2 flex items-center gap-1 transition-all"
+                                >
+                                  {isExpanded ? 'Show less' : 'Show more'}
+                                </button>
+                              )}
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 pt-3 border-t border-border/30 text-[10px] sm:text-xs text-muted-foreground/70">
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">
+                                  {(ann.createdBy || 'A')[0].toUpperCase()}
+                                </div>
+                                <span className="font-semibold text-muted-foreground">Admin: {ann.createdBy}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <Clock className="w-3.5 h-3.5" />
+                                <span>{new Date(ann.createdAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
       </div>
 
       {/* ─── VIEW COURSE DETAILS DIALOG ─────────────────────────── */}

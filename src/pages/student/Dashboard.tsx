@@ -15,6 +15,8 @@ import {
   AlertCircle,
   RefreshCw,
   Megaphone,
+  CalendarDays,
+  ClipboardCheck,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
@@ -89,6 +91,12 @@ const StudentDashboard = () => {
 
   // Announcements
   const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [expandedAnnouncements, setExpandedAnnouncements] = useState<Record<string, boolean>>({});
+
+  const toggleAnnouncement = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedAnnouncements(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   // Academic Calendar
   const [academicEvents, setAcademicEvents] = useState<any[]>([]);
@@ -243,19 +251,48 @@ const StudentDashboard = () => {
 
   // 1) Fetch whole weekly schedule once when studentSection is ready
   useEffect(() => {
-    if (!studentSection) return;
+    if (!studentSection || !displaySemester || !userData?.collegeId) return;
 
     const fetchWeeklySchedule = async () => {
       let config = null;
 
       try {
+        const getStudentYear = (collegeId: string) => {
+          const yearCode = collegeId.substring(0, 2);
+          if (!yearCode || !/^\d{2}$/.test(yearCode)) return "IV Year";
+          const admissionYear = parseInt("20" + yearCode);
+          const now = new Date();
+          const curYear = now.getFullYear();
+          const academicStartYear = now.getMonth() >= 6 ? curYear : curYear - 1;
+          const map = ["I Year", "II Year", "III Year", "IV Year"];
+          return map[Math.min(Math.max(academicStartYear - admissionYear, 0), 3)] || "IV Year";
+        };
+
+        const getStudentBranch = (collegeId: string) => {
+          const branchCode = collegeId.substring(6, 8);
+          if (branchCode === "04") return "ECE";
+          if (branchCode === "12") return "IT";
+          return "CSE";
+        };
+
+        const mapRomanToSemesterStr = (roman: string) => {
+          const dict: Record<string, string> = {
+            "I": "Semester-I", "II": "Semester-II", 
+            "III": "Semester-I", "IV": "Semester-II",
+            "V": "Semester-I", "VI": "Semester-II",
+            "VII": "Semester-I", "VIII": "Semester-II"
+          };
+          return dict[String(roman).trim().toUpperCase()] || "Semester-I";
+        };
+
         const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
         const params = new URLSearchParams({
           scheduleType: "student",
-          degree: "Major",   // Using default generic values matching Faculty 
-          year: "25",        // IV Year matching default
-          semester: "I",     // Semester I
-          section: "B",
+          degree: "Major",
+          year: getStudentYear(userData.collegeId),
+          semester: mapRomanToSemesterStr(displaySemester),
+          branch: getStudentBranch(userData.collegeId),
+          section: studentSection,
         });
 
         const res = await fetch(`${apiBaseUrl}/schedules?${params.toString()}`);
@@ -297,7 +334,7 @@ const StudentDashboard = () => {
     };
 
     fetchWeeklySchedule();
-  }, [studentSection]);
+  }, [studentSection, displaySemester, userData?.collegeId]);
 
   // 2) Update displayed schedule when calendar date changes
   useEffect(() => {
@@ -589,27 +626,22 @@ const StudentDashboard = () => {
     const loadHistoricalMetrics = async () => {
       try {
         const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
-        const coursesRes = await fetch(`${apiBaseUrl}/courses`);
+        const params = new URLSearchParams();
+        if (studentSection) params.append("section", studentSection);
+        if (userData.collegeId) params.append("studentId", userData.collegeId);
+
+        const coursesRes = await fetch(`${apiBaseUrl}/courses?${params.toString()}`);
         let subjects: { subjectCode: string; subjectName: string }[] = [];
         
         if (coursesRes.ok) {
           const coursesData = await coursesRes.json();
-          // Profile match logic for course mapping
-          const stdDept = userData?.department || "CSE";
-          const stdYear = userData?.year || "IV Year";
-          const stdSem = userData?.semester || "Semester I";
-
+          // Filter to only active courses, relying on the backend to filter by section/student
           subjects = coursesData
-            .filter((c: any) => 
-               c.status === "Active" &&
-               (c.department === stdDept || !c.department) &&
-               (c.year === stdYear || !c.year) &&
-               (c.semester === stdSem || !c.semester)
-            )
-            .map((c: any) => ({
-              subjectCode: c.courseCode,
-              subjectName: c.courseName,
-            }));
+             .filter((c: any) => c.status === "Active")
+             .map((c: any) => ({
+                subjectCode: c.courseCode,
+                subjectName: c.courseName,
+             }));
         }
 
         if (subjects.length === 0) {
@@ -861,70 +893,47 @@ const StudentDashboard = () => {
     return "bg-red-500";
   };
 
-  // Derive subjects and labs from weekly schedule config
+  // Derive theory, labs, and faculty counts strictly from actual course data mapped to the current semester
   useEffect(() => {
-    if (!weeklyScheduleConfig || weeklyScheduleConfig.length === 0) {
-      setSubjectsCount(null);
-      setLabsCount(null);
-      return;
-    }
+    if (!userData || !displaySemester || !studentSemester) return;
 
-    const allSlots: any[] = [];
-    weeklyScheduleConfig.forEach((dayConfig: any) => {
-      if (dayConfig?.slots) {
-        dayConfig.slots.forEach((slot: any) => {
-          if (slot.subjectCode && slot.subjectCode.trim() !== "") {
-            allSlots.push(slot);
-          }
-        });
-      }
-    });
-
-    // Group unique subjects by classType
-    const subjectSet = new Set<string>();
-    const labSet = new Set<string>();
-
-    allSlots.forEach((slot) => {
-      const code = slot.subjectCode.trim().toUpperCase();
-      const type = (slot.classType || "Class").toLowerCase();
-      if (type === "lab") {
-        labSet.add(code);
-      } else {
-        subjectSet.add(code);
-      }
-    });
-
-    console.log(`[DashboardStats] Unique subjects: ${subjectSet.size}, Unique labs: ${labSet.size}`);
-    setSubjectsCount(subjectSet.size);
-    setLabsCount(labSet.size);
-
-    // Faculty count fallback: subjects + labs
-    if (facultyCount === null) {
-      setFacultyCount(subjectSet.size + labSet.size);
-    }
-  }, [weeklyScheduleConfig]);
-
-  // Fetch faculty count from backend
-  useEffect(() => {
-    const fetchFacultyCount = async () => {
+    const fetchSemesterCourses = async () => {
       try {
         const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
-        const res = await fetch(`${apiBaseUrl}/faculty-assignments`);
+        const params = new URLSearchParams();
+        if (userData.section) params.append("section", userData.section);
+        if (userData.collegeId) params.append("studentId", userData.collegeId);
+        
+        const res = await fetch(`${apiBaseUrl}/courses?${params.toString()}`);
         if (res.ok) {
-          const assignments = await res.json();
-          // Count unique facultyId values
-          const uniqueFaculty = new Set(assignments.map((a: any) => a.facultyId));
-          console.log(`[DashboardStats] Unique faculty from API: ${uniqueFaculty.size}`);
-          if (uniqueFaculty.size > 0) {
-            setFacultyCount(uniqueFaculty.size);
-          }
+          const allCourses = await res.json();
+          
+          // Isolate courses belonging exactly strictly to the student's current mapped semester designation
+          const activeSemesterCourses = allCourses.filter((c: any) => {
+             const cSem = String(c.semester || "").toLowerCase().trim();
+             const dSem = String(displaySemester).toLowerCase().trim();
+             const nSem = String(studentSemester).toLowerCase().trim();
+             return (cSem.includes(dSem) || cSem === nSem) && c.status === "Active";
+          });
+
+          // Compute explicit counts isolating strictly against exact classType field states natively
+          const theoryCount = activeSemesterCourses.filter((c: any) => (!c.classType || c.classType === "Theory")).length;
+          const labsCountResult = activeSemesterCourses.filter((c: any) => c.classType === "Lab").length;
+
+          console.log(`[DashboardStats] Dynamically Computed from Core Courses -> Theory: ${theoryCount}, Labs: ${labsCountResult}, Faculty: ${theoryCount + labsCountResult}`);
+          setSubjectsCount(theoryCount);
+          setLabsCount(labsCountResult);
+          
+          // Total count exactly equals number of theory subjects + number of lab subjects
+          setFacultyCount(theoryCount + labsCountResult);
         }
       } catch (error) {
-        console.warn("[DashboardStats] Failed to fetch faculty count:", error);
+        console.warn("[DashboardStats] Failed to fetch semester courses strictly:", error);
       }
     };
-    fetchFacultyCount();
-  }, []);
+    
+    fetchSemesterCourses();
+  }, [userData, displaySemester, studentSemester]);
 
   const stats = [
     {
@@ -934,7 +943,7 @@ const StudentDashboard = () => {
       color: "text-orange-500",
     },
     {
-      label: "Subjects",
+      label: "Theory",
       value: subjectsCount !== null ? String(subjectsCount) : "--",
       icon: <Users className="w-4 h-4" />,
       color: "text-green-500",
@@ -992,9 +1001,9 @@ const StudentDashboard = () => {
       <Card className="border-border/50 shadow-lg">
         <CardHeader>
           <div>
-            <CardTitle className="text-xl">
+            <CardTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
               {date && date.toLocaleDateString() !== serverTime.toLocaleDateString()
-                ? "Schedule & Attendance for the Day"
+                ? `Schedule & Attendance for ${format(date, "dd MMM yyyy")}`
                 : "Schedule & Attendance for Today"}
             </CardTitle>
           </div>
@@ -1031,7 +1040,7 @@ const StudentDashboard = () => {
                   <>
                     <CalendarIcon className="w-12 h-12 mb-4 text-muted-foreground/30" />
                     <h3 className="text-lg font-medium text-foreground">No Schedule Found</h3>
-                    <p>No classes scheduled for this day.</p>
+                    <p>No schedule available for selected date</p>
                   </>
               </div>
             ) : [...todaySchedule]
@@ -1139,9 +1148,9 @@ const StudentDashboard = () => {
       {/* Today's Attendance Summary - Real-time Metrics */}
       <Card className="border-border/50 shadow-lg bg-gradient-to-r from-primary/5 to-primary/10">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-primary" />
-            Selected Date Attendance Summary
+          <CardTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
+            <ClipboardCheck className="w-5 h-5 text-primary" />
+            Attendance Summary
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -1212,7 +1221,10 @@ const StudentDashboard = () => {
           <Card className="border-border/50 shadow-lg">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Performance Metrics</CardTitle>
+                <CardTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
+                  <BarChart3 className="w-5 h-5 text-primary" />
+                  Performance Metrics
+                </CardTitle>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -1276,43 +1288,87 @@ const StudentDashboard = () => {
           </Card>
 
           {/* Announcements Section */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-              <Megaphone className="w-5 h-5 text-primary" />
-              Announcements
-            </h3>
-            {announcements.length === 0 ? (
-              <Card className="border-border/50 border-dashed bg-transparent">
-                <CardContent className="flex flex-col items-center justify-center py-8 text-center">
-                  <Megaphone className="w-8 h-8 text-muted-foreground/30 mb-2" />
-                  <p className="text-sm text-muted-foreground">No active announcements</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                {announcements.map((ann) => (
-                  <Card key={ann._id} className="border-border/50 shadow-md hover:border-primary/50 transition-colors">
-                    <CardHeader className="pb-2">
-                      <div className="flex justify-between items-start gap-4">
-                        <CardTitle className="text-base leading-tight">{ann.title}</CardTitle>
-                        {ann.priority === "Important" && (
-                          <Badge variant="destructive" className="shrink-0 text-[10px] px-1.5 py-0 h-4">Important</Badge>
-                        )}
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground">{ann.message}</p>
-                      <div className="flex items-center gap-2 mt-4 text-xs text-muted-foreground">
-                        <span className="font-medium">Posted by {ann.createdBy}</span>
-                        <span>•</span>
-                        <span>{new Date(ann.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+          <Card className="border-border/50 shadow-lg">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
+                  <Megaphone className="w-5 h-5 text-primary" />
+                  Latest Announcements
+                </CardTitle>
               </div>
-            )}
-          </div>
+            </CardHeader>
+            <CardContent className="max-h-[680px] overflow-y-auto space-y-4 scroll-smooth">
+                {announcements.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-10 text-center">
+                    <Megaphone className="w-10 h-10 text-muted-foreground/20 mb-3" />
+                    <p className="text-sm text-muted-foreground font-medium">No active announcements at the moment</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {announcements.map((ann) => {
+                      const isExpanded = expandedAnnouncements[ann._id];
+                      return (
+                        <Card 
+                          key={ann._id} 
+                          className="group border-border/40 bg-muted/20 hover:bg-muted/30 transition-all duration-300 relative overflow-hidden"
+                        >
+                          <CardContent className="p-4 sm:p-5">
+                            <div className="flex flex-col gap-2">
+                              <div className="flex justify-between items-start gap-3">
+                                <h4 className="font-bold text-base sm:text-lg text-foreground leading-tight">
+                                  {ann.title}
+                                </h4>
+                                {ann.priority === "Important" && (
+                                  <Badge className="bg-red-500/10 text-red-500 border-red-500/20 shrink-0 text-[10px] px-2 py-0.5 uppercase tracking-wider font-bold">
+                                    Urgent
+                                  </Badge>
+                                )}
+                              </div>
+                              
+                              <div className="relative">
+                                <p className={cn(
+                                  "text-sm sm:text-base text-muted-foreground leading-relaxed transition-all duration-500 ease-in-out",
+                                  isExpanded ? "opacity-100" : "line-clamp-3 opacity-90"
+                                )}>
+                                  {ann.message}
+                                </p>
+                                
+                                {ann.message && ann.message.length > 150 && (
+                                  <button
+                                    onClick={(e) => toggleAnnouncement(ann._id, e)}
+                                    className="text-primary text-xs sm:text-sm font-semibold hover:underline mt-2 flex items-center gap-1 transition-all"
+                                  >
+                                    {isExpanded ? 'Show less' : 'Show more'}
+                                  </button>
+                                )}
+                              </div>
+
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 pt-3 border-t border-border/30 text-[10px] sm:text-xs text-muted-foreground/70">
+                                <div className="flex items-center gap-1.5">
+                                  <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">
+                                    {ann.createdBy?.[0]?.toUpperCase() || 'A'}
+                                  </div>
+                                  <span className="font-semibold text-muted-foreground"> {ann.createdBy}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  <span>{new Date(ann.createdAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 ml-auto">
+                                  <Badge variant="outline" className="text-[9px] h-4 bg-muted/40 uppercase tracking-tighter">
+                                    {ann.audience || "General"}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
         </div>
 
         {/* Calendar & Events */}
@@ -1353,7 +1409,7 @@ const StudentDashboard = () => {
 
                     <div className="flex flex-col gap-4 py-4 sm:border-l border-border/20 sm:pl-8">
                       <h4 className="font-semibold text-base leading-tight">
-                        Attendence
+                        Attendance Legend
                       </h4>
                       <div className="space-y-4">
                         <div className="flex items-center gap-4">
@@ -1374,37 +1430,76 @@ const StudentDashboard = () => {
 
           <Card className="border-border/50 shadow-lg">
             <CardHeader>
-              <CardTitle className="text-lg">Academic Calendar</CardTitle>
+              <CardTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
+                <CalendarDays className="w-5 h-5 text-primary" />
+                Academic Calendar
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 relative pb-6">
               {academicEvents.length === 0 ? (
                 <div className="text-center py-4 text-muted-foreground">
                   No Academic Events Available
                 </div>
               ) : (
-                academicEvents.map((event, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center space-x-3 p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-                  >
-                    <div
-                      className={`w-3 h-3 rounded-full ${event.color}`}
-                    ></div>
-                    <div className="flex-1 overflow-hidden">
-                      <div className="text-sm font-medium text-foreground truncate">
-                        {event.title}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {formatDateLabel(event.startDate, event.endDate)}
-                      </div>
-                    </div>
-                    {event.tagLabel && (
-                      <Badge variant="secondary" className="text-xs shrink-0">
-                        {event.tagLabel}
-                      </Badge>
-                    )}
+                <div className="relative">
+                  {/* Position line precisely using left + transform translate mapping to the dot's identical relative offset */}
+                  <div 
+                    className="absolute top-4 bottom-4 border-l-2 border-dotted border-muted-foreground/40 z-0"
+                    style={{ left: '14px', transform: 'translateX(-50%)', width: 0 }}
+                  ></div>
+
+                  <div className="space-y-3 relative z-10 w-full">
+                    {academicEvents.map((event, index) => {
+                       const nowTime = new Date().getTime();
+                       const sDateObj = new Date(event.startDate);
+                       sDateObj.setHours(0, 0, 0, 0);
+                       const eDateObj = new Date(event.endDate);
+                       eDateObj.setHours(23, 59, 59, 999);
+                       const isCurrent = sDateObj.getTime() <= nowTime && eDateObj.getTime() >= nowTime;
+
+                       return (
+                        <div
+                          key={index}
+                          className={cn(
+                            "flex items-start space-x-3 p-2 rounded-lg transition-colors relative w-full",
+                            isCurrent
+                              ? "bg-muted/50 shadow-sm ring-1 ring-primary/40"
+                              : "bg-muted/30 hover:bg-muted/50"
+                          )}
+                        >
+                          {/* Common relative container for the dot that guarantees width & exact center alignment */}
+                          <div className="relative w-3 shrink-0 h-4 mt-[3px]">
+                            <div
+                              className={cn(
+                                "w-3 h-3 rounded-full absolute top-[2px]",
+                                event.color,
+                                isCurrent && "ring-2 ring-primary/50 shadow-[0_0_8px_rgba(59,130,246,0.6)]"
+                              )}
+                              style={{ left: '50%', transform: 'translateX(-50%)' }}
+                            ></div>
+                          </div>
+                          
+                          {/* Event Text Content */}
+                          <div className="flex-1 overflow-visible">
+                            <div className="text-sm font-medium text-foreground whitespace-normal break-words leading-tight">
+                              {event.title}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {formatDateLabel(event.startDate, event.endDate)}
+                            </div>
+                          </div>
+                          
+                          {/* Event Tag */}
+                          {event.tagLabel && (
+                            <Badge variant={isCurrent ? "default" : "secondary"} className="text-[10px] shrink-0 self-start mt-0.5 whitespace-nowrap px-1.5 py-0">
+                              {event.tagLabel}
+                            </Badge>
+                          )}
+                        </div>
+                       );
+                    })}
                   </div>
-                ))
+                </div>
               )}
             </CardContent>
           </Card>

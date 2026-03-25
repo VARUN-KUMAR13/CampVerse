@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import StudentLayout from "@/components/StudentLayout";
 import { useAuth } from "@/contexts/AuthContext";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useMemo, useRef, useState } from "react";
 
 const StudentSchedule = () => {
@@ -169,17 +170,16 @@ const StudentSchedule = () => {
           <p className="text-muted-foreground">Welcome back, {userData?.collegeId}</p>
         </div>
         <div className="flex gap-2">
-          <select
-            className="bg-background border rounded px-2 py-1 text-sm"
+          <SearchableSelect
             value={viewDay}
-            onChange={(e) => setViewDay(e.target.value)}
-            aria-label="Filter by day"
-          >
-            <option value="ALL">All Days</option>
-            {days.map((d) => (
-              <option key={d} value={d}>{d}</option>
-            ))}
-          </select>
+            onChange={setViewDay}
+            placeholder="Filter by day"
+            className="w-[180px]"
+            options={[
+              { label: "All Days", value: "ALL" },
+              ...days.map(d => ({ label: d, value: d }))
+            ]}
+          />
           <Button variant={compact ? "outline" : "default"} onClick={() => setCompact((v) => !v)}>
             {compact ? 'Comfortable' : 'Compact'}
           </Button>

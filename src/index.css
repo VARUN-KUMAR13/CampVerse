@@ -153,7 +153,10 @@
 
   /* Chatbase Widget Customization */
   #chatbase-bubble-button, 
-  #chatbase-bubble-window-button {
+  #chatbase-bubble-window-button,
+  #chatbase-message-bubbles,
+  div[id^="chatbase-message-"],
+  iframe[id^="chatbase-message-"] {
     display: none !important;
   }
 
@@ -167,8 +170,8 @@
     right: 24px !important;
     width: 400px !important;
     max-width: calc(100vw - 48px) !important;
-    height: 600px !important;
-    max-height: calc(100vh - 120px) !important;
+    height: calc(100vh - 160px) !important;
+    max-height: 800px !important;
     background-color: hsl(222, 47%, 7%) !important;
     
     /* Animation base - starts hidden */
@@ -195,6 +198,34 @@
     width: 100% !important;
     height: 100% !important;
   }
+}
+
+/* Minimal Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border) / 0.5);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--border));
+}
+
+/* Remove Number Input Spinner Arrows */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 /* Chatbot animations */

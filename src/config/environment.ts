@@ -40,6 +40,7 @@ interface Config {
     ERROR_REPORTING: boolean;
     OFFLINE_SUPPORT: boolean;
   };
+  CHATBASE_ID: string;
 
   // Limits and Constraints
   LIMITS: {
@@ -144,6 +145,9 @@ export const config: Config = {
     ERROR_REPORTING: getBooleanEnvVar('VITE_FEATURE_ERROR_REPORTING', currentEnv !== 'development'),
     OFFLINE_SUPPORT: getBooleanEnvVar('VITE_FEATURE_OFFLINE', false),
   },
+
+  // Third-party Integrations
+  CHATBASE_ID: getEnvVar('VITE_CHATBASE_ID') || 'hT0ZVaHT1raLPftpo9ddq',
 
   // Limits and Constraints
   LIMITS: {

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -8,6 +9,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import StudentLayout from "@/components/StudentLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { User, FileText, BookOpen, Loader2, Download } from "lucide-react";
@@ -45,6 +53,9 @@ interface Course {
   department?: string;
   year?: string;
   semester?: string;
+  classType?: string;
+  sections?: string[];
+  assignedStudents?: string[];
   createdAt: string;
 }
 
@@ -53,29 +64,78 @@ const StudentCourses = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  // ── Compute student's current academic year from collegeId ──
+  const getStudentCurrentYear = (): string => {
+    const collegeId = userData?.collegeId || "";
+    const yearCode = collegeId.substring(0, 2);
+    if (!yearCode || !/^\d{2}$/.test(yearCode)) return "IV Year";
+    const admissionYear = parseInt("20" + yearCode);
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const curMonth = now.getMonth();
+    const academicStartYear = curMonth >= 6 ? curYear : curYear - 1;
+    const yearNum = academicStartYear - admissionYear + 1;
+    const yearLabels = ["I Year", "II Year", "III Year", "IV Year"];
+    return yearLabels[Math.min(Math.max(yearNum - 1, 0), 3)];
+  };
 
-  // Fetch all active courses
+  const [degree, setDegree] = useState("Major");
+  const [selectedYear, setSelectedYear] = useState(() => getStudentCurrentYear());
+  const [selectedSemester, setSelectedSemester] = useState("Semester-I");
+
+  // Dynamically configure dropdown defaults mapping exactly to the backend student Current Semester logic
+  useEffect(() => {
+    if (!userData?.uid) return;
+    const fetchProfileSemester = async () => {
+      try {
+        const apiBaseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+        const res = await fetch(`${apiBaseUrl}/users/${userData.uid}`);
+        if (res.ok) {
+          const profile = await res.json();
+          const currentSem = profile.academicInformation?.currentSemester || profile.semester;
+          if (currentSem) {
+            const romanMap: Record<string, { year: string; semLabel: string }> = {
+              "I": { year: "I Year", semLabel: "Semester-I" },
+              "II": { year: "I Year", semLabel: "Semester-II" },
+              "III": { year: "II Year", semLabel: "Semester-I" },
+              "IV": { year: "II Year", semLabel: "Semester-II" },
+              "V": { year: "III Year", semLabel: "Semester-I" },
+              "VI": { year: "III Year", semLabel: "Semester-II" },
+              "VII": { year: "IV Year", semLabel: "Semester-I" },
+              "VIII": { year: "IV Year", semLabel: "Semester-II" }
+            };
+            const mapping = romanMap[String(currentSem).toUpperCase()];
+            if (mapping) {
+              setDegree("Major");
+              setSelectedYear(mapping.year);
+              setSelectedSemester(mapping.semLabel);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to initialize course mapping defaults:", err);
+      }
+    };
+    fetchProfileSemester();
+  }, [userData?.uid]);
+
+  // Fetch courses relevant to this student
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${API_BASE}/courses`);
+        const studentSection = userData?.section || "";
+        const studentId = userData?.collegeId || "";
+
+        const params = new URLSearchParams();
+        if (studentSection) params.append("section", studentSection);
+        if (studentId) params.append("studentId", studentId);
+
+        const res = await fetch(`${API_BASE}/courses?${params.toString()}`);
         if (res.ok) {
           const data = await res.json();
-          // Profile match logic (defaulting to typical CSE IV Year Semester I if user missing data)
-          const stdDept = userData?.department || "CSE";
-          const stdYear = userData?.year || "IV Year";
-          const stdSem = userData?.semester || "Semester I";
-
-          setCourses(
-            data.filter(
-              (c: Course) =>
-                c.status === "Active" &&
-                (c.department === stdDept || !c.department) &&
-                (c.year === stdYear || !c.year) &&
-                (c.semester === stdSem || !c.semester)
-            )
-          );
+          const activeCourses = data.filter((c: Course) => c.status === "Active").reverse();
+          setCourses(activeCourses);
         }
       } catch (error) {
         console.error("Error fetching courses:", error);
@@ -84,7 +144,32 @@ const StudentCourses = () => {
       }
     };
     fetchCourses();
-  }, []);
+  }, [userData?.section, userData?.collegeId]);
+
+  // Robust filtering to handle Faculty entering either relative ("Semester I") or absolute ("Semester VII") terms
+  const filteredCourses = courses.filter((c) => {
+    // Check Year
+    const yearMatch = c.year === selectedYear || !c.year;
+    
+    // Check Semester
+    let semesterMatch = false;
+    const sem = c.semester || "";
+    if (selectedSemester === "Semester-I") {
+      semesterMatch = ["Semester-I", "Semester I", "Semester 1"].includes(sem);
+      if (selectedYear === "I Year") semesterMatch = semesterMatch || sem === "Semester I";
+      if (selectedYear === "II Year") semesterMatch = semesterMatch || sem === "Semester III";
+      if (selectedYear === "III Year") semesterMatch = semesterMatch || sem === "Semester V";
+      if (selectedYear === "IV Year") semesterMatch = semesterMatch || sem === "Semester VII";
+    } else if (selectedSemester === "Semester-II") {
+      semesterMatch = ["Semester-II", "Semester II", "Semester 2"].includes(sem);
+      if (selectedYear === "I Year") semesterMatch = semesterMatch || sem === "Semester II";
+      if (selectedYear === "II Year") semesterMatch = semesterMatch || sem === "Semester IV";
+      if (selectedYear === "III Year") semesterMatch = semesterMatch || sem === "Semester VI";
+      if (selectedYear === "IV Year") semesterMatch = semesterMatch || sem === "Semester VIII";
+    }
+
+    return yearMatch && semesterMatch;
+  });
 
   // Download a resource
   const handleDownload = async (courseId: string, resource: CourseResource) => {
@@ -118,7 +203,7 @@ const StudentCourses = () => {
     <StudentLayout>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
               <BookOpen className="w-8 h-8 text-primary" />
@@ -130,25 +215,60 @@ const StudentCourses = () => {
           </div>
         </div>
 
+        {/* Top Filters — matching /student/assignments exactly */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Select name="degree" value={degree} onValueChange={setDegree}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Degree" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Major">Major</SelectItem>
+              <SelectItem value="Minor">Minor</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select name="year" value={selectedYear} onValueChange={setSelectedYear}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Year" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="I Year">I Year</SelectItem>
+              <SelectItem value="II Year">II Year</SelectItem>
+              <SelectItem value="III Year">III Year</SelectItem>
+              <SelectItem value="IV Year">IV Year</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select name="semester" value={selectedSemester} onValueChange={setSelectedSemester}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Semester" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Semester-I">Semester-I</SelectItem>
+              <SelectItem value="Semester-II">Semester-II</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Loading */}
         {loading ? (
           <div className="flex items-center justify-center py-24">
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
           </div>
-        ) : courses.length === 0 ? (
+        ) : filteredCourses.length === 0 ? (
           <div className="text-center py-24">
             <BookOpen className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
             <p className="text-lg font-medium text-muted-foreground">
-              No courses available yet
+              {courses.length > 0 ? "No courses available for this semester" : "No courses available yet"}
             </p>
             <p className="text-sm text-muted-foreground/60 mt-1">
-              Courses will appear here once your faculty adds them.
+              {courses.length > 0 ? "Select another semester to view your courses." : "Courses will appear here once your faculty adds them."}
             </p>
           </div>
         ) : (
           /* Courses Grid */
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {courses.map((course) => (
+            {filteredCourses.map((course) => (
               <Card key={course._id} className="hover:shadow-lg transition-shadow">
                 <CardHeader className="pb-4">
                   <div
@@ -156,8 +276,22 @@ const StudentCourses = () => {
                   >
                     {course.courseCode}
                   </div>
-                  <CardTitle className="text-lg">{course.courseName}</CardTitle>
-                  <div className="flex items-center space-x-1 text-sm text-muted-foreground">
+                  <div className="flex items-start justify-between gap-3">
+                    <CardTitle className="text-lg leading-tight">{course.courseName}</CardTitle>
+                    {course.classType && (
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 mt-0.5 ${
+                          course.classType === "Theory"
+                            ? "bg-orange-500/10 text-orange-500 border-orange-500/20"
+                            : "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                        }`}
+                      >
+                        {course.classType}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center space-x-1 text-sm text-muted-foreground mt-1.5">
                     <User className="w-4 h-4" />
                     <span>{course.facultyName}</span>
                   </div>

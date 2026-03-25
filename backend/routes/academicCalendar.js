@@ -5,13 +5,23 @@ const AcademicCalendar = require("../models/AcademicCalendar");
 // Get all events
 router.get("/", async (req, res) => {
   try {
-    const { collegeId, semester } = req.query;
+    const { collegeId, semester, degree, year } = req.query;
     if (!collegeId) {
       return res.status(400).json({ error: "collegeId is required" });
     }
     const query = { collegeId };
-    if (semester) {
-      query.semester = semester;
+    
+    if (semester && semester !== "All") {
+      query.$and = query.$and || [];
+      query.$and.push({ $or: [{ semester }, { semester: { $exists: false } }, { semester: "" }] });
+    }
+    if (degree && degree !== "All") {
+      query.$and = query.$and || [];
+      query.$and.push({ $or: [{ degree }, { degree: { $exists: false } }, { degree: "" }] });
+    }
+    if (year && year !== "All") {
+      query.$and = query.$and || [];
+      query.$and.push({ $or: [{ year }, { year: { $exists: false } }, { year: "" }] });
     }
     const events = await AcademicCalendar.find(query).sort({ startDate: 1 });
     res.json(events);
@@ -23,7 +33,7 @@ router.get("/", async (req, res) => {
 // Create event
 router.post("/", async (req, res) => {
   try {
-    const { collegeId, semester, title, type, startDate, endDate, color, tagLabel } = req.body;
+    const { collegeId, semester, degree, year, title, type, startDate, endDate, color, tagLabel } = req.body;
     
     // Auto Tag Generation handling
     let generatedTag = tagLabel;
@@ -41,6 +51,8 @@ router.post("/", async (req, res) => {
     const newEvent = new AcademicCalendar({
       collegeId, 
       semester, 
+      degree,
+      year,
       title, 
       type, 
       startDate, 

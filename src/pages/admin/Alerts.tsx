@@ -11,6 +11,15 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
     AlertDialog,
     AlertDialogAction,
     AlertDialogCancel,
@@ -36,16 +45,85 @@ import {
     Users,
     Clock,
     Trash2,
+    Plus,
+    Send,
 } from "lucide-react";
 
 const AdminAlerts = () => {
     const { userData } = useAuth();
-    const { allNotifications, loading, error, fetchNotifications, deleteNotification } = useNotifications();
+    const { allNotifications, loading, error, fetchNotifications, deleteNotification, sendNotification } = useNotifications();
     const { toast } = useToast();
     const [searchTerm, setSearchTerm] = useState("");
     const [urgencyFilter, setUrgencyFilter] = useState("all");
     const [categoryFilter, setCategoryFilter] = useState("all");
     const [deletingId, setDeletingId] = useState<string | null>(null);
+
+    // Notification Form State (Matching Dashboard)
+    const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
+    const [isNotificationSubmitting, setIsNotificationSubmitting] = useState(false);
+    const [notificationForm, setNotificationForm] = useState({
+        title: "",
+        message: "",
+        urgency: "normal" as "normal" | "important" | "critical",
+        targetType: "all" as "all" | "students" | "faculty" | "custom",
+        category: "general" as "general" | "academic" | "placement" | "event" | "emergency",
+        branches: [] as string[],
+        sections: [] as string[],
+        years: [] as string[],
+    });
+
+    const handleNotificationSubmit = async () => {
+        if (!notificationForm.title.trim() || !notificationForm.message.trim()) {
+            toast({
+                title: "Missing Fields",
+                description: "Please fill in Title and Message.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        try {
+            setIsNotificationSubmitting(true);
+            const targetAudience: any = { type: notificationForm.targetType };
+            
+            if (notificationForm.targetType === 'custom') {
+                if (notificationForm.branches.length > 0) targetAudience.branches = notificationForm.branches;
+                if (notificationForm.sections.length > 0) targetAudience.sections = notificationForm.sections;
+                if (notificationForm.years.length > 0) targetAudience.years = notificationForm.years;
+            }
+
+            await sendNotification({
+                title: notificationForm.title,
+                message: notificationForm.message,
+                urgency: notificationForm.urgency,
+                targetAudience,
+                category: notificationForm.category,
+            });
+
+            toast({ title: "Success!", description: "Notification sent successfully." });
+            
+            setNotificationForm({
+                title: "",
+                message: "",
+                urgency: "normal",
+                targetType: "all",
+                category: "general",
+                branches: [],
+                sections: [],
+                years: [],
+            });
+            setIsNotificationModalOpen(false);
+            fetchNotifications(); // Refresh the list
+        } catch (err: any) {
+            toast({
+                title: "Error",
+                description: err.message || "Failed to send notification.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsNotificationSubmitting(false);
+        }
+    };
 
     // Fetch notifications when component mounts
     useEffect(() => {
@@ -147,18 +225,12 @@ const AdminAlerts = () => {
                             View and manage all notifications sent via the system
                         </p>
                     </div>
-                    <Button
-                        variant="outline"
-                        onClick={fetchNotifications}
-                        disabled={loading}
-                        className="flex items-center gap-2"
+                    <Button 
+                        onClick={() => setIsNotificationModalOpen(true)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 border-none px-6 py-2 rounded-xl transition-all duration-300 shadow-lg hover:shadow-blue-500/20 active:scale-95"
                     >
-                        {loading ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                            <RefreshCw className="w-4 h-4" />
-                        )}
-                        Refresh
+                        <Plus className="w-5 h-5" />
+                        Send Alert
                     </Button>
                 </div>
 
@@ -379,6 +451,177 @@ const AdminAlerts = () => {
                         ))}
                     </div>
                 )}
+
+                {/* Notification Modal (Reused from Dashboard) */}
+                <Dialog
+                    open={isNotificationModalOpen}
+                    onOpenChange={setIsNotificationModalOpen}
+                >
+                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2 text-xl">
+                                <Bell className="w-6 h-6 text-primary" />
+                                Send Notification Alert
+                            </DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-5 py-4">
+                            {/* Title */}
+                            <div className="space-y-2">
+                                <Label className="text-sm font-semibold">
+                                    Alert Title <span className="text-destructive">*</span>
+                                </Label>
+                                <Input
+                                    value={notificationForm.title}
+                                    onChange={(e) =>
+                                        setNotificationForm({ ...notificationForm, title: e.target.value })
+                                    }
+                                    placeholder="e.g., Important: Exam Schedule Update"
+                                />
+                            </div>
+
+                            {/* Message */}
+                            <div className="space-y-2">
+                                <Label className="text-sm font-semibold">
+                                    Message <span className="text-destructive">*</span>
+                                </Label>
+                                <Textarea
+                                    value={notificationForm.message}
+                                    onChange={(e) =>
+                                        setNotificationForm({ ...notificationForm, message: e.target.value })
+                                    }
+                                    placeholder="Enter your notification message..."
+                                    rows={4}
+                                />
+                            </div>
+
+                            {/* Category */}
+                            <div className="space-y-2">
+                                <Label className="text-sm font-semibold">Category</Label>
+                                <Select
+                                    value={notificationForm.category}
+                                    onValueChange={(value: "general" | "academic" | "placement" | "event" | "emergency") =>
+                                        setNotificationForm({ ...notificationForm, category: value })
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="general">General</SelectItem>
+                                        <SelectItem value="academic">Academic</SelectItem>
+                                        <SelectItem value="placement">Placement</SelectItem>
+                                        <SelectItem value="event">Event</SelectItem>
+                                        <SelectItem value="emergency">Emergency</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Target Audience */}
+                            <div className="space-y-2">
+                                <Label className="text-sm font-semibold">Target Audience</Label>
+                                <Select
+                                    value={notificationForm.targetType}
+                                    onValueChange={(value: "all" | "students" | "faculty" | "custom") =>
+                                        setNotificationForm({ ...notificationForm, targetType: value })
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Users</SelectItem>
+                                        <SelectItem value="students">All Students</SelectItem>
+                                        <SelectItem value="faculty">All Faculty</SelectItem>
+                                        <SelectItem value="custom">Custom (Specific Branches/Sections)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Custom Targeting Options */}
+                            {notificationForm.targetType === "custom" && (
+                                <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/20">
+                                    <p className="text-sm font-medium text-foreground">Custom Targeting Options</p>
+
+                                    {/* Branches */}
+                                    <div className="space-y-2">
+                                        <Label className="text-sm">Branches (comma-separated)</Label>
+                                        <Input
+                                            value={notificationForm.branches.join(", ")}
+                                            onChange={(e) =>
+                                                setNotificationForm({
+                                                    ...notificationForm,
+                                                    branches: e.target.value.split(",").map((b) => b.trim()).filter((b) => b),
+                                                })
+                                            }
+                                            placeholder="e.g., CSE, ECE, EEE"
+                                        />
+                                        <p className="text-xs text-muted-foreground">Leave empty to include all branches</p>
+                                    </div>
+
+                                    {/* Sections */}
+                                    <div className="space-y-2">
+                                        <Label className="text-sm">Sections (comma-separated)</Label>
+                                        <Input
+                                            value={notificationForm.sections.join(", ")}
+                                            onChange={(e) =>
+                                                setNotificationForm({
+                                                    ...notificationForm,
+                                                    sections: e.target.value.split(",").map((s) => s.trim()).filter((s) => s),
+                                                })
+                                            }
+                                            placeholder="e.g., A, B, C"
+                                        />
+                                        <p className="text-xs text-muted-foreground">Leave empty to include all sections</p>
+                                    </div>
+
+                                    {/* Years */}
+                                    <div className="space-y-2">
+                                        <Label className="text-sm">Years (comma-separated)</Label>
+                                        <Input
+                                            value={notificationForm.years.join(", ")}
+                                            onChange={(e) =>
+                                                setNotificationForm({
+                                                    ...notificationForm,
+                                                    years: e.target.value.split(",").map((y) => y.trim()).filter((y) => y),
+                                                })
+                                            }
+                                            placeholder="e.g., 1, 2, 3, 4"
+                                        />
+                                        <p className="text-xs text-muted-foreground">Leave empty to include all years</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Form Actions */}
+                            <div className="flex justify-end gap-3 pt-4 border-t">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setIsNotificationModalOpen(false)}
+                                    disabled={isNotificationSubmitting}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={handleNotificationSubmit}
+                                    disabled={isNotificationSubmitting}
+                                    className="min-w-[140px] bg-blue-600 hover:bg-blue-700 rounded-xl"
+                                >
+                                    {isNotificationSubmitting ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                            Sending...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Send className="w-4 h-4 mr-2" />
+                                            Send Alert
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
+                        </div>
+                    </DialogContent>
+                </Dialog>
             </div>
         </AdminLayout>
     );

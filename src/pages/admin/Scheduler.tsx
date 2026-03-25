@@ -11,6 +11,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
     Dialog,
     DialogContent,
@@ -989,7 +990,7 @@ const AdminScheduler = () => {
 
                 {/* ─── Edit Schedule Modal ─── */}
                 <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-                    <DialogContent className="max-w-[95vw] w-full max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="max-w-[1400px] w-full max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                             <DialogTitle className="flex items-center gap-2 text-xl">
                                 <Calendar className="w-6 h-6 text-primary" />
@@ -1122,15 +1123,23 @@ const AdminScheduler = () => {
                                                     />
                                                 </TableCell>
                                                 <TableCell>
-                                                    <select
+                                                    <Select
                                                         value={slot.classType || "Class"}
-                                                        onChange={(e) => handleSlotChange(selectedDay, idx, "classType", e.target.value)}
-                                                        className="h-9 min-w-[100px] rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                                        onValueChange={(val) => handleSlotChange(selectedDay, idx, "classType", val)}
                                                     >
-                                                        <option value="Class">Class</option>
-                                                        <option value="Lab">Lab</option>
-                                                        <option value="Tutorial">Tutorial</option>
-                                                    </select>
+                                                        <SelectTrigger className="h-9 min-w-[100px] rounded-xl bg-background/50 backdrop-blur-md border-border/60 hover:bg-accent/30 transition-all duration-300">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="rounded-xl border-border/40 shadow-xl bg-popover/80 backdrop-blur-xl">
+                                                            <SelectItem value="Class">Class</SelectItem>
+                                                            <SelectItem value="Lab">Lab</SelectItem>
+                                                            <SelectItem value="Tutorial">Tutorial</SelectItem>
+                                                            <SelectItem value="Sports">Sports</SelectItem>
+                                                            <SelectItem value="Library">Library</SelectItem>
+                                                            <SelectItem value="Mentoring">Mentoring</SelectItem>
+                                                            <SelectItem value="Review">Review</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
                                                 </TableCell>
                                                 <TableCell>
                                                     <Button

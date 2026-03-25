@@ -18,6 +18,15 @@ const courseSchema = new mongoose.Schema(
             type: String,
             default: "CSE",
         },
+        degree: {
+            type: String,
+            default: "Major",
+        },
+        classType: {
+            type: String,
+            enum: ["Theory", "Lab"],
+            default: "Theory",
+        },
         year: {
             type: String,
             default: "IV Year",
@@ -34,8 +43,16 @@ const courseSchema = new mongoose.Schema(
         },
         maxStudents: {
             type: Number,
-            required: true,
-            min: 1,
+            default: 0,
+            min: 0,
+        },
+        sections: {
+            type: [String],
+            default: [],
+        },
+        assignedStudents: {
+            type: [String],
+            default: [],
         },
         description: {
             type: String,

@@ -11,7 +11,7 @@ const slotSchema = new mongoose.Schema({
     facultyName: { type: String, default: "" },
     facultyId: { type: String, default: "" },
     room: { type: String, default: "" },
-    classType: { type: String, default: "Class", enum: ["Class", "Lab", "Tutorial"] },
+    classType: { type: String, default: "Class", enum: ["Class", "Lab", "Tutorial", "Sports", "Library", "Mentoring", "Review"] },
     className: { type: String, default: "" },   // e.g. "III Year" - used in faculty schedules
     section: { type: String, default: "" },      // e.g. "A" - used in faculty schedules
 });

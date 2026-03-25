@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getAnalytics } from "firebase/analytics";
+// Removed static analytics import to prevent AdBlocker issues
 import { getDatabase } from "firebase/database";
 import { getStorage } from "firebase/storage";
 import { getFirestore } from "firebase/firestore";
@@ -40,11 +40,16 @@ try {
 
     // Initialize Analytics only if feature is enabled and in browser environment
     if (typeof window !== 'undefined' && config.FIREBASE_CONFIG.measurementId && config.FEATURES?.ANALYTICS) {
-      try {
-        analytics = getAnalytics(app);
-      } catch (analyticsError) {
-        console.log("Analytics disabled or unavailable");
-      }
+      // Dynamic import to avoid AdBlocker console errors
+      import("firebase/analytics").then(({ getAnalytics }) => {
+        try {
+          analytics = getAnalytics(app);
+        } catch (analyticsError) {
+          console.log("Analytics disabled or unavailable");
+        }
+      }).catch(() => {
+        console.log("Analytics script blocked by client");
+      });
     }
 
     firebaseReady = true;

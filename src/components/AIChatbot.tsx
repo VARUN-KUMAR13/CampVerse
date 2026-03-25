@@ -6,8 +6,14 @@ import { api } from '../lib/api';
 declare global {
   interface Window {
     chatbase?: any;
+    chatbaseConfig?: {
+      chatbotId: string;
+      [key: string]: any;
+    };
   }
 }
+
+import { config } from '../config/environment';
 
 export const AIChatbot: React.FC = () => {
   const { userData, currentUser } = useAuth();
@@ -16,22 +22,23 @@ export const AIChatbot: React.FC = () => {
   // Initialize Chatbase Script
   useEffect(() => {
     if (!window.chatbase) {
+      // Set initial config to hide default launcher
+      window.chatbaseConfig = {
+        chatbotId: config.CHATBASE_ID,
+      };
+
       (function(){
         const chatbot = (...args: any[]) => {
           if (!chatbot.q) { chatbot.q = []; }
           chatbot.q.push(args);
         };
         chatbot.q = [] as any[];
-        window.chatbase = new Proxy(chatbot, {
-          get(target, prop) {
-            if (prop === "q") { return target.q; }
-            return (...args: any[]) => (target as any)[prop](...args);
-          }
-        });
+        window.chatbase = chatbot;
+
         const onLoad = function() {
           const script = document.createElement("script");
           script.src = "https://www.chatbase.co/embed.min.js";
-          script.id = "hT0ZVaHT1raLPftpo9ddq";
+          script.id = config.CHATBASE_ID;
           script.setAttribute("domain", "www.chatbase.co");
           document.body.appendChild(script);
         };
@@ -91,15 +98,8 @@ export const AIChatbot: React.FC = () => {
     return () => clearInterval(checkState);
   }, [isOpen]);
 
-  // Manage body class for animations and hide default launcher via config
+  // Manage body class for animations
   useEffect(() => {
-    if (window.chatbase) {
-      // Try to disable default launcher via config as well
-      window.chatbase('setConfig', {
-        launcher: false,
-        autoShow: false
-      });
-    }
 
     if (isOpen) {
       document.body.classList.add('chat-widget-open');
