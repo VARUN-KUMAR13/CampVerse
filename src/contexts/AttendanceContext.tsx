@@ -278,6 +278,7 @@ export const AttendanceProvider: React.FC<AttendanceProviderProps> = ({ children
                         status: record.status,
                         markedAt: record.markedAt,
                         markedBy: record.markedBy,
+                        markedByRole: record.markedByRole,
                     };
                 }
                 return item;
@@ -385,7 +386,9 @@ export const AttendanceProvider: React.FC<AttendanceProviderProps> = ({ children
             userRole,
             slotId,
             today,
-            category
+            category,
+            currentSlot?.id === slotId ? currentSlot.startTime : undefined,
+            currentSlot?.id === slotId ? currentSlot.endTime : undefined
         );
     };
 

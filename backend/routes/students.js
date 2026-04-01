@@ -13,12 +13,17 @@ router.get("/section/:year/:branch/:section", async (req, res) => {
         let students = [];
 
         // First add students from MongoDB
-        const mongoUsers = await User.find({
+        const query = {
             role: "student",
             year: { $regex: new RegExp(`^${year}$`, "i") },
-            branch: { $regex: new RegExp(`^${branch}$`, "i") },
-            section: { $regex: new RegExp(`^${targetSection}$`, "i") }
-        });
+            branch: { $regex: new RegExp(`^${branch}$`, "i") }
+        };
+        
+        if (targetSection !== "ALL") {
+            query.section = { $regex: new RegExp(`^${targetSection}$`, "i") };
+        }
+
+        const mongoUsers = await User.find(query);
 
         const mongoMapped = mongoUsers.map(u => ({
             rollNumber: u.collegeId,
@@ -69,14 +74,14 @@ router.get("/section/:year/:branch/:section", async (req, res) => {
                                 }
                             }
 
-                            if (match) {
+                            if (match || targetSection === "ALL") {
                                 // Check if we already have this student from Mongo
                                 if (!students.some(s => s.rollNumber.toUpperCase() === rollNo.toUpperCase())) {
                                     const name = student["Name of the student"] || student.name || student.studentName || 'Unknown';
                                     students.push({
                                         rollNumber: rollNo.toUpperCase(),
                                         name: name,
-                                        section: targetSection,
+                                        section: student.section || student.Section || '—',
                                         branch: branch,
                                         year: year,
                                     });

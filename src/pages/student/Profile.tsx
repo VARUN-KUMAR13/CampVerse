@@ -44,6 +44,8 @@ import {
   Globe,
   ExternalLink,
   Trash2,
+  Download,
+  Loader2,
 } from "lucide-react";
 
 
@@ -60,7 +62,7 @@ const StudentProfile = () => {
     dateOfBirth: "",
     branch: "Computer Science and Engineering",
     section: "B",
-    semester: "VI",
+    semester: userData?.collegeId?.startsWith("22") ? "VIII" : "VI",
     rollNumber: userData?.collegeId || "",
     cgpa: "",
     bio: "",
@@ -81,6 +83,64 @@ const StudentProfile = () => {
   const [newProject, setNewProject] = useState({ title: "", description: "", techStack: "", link: "" });
   const [newCertification, setNewCertification] = useState({ name: "", issuer: "", date: "", credentialLink: "" });
   const printRef = useRef<HTMLDivElement | null>(null);
+
+  const [isGeneratingResume, setIsGeneratingResume] = useState(false);
+  const resumeRef = useRef<HTMLDivElement | null>(null);
+
+  const handleDownloadResume = async () => {
+    try {
+      setIsGeneratingResume(true);
+      
+      const node = resumeRef.current;
+      if (!node) return;
+      
+      const [{ default: html2canvas }, jsPDFModule] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ]);
+      const jsPDFCtor: any = (jsPDFModule as any).jsPDF || (jsPDFModule as any).default;
+      
+      node.style.display = "block";
+      
+      const canvas = await html2canvas(node, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      });
+      
+      node.style.display = "none";
+      
+      const imgData = canvas.toDataURL('image/png', 1.0);
+      const pdf = new jsPDFCtor('p', 'mm', 'a4');
+      
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+      
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      
+      const fileName = `${userData?.collegeId || 'student'}_Resume.pdf`;
+      pdf.save(fileName);
+      
+    } catch (error) {
+      console.error("Resume generation failed", error);
+      alert("Failed to generate resume.");
+    } finally {
+      setIsGeneratingResume(false);
+    }
+  };
 
   // Fetch student name from Firebase Realtime Database using REST API
   useEffect(() => {
@@ -155,7 +215,7 @@ const StudentProfile = () => {
                 avatar: (studentProfile.avatar?.startsWith('blob:')) ? '' : (studentProfile.avatar || prev.avatar),
                 branch: studentProfile.branchInfo || studentProfile.branch || prev.branch,
                 section: studentProfile.section || prev.section,
-                semester: studentProfile.semester || prev.semester,
+                semester: userData?.collegeId?.startsWith("22") ? "VIII" : (studentProfile.semester || prev.semester),
                 cgpa: studentProfile.cgpa || prev.cgpa,
                 skills: studentProfile.skills || [],
                 achievements: studentProfile.achievements || [],
@@ -424,7 +484,8 @@ const StudentProfile = () => {
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(11);
       pdf.setTextColor(220, 230, 255);
-      pdf.text(`${profileData.rollNumber}  |  ${profileData.branch}  |  Semester ${profileData.semester}  |  Section ${profileData.section}`, margin, 24);
+      const headerBranch = (profileData.branch || '').replace(/Computer Science (and|&) Engineering/i, 'CSE');
+      pdf.text(`${profileData.rollNumber}  |  ${headerBranch}  |  Semester ${profileData.semester}  |  Section ${profileData.section}`, margin, 24);
 
       // Contact info row
       pdf.setFontSize(9);
@@ -460,75 +521,7 @@ const StudentProfile = () => {
         y += bioLines.length * 4.5 + 6;
       }
 
-      // ========== ACADEMIC INFO ==========
-      drawSectionHeader('ACADEMIC INFORMATION');
-      const acadCol = contentWidth / 4;
-      const acadItems = [
-        { label: 'Roll Number', value: profileData.rollNumber },
-        { label: 'Branch', value: profileData.branch },
-        { label: 'Semester', value: profileData.semester },
-        { label: 'CGPA', value: profileData.cgpa },
-      ];
-      const acadY = y;
-      acadItems.forEach((item, i) => {
-        const x = margin + 2 + i * acadCol;
-        pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(8);
-        pdf.setTextColor(...mutedColor);
-        pdf.text(item.label, x, acadY);
-        pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(11);
-        pdf.setTextColor(...darkColor);
-        pdf.text(item.value || '—', x, acadY + 5);
-      });
-      y = acadY + 12;
 
-      // ========== PERSONAL INFO ==========
-      if (profileData.dateOfBirth || profileData.phone || profileData.address) {
-        drawSectionHeader('PERSONAL INFORMATION');
-        const halfWidth = contentWidth / 2 - 4;
-
-        // Row 1: DOB & Phone
-        const personalY1 = y;
-        if (profileData.dateOfBirth) {
-          drawField('Date of Birth', profileData.dateOfBirth, margin + 2, halfWidth);
-        }
-        const afterDob = y;
-        y = personalY1;
-        if (profileData.phone) {
-          drawField('Phone', profileData.phone, margin + contentWidth / 2, halfWidth);
-        }
-        y = Math.max(afterDob, y);
-
-        // Row 2: Address
-        if (profileData.address) {
-          drawField('Address', profileData.address, margin + 2, contentWidth - 4);
-        }
-      }
-
-      // ========== SKILLS ==========
-      if (profileData.skills.length > 0) {
-        drawSectionHeader('SKILLS');
-        checkPage(12);
-        let skillX = margin + 2;
-        const skillY = y;
-        profileData.skills.forEach((skill) => {
-          const textWidth = pdf.getTextWidth(skill) + 6;
-          if (skillX + textWidth > pageWidth - margin) {
-            skillX = margin + 2;
-            y += 7;
-          }
-          checkPage(8);
-          pdf.setFillColor(...accentBg);
-          pdf.roundedRect(skillX, y - 4, textWidth, 6, 1.5, 1.5, 'F');
-          pdf.setFont('helvetica', 'normal');
-          pdf.setFontSize(9);
-          pdf.setTextColor(...primaryColor);
-          pdf.text(skill, skillX + 3, y);
-          skillX += textWidth + 3;
-        });
-        y += 8;
-      }
 
       // ========== PROJECTS ==========
       if (profileData.projects.length > 0) {
@@ -565,6 +558,30 @@ const StudentProfile = () => {
           }
           y += 3;
         });
+      }
+
+      // ========== SKILLS ==========
+      if (profileData.skills.length > 0) {
+        drawSectionHeader('SKILLS');
+        checkPage(12);
+        let skillX = margin + 2;
+        const skillY = y;
+        profileData.skills.forEach((skill) => {
+          const textWidth = pdf.getTextWidth(skill) + 6;
+          if (skillX + textWidth > pageWidth - margin) {
+            skillX = margin + 2;
+            y += 7;
+          }
+          checkPage(8);
+          pdf.setFillColor(...accentBg);
+          pdf.roundedRect(skillX, y - 4, textWidth, 6, 1.5, 1.5, 'F');
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(9);
+          pdf.setTextColor(...primaryColor);
+          pdf.text(skill, skillX + 3, y);
+          skillX += textWidth + 3;
+        });
+        y += 8;
       }
 
       // ========== CERTIFICATIONS ==========
@@ -645,14 +662,19 @@ const StudentProfile = () => {
               Manage your personal information and preferences
             </p>
           </div>
-          <Button
-            onClick={() => setIsEditing(!isEditing)}
-            variant={isEditing ? "outline" : "default"}
-            className="print-hidden"
-          >
-            <Edit className="w-4 h-4 mr-2" />
-            {isEditing ? "Cancel" : "Edit Profile"}
-          </Button>
+          <div className="flex items-center gap-3 print-hidden flex-wrap justify-end">
+            <Button onClick={handlePrint} className="bg-[#4A90E2] text-white hover:bg-[#4A90E2]/90 border border-[#1D2839] rounded-[10px]">
+              <Download className="w-4 h-4 mr-2" />
+              Download Resume
+            </Button>
+            <Button
+              onClick={() => setIsEditing(!isEditing)}
+              variant={isEditing ? "outline" : "default"}
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              {isEditing ? "Cancel" : "Edit Profile"}
+            </Button>
+          </div>
         </div>
 
         {/* Profile Header Card */}
@@ -1312,7 +1334,7 @@ const StudentProfile = () => {
         </div>
         {/* Save Button */}
         {isEditing && (
-          <div className="flex justify-end">
+          <div className="flex justify-end mt-4">
             <Button
               onClick={handleSave}
               className="flex items-center gap-2 print-hidden"
@@ -1323,10 +1345,124 @@ const StudentProfile = () => {
           </div>
         )}
       </div>
-      <div className="mt-4 flex justify-end">
-        <Button onClick={handlePrint} className="print-hidden mr-auto bg-[#4A90E2] text-white hover:bg-[#4A90E2]/90 border border-[#1D2839] rounded-[10px]">
-          Print
-        </Button>
+
+      {/* HIDDEN TEMPLATE FOR RESUME */}
+      <div style={{ position: 'absolute', top: -9999, left: -9999, pointerEvents: 'none' }}>
+        <div 
+          ref={resumeRef} 
+          style={{ 
+            display: 'none',
+            width: '800px', 
+            padding: '40px 50px', 
+            backgroundColor: 'white', 
+            color: '#111827',
+            fontFamily: "'Inter', sans-serif",
+            lineHeight: 1.5,
+          }}
+        >
+          {/* HEADER */}
+          <div style={{ textAlign: 'center', marginBottom: '24px', borderBottom: '2px solid #e5e7eb', paddingBottom: '16px' }}>
+            <h1 style={{ fontSize: '28px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#111827', textTransform: 'capitalize' }}>
+              {studentName || `${profileData.firstName} ${profileData.lastName}`}
+            </h1>
+            <div style={{ fontSize: '13px', color: '#4b5563', display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+               {profileData.email && <span>{profileData.email}</span>}
+               {profileData.phone && <span>• {profileData.phone}</span>}
+               {profileData.github && <span>• {profileData.github.replace(/^https?:\/\/(www\.)?/, '')}</span>}
+               {profileData.linkedin && <span>• {profileData.linkedin.replace(/^https?:\/\/(www\.)?/, '')}</span>}
+            </div>
+          </div>
+
+          {/* OBJECTIVE */}
+          {profileData.bio && (
+            <div style={{ marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: 'bold', borderBottom: '1px solid #e5e7eb', paddingBottom: '4px', marginBottom: '8px', color: '#111827', textTransform: 'uppercase' }}>Professional Summary</h2>
+              <p style={{ fontSize: '13px', color: '#374151', margin: 0, textAlign: 'justify' }}>{profileData.bio}</p>
+            </div>
+          )}
+
+          {/* EDUCATION */}
+          <div style={{ marginBottom: '20px' }}>
+            <h2 style={{ fontSize: '16px', fontWeight: 'bold', borderBottom: '1px solid #e5e7eb', paddingBottom: '4px', marginBottom: '8px', color: '#111827', textTransform: 'uppercase' }}>Education</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+              <div>
+                <strong style={{ fontSize: '14px', color: '#111827' }}>Bachelor of Technology in {profileData.branch}</strong>
+                <div style={{ fontSize: '13px', color: '#374151' }}>CVR College of Engineering</div>
+              </div>
+              <div style={{ textAlign: 'right', fontSize: '13px', color: '#4b5563' }}>
+                <div>CGPA: <strong style={{color: '#111827'}}>{profileData.cgpa || 'N/A'}</strong></div>
+              </div>
+            </div>
+          </div>
+
+          {/* PROJECTS */}
+          {profileData.projects.length > 0 && (
+            <div style={{ marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: 'bold', borderBottom: '1px solid #e5e7eb', paddingBottom: '4px', marginBottom: '8px', color: '#111827', textTransform: 'uppercase' }}>Projects</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {profileData.projects.map((project, idx) => (
+                  <div key={idx}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                      <strong style={{ fontSize: '14px', color: '#111827' }}>{project.title}</strong>
+                      {project.link && <span style={{ fontSize: '12px', color: '#2563eb' }}>{project.link.replace(/^https?:\/\/(www\.)?/, '')}</span>}
+                    </div>
+                    {project.techStack && (
+                      <div style={{ fontSize: '12.5px', color: '#4b5563', marginBottom: '4px', marginTop: '2px' }}>
+                        <span style={{ fontWeight: 'bold', color: '#1f2937' }}>Technologies:</span> {project.techStack}
+                      </div>
+                    )}
+                    <ul style={{ margin: '4px 0 0 0', paddingLeft: '16px', fontSize: '13px', color: '#374151' }}>
+                       {project.description.split('\n').map((line, i) => line.trim() !== '' && (
+                         <li key={i} style={{ marginBottom: '3px', textAlign: 'justify' }}>{line.replace(/^[-•]\s*/, '').trim()}</li>
+                       ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* SKILLS */}
+          {profileData.skills.length > 0 && (
+            <div style={{ marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: 'bold', borderBottom: '1px solid #e5e7eb', paddingBottom: '4px', marginBottom: '8px', color: '#111827', textTransform: 'uppercase' }}>Skills</h2>
+              <div style={{ fontSize: '13px', color: '#374151', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                {profileData.skills.map((s, idx) => (
+                   <span key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                     {s} {idx !== profileData.skills.length - 1 && <span style={{ color: '#d1d5db' }}>|</span>}
+                   </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ACHIEVEMENTS */}
+          {profileData.achievements.length > 0 && (
+            <div style={{ marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: 'bold', borderBottom: '1px solid #e5e7eb', paddingBottom: '4px', marginBottom: '8px', color: '#111827', textTransform: 'uppercase' }}>Achievements</h2>
+              <ul style={{ margin: '0', paddingLeft: '16px', fontSize: '13px', color: '#374151' }}>
+                {profileData.achievements.map((ach, idx) => (
+                  <li key={idx} style={{ marginBottom: '4px' }}>{ach.replace(/^[-•]\s*/, '').trim()}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* CERTIFICATIONS */}
+          {profileData.certifications.length > 0 && (
+            <div style={{ marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: 'bold', borderBottom: '1px solid #e5e7eb', paddingBottom: '4px', marginBottom: '8px', color: '#111827', textTransform: 'uppercase' }}>Certifications</h2>
+              <ul style={{ margin: '0', paddingLeft: '16px', fontSize: '13px', color: '#374151' }}>
+                {profileData.certifications.map((cert, idx) => (
+                  <li key={idx} style={{ marginBottom: '4px' }}>
+                    <strong style={{ color: '#111827' }}>{cert.name}</strong> – {cert.issuer} {cert.date && `(${cert.date})`}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+        </div>
       </div>
     </StudentLayout>
   );

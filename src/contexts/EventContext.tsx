@@ -32,6 +32,7 @@ export interface Event {
     attachments?: { filename: string; url: string }[];
     postedBy?: { name: string; collegeId: string };
     isRegistrationOpen?: boolean;
+    coordinatorRollNo?: string;
     createdAt?: string;
 }
 

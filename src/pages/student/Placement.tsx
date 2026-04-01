@@ -60,7 +60,7 @@ const StudentPlacement = () => {
       statusFilter === "all" ||
       (statusFilter === "eligible" && job.eligible && !job.applied) ||
       (statusFilter === "applied" && job.applied) ||
-      (statusFilter === "closed" && job.status === "Closed");
+      (statusFilter === "closed" && (job.status === "Closed" || (job.deadline && new Date(job.deadline) < new Date())));
 
     console.log(`Job ${job.job_id}:`, {
       matchesSearch,
@@ -80,7 +80,7 @@ const StudentPlacement = () => {
   console.log("Status filter:", statusFilter);
 
   const getStatusBadge = (job: any) => {
-    if (job.status === "Closed") {
+    if (job.status === "Closed" || (job.deadline && new Date(job.deadline) < new Date())) {
       return <Badge variant="destructive">Closed</Badge>;
     }
     if (job.applied) {

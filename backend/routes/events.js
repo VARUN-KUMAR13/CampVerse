@@ -313,4 +313,159 @@ router.get('/:id/registrations', authenticateToken, authorizeRoles(['admin', 'fa
     }
 });
 
+// ═══════════════════════════════════════════════════
+// EVENT POSTS (Social Feed) ROUTES
+// ═══════════════════════════════════════════════════
+const EventPost = require('../models/EventPost');
+
+// @route   GET /api/events/slug/:slug
+// @desc    Get event by URL slug (title slugified)
+// @access  Authenticated
+router.get('/slug/:slug', authenticateToken, async (req, res) => {
+    try {
+        const slug = req.params.slug;
+        // Convert slug to flexible regex: "codestorm-hackathon-2026" -> "codestorm.+hackathon.+2026"
+        const parts = slug.split('-').filter(Boolean);
+        const titlePattern = parts.join('.+');
+        
+        const event = await Event.findOne({
+            title: { $regex: new RegExp(`^${titlePattern}$`, 'i') },
+            isActive: true,
+        }).populate('postedBy', 'name collegeId email');
+
+        if (!event) {
+            return res.status(404).json({ message: 'Event not found' });
+        }
+
+        res.json({
+            ...event.toObject(),
+            isRegistrationOpen: event.isRegistrationOpen(),
+        });
+    } catch (error) {
+        console.error('Error fetching event by slug:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// @route   GET /api/events/:eventId/posts
+// @desc    Get all posts for an event
+// @access  Authenticated
+router.get('/:eventId/posts', authenticateToken, async (req, res) => {
+    try {
+        const posts = await EventPost.find({ eventId: req.params.eventId })
+            .populate('createdBy', 'name collegeId role')
+            .populate('comments.user', 'name collegeId')
+            .sort({ createdAt: -1 });
+
+        res.json({ posts });
+    } catch (error) {
+        console.error('Error fetching event posts:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// @route   POST /api/events/:eventId/posts
+// @desc    Create a post for an event (coordinator only)
+// @access  Authenticated (coordinator validated server-side)
+router.post('/:eventId/posts', authenticateToken, async (req, res) => {
+    try {
+        const event = await Event.findById(req.params.eventId);
+        if (!event) {
+            return res.status(404).json({ message: 'Event not found' });
+        }
+
+        // Security: Only the assigned coordinator can create posts
+        const userRollNo = (req.user.collegeId || '').toUpperCase();
+        const coordinatorRollNo = (event.coordinatorRollNo || '').toUpperCase();
+
+        if (!coordinatorRollNo) {
+            return res.status(403).json({ message: 'No coordinator assigned to this event.' });
+        }
+
+        if (userRollNo !== coordinatorRollNo) {
+            return res.status(403).json({ message: 'Only the event coordinator can create posts.' });
+        }
+
+        const { content, image } = req.body;
+        if (!content || !content.trim()) {
+            return res.status(400).json({ message: 'Post content is required' });
+        }
+
+        const post = new EventPost({
+            eventId: req.params.eventId,
+            content: content.trim(),
+            image: image || null,
+            createdBy: req.user._id,
+        });
+
+        await post.save();
+        await post.populate('createdBy', 'name collegeId role');
+
+        res.status(201).json({ message: 'Post created', post });
+    } catch (error) {
+        console.error('Error creating event post:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// @route   POST /api/events/:eventId/posts/:postId/like
+// @desc    Toggle like on a post
+// @access  Authenticated
+router.post('/:eventId/posts/:postId/like', authenticateToken, async (req, res) => {
+    try {
+        const post = await EventPost.findById(req.params.postId);
+        if (!post) {
+            return res.status(404).json({ message: 'Post not found' });
+        }
+
+        const userId = req.user._id;
+        const idx = post.likes.indexOf(userId);
+
+        if (idx > -1) {
+            post.likes.splice(idx, 1); // unlike
+        } else {
+            post.likes.push(userId); // like
+        }
+
+        await post.save();
+
+        res.json({ liked: idx === -1, likesCount: post.likes.length });
+    } catch (error) {
+        console.error('Error toggling like:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// @route   POST /api/events/:eventId/posts/:postId/comment
+// @desc    Add a comment to a post
+// @access  Authenticated
+router.post('/:eventId/posts/:postId/comment', authenticateToken, async (req, res) => {
+    try {
+        const post = await EventPost.findById(req.params.postId);
+        if (!post) {
+            return res.status(404).json({ message: 'Post not found' });
+        }
+
+        const { text } = req.body;
+        if (!text || !text.trim()) {
+            return res.status(400).json({ message: 'Comment text is required' });
+        }
+
+        post.comments.push({
+            user: req.user._id,
+            text: text.trim(),
+        });
+
+        await post.save();
+        await post.populate('comments.user', 'name collegeId');
+
+        const newComment = post.comments[post.comments.length - 1];
+
+        res.status(201).json({ message: 'Comment added', comment: newComment });
+    } catch (error) {
+        console.error('Error adding comment:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
 module.exports = router;

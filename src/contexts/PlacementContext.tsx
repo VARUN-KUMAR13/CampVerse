@@ -19,7 +19,13 @@ export interface PlacementJob {
   stipend: string;
   deadline: string;
   status: string;
-  eligibility: string[];
+  eligibility?: string[];
+  eligibleBranches?: string[];
+  degree?: string;
+  year?: string;
+  semester?: string;
+  section?: string;
+  allowedRollNumbers?: string[] | string;
   appliedCount: number;
   shortlistedCount: number;
   selectedCount: number;
@@ -34,6 +40,14 @@ export interface PlacementJob {
   canApply?: boolean;
   applicationStatus?: string | null;
   location?: string;
+  filters?: {
+    branch?: string;
+    degree?: string;
+    year?: string;
+    semester?: string;
+    section?: string;
+  };
+  selectedStudents?: string[];
   requirements?: string[];
   benefits?: string[];
 }
@@ -162,6 +176,7 @@ export const PlacementProvider: React.FC<{ children: ReactNode }> = ({
           : newJobData.eligibility
             ? [newJobData.eligibility as any]
             : ["All Branches"],
+        eligibleBranches: newJobData.eligibleBranches || [],
         // Ensure rounds is an array
         rounds: Array.isArray(newJobData.rounds)
           ? newJobData.rounds

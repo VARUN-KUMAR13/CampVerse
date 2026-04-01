@@ -107,6 +107,11 @@ const clubSchema = new mongoose.Schema({
     isActive: {
         type: Boolean,
         default: true
+    },
+    coordinatorRollNo: {
+        type: String,
+        trim: true,
+        uppercase: true
     }
 }, {
     timestamps: true

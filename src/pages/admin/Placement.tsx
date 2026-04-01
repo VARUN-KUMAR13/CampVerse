@@ -1,10 +1,12 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -35,6 +37,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePlacement } from "@/contexts/PlacementContext";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
 import {
   Plus,
   Building2,
@@ -54,6 +58,7 @@ import {
   Mail,
   GraduationCap,
   ExternalLink,
+  Download,
 } from "lucide-react";
 
 interface AttachedFile {
@@ -76,6 +81,7 @@ interface Applicant {
     year?: string;
     section?: string;
     branch?: string;
+    resumeUrl?: string;
   };
 }
 
@@ -89,6 +95,9 @@ const AdminPlacement = () => {
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const [driveLink, setDriveLink] = useState("");
   const [showDriveLinkInput, setShowDriveLinkInput] = useState(false);
+
+  // Resume generator state
+  const [isGeneratingResume, setIsGeneratingResume] = useState<string | null>(null);
 
   // View modal state
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -105,6 +114,11 @@ const AdminPlacement = () => {
   const [showEditDriveLinkInput, setShowEditDriveLinkInput] = useState(false);
   const editFileInputRef = useRef<HTMLInputElement>(null);
 
+  // Student Selection state
+  const [studentList, setStudentList] = useState<any[]>([]);
+  const [loadingStudents, setLoadingStudents] = useState(false);
+  const [selectedRollNumbers, setSelectedRollNumbers] = useState<string[]>([]);
+
   // Delete confirmation state
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
@@ -120,12 +134,72 @@ const AdminPlacement = () => {
     deadlineDate: "",
     deadlineTime: "",
     deadlineAmPm: "AM",
-    eligibility: [] as string[],
+    eligibleBranches: [] as string[],
+    filters: {
+        branch: "",
+        degree: "",
+        year: "",
+        semester: "",
+        section: "",
+    },
+    selectedStudents: [] as string[],
     description: "",
     bond: "",
     rounds: "",
     location: "",
   });
+
+  const availableBranches = [
+    "CSE", "ECE", "EEE", "ME", "CE"
+  ];
+
+  const yearMapping: Record<string, string> = {
+    "IV Year": "22",
+    "III Year": "23",
+    "II Year": "24",
+    "I Year": "25"
+  };
+
+  const fetchStudents = useCallback(async (filters: any) => {
+    if (!filters.branch || !filters.year) {
+        setStudentList([]);
+        return;
+    }
+    
+    setLoadingStudents(true);
+    try {
+        const yearCode = filters.year; 
+        const response = await api.get(`/students/section/${yearCode}/${filters.branch}/${filters.section || 'All'}`);
+        if (response && response.students) {
+            setStudentList(response.students);
+        } else {
+            setStudentList([]);
+        }
+    } catch (err) {
+        console.error("Error fetching students:", err);
+        setStudentList([]);
+    } finally {
+        setLoadingStudents(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAddModalOpen || isEditModalOpen) {
+        const job = isEditModalOpen ? editJob : newJob;
+        if (job && job.filters && job.filters.branch && job.filters.year) {
+            fetchStudents(job.filters);
+        }
+    }
+  }, [newJob.filters.branch, newJob.filters.year, newJob.filters.section, isAddModalOpen]);
+
+  useEffect(() => {
+    if (isEditModalOpen && editJob?.filters) {
+        fetchStudents(editJob.filters);
+        if (editJob.selectedStudents) {
+            setSelectedRollNumbers(editJob.selectedStudents);
+        }
+    }
+  }, [editJob?.filters?.branch, editJob?.filters?.year, editJob?.filters?.section, isEditModalOpen]);
 
   // Generate unique Job ID
   const generateJobId = () => {
@@ -245,7 +319,14 @@ const AdminPlacement = () => {
       let uploadedAttachments: { filename: string; url: string }[] = [];
 
       if (localFiles.length > 0) {
-        const formData = new FormData();
+        const jobDataToSubmit = {
+        ...newJob,
+        deadline: deadline,
+        selectedStudents: selectedRollNumbers
+      };
+
+      const formData = new FormData();
+      formData.append("jobData", JSON.stringify(jobDataToSubmit));
         localFiles.forEach((f) => {
           if (f.file) formData.append("files", f.file);
         });
@@ -284,8 +365,9 @@ const AdminPlacement = () => {
         description: newJob.description,
         bond: newJob.bond,
         location: newJob.location,
-        eligibility:
-          newJob.eligibility.length > 0 ? newJob.eligibility : ["All Branches"],
+        eligibleBranches: newJob.eligibleBranches,
+        filters: newJob.filters,
+        selectedStudents: selectedRollNumbers,
         rounds: newJob.rounds
           ? newJob.rounds.split(",").map((r) => r.trim())
           : [],
@@ -310,7 +392,15 @@ const AdminPlacement = () => {
         deadlineDate: "",
         deadlineTime: "",
         deadlineAmPm: "AM",
-        eligibility: [],
+        eligibleBranches: [],
+        filters: {
+            branch: "",
+            degree: "",
+            year: "",
+            semester: "",
+            section: "",
+        },
+        selectedStudents: [],
         description: "",
         bond: "",
         rounds: "",
@@ -348,12 +438,16 @@ const AdminPlacement = () => {
 
   // ── Edit modal handler ──
   const handleOpenEdit = (job: any) => {
+    const datePart = job.deadline ? job.deadline.split("T")[0] : "";
+    const timePart = job.deadline ? job.deadline.split("T")[1]?.slice(0, 5) || "" : "";
+
     setEditJob({
       ...job,
-      deadlineDate: job.deadline ? job.deadline.split("T")[0] : "",
-      deadlineTime: job.deadline ? job.deadline.split("T")[1]?.slice(0, 5) || "" : "",
-      rounds: Array.isArray(job.rounds) ? job.rounds.join(", ") : (job.rounds || ""),
-      eligibility: job.eligibility || [],
+      deadlineDate: datePart,
+      deadlineTime: timePart,
+      filters: job.filters || { branch: "", degree: "", year: "", semester: "", section: "" },
+      selectedStudents: job.selectedStudents || [],
+      eligibleBranches: job.eligibleBranches && job.eligibleBranches.length > 0 ? job.eligibleBranches : (job.eligibility || [])
     });
     // Load existing attachments into edit state
     const existingAttachments: AttachedFile[] = (job.attachments || []).map((a: any) => ({
@@ -448,7 +542,9 @@ const AdminPlacement = () => {
         description: editJob.description,
         bond: editJob.bond,
         location: editJob.location,
-        eligibility: editJob.eligibility,
+        eligibleBranches: editJob.eligibleBranches,
+        filters: editJob.filters,
+        selectedStudents: selectedRollNumbers,
         rounds: editJob.rounds ? editJob.rounds.split(",").map((r: string) => r.trim()) : [],
         attachments: allAttachments,
       });
@@ -524,20 +620,254 @@ const AdminPlacement = () => {
     if (!branch) return "—";
     const map: Record<string, string> = {
       "Computer Science and Engineering": "CSE",
+      "Computer Science & Engineering": "CSE",
       "Computer Science": "CSE",
       "Information Technology": "IT",
       "Electronics and Communication Engineering": "ECE",
       "Electronics & Communication Engineering": "ECE",
       "Electrical and Electronics Engineering": "EEE",
       "Electrical & Electronics Engineering": "EEE",
-      "Mechanical Engineering": "MECH",
-      "Civil Engineering": "CIVIL",
+      "Mechanical Engineering": "ME", // Changed per request
+      "Civil Engineering": "CE",      // Changed per request
       "Chemical Engineering": "CHEM",
       "Aerospace Engineering": "AERO",
       "Biotechnology": "BIOTECH",
       "Data Science": "DS",
     };
     return map[branch] || branch;
+  };
+
+  const handleViewResume = async (studentData: any) => {
+    if (!studentData.email || !studentData.collegeId) {
+      toast({ title: "Incomplete Profile", description: "This student has not completed their profile.", variant: "destructive" });
+      return;
+    }
+    
+    setIsGeneratingResume(studentData._id);
+    
+    try {
+      const jsPDFModule = await import('jspdf');
+      const jsPDFCtor: any = (jsPDFModule as any).jsPDF || (jsPDFModule as any).default;
+      const pdf = new jsPDFCtor('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 15;
+      const contentWidth = pageWidth - margin * 2;
+      let y = 0;
+
+      // Colors
+      const primaryColor = [37, 99, 235]; // blue-600
+      const darkColor = [17, 24, 39]; // gray-900
+      const mutedColor = [107, 114, 128]; // gray-500
+      const accentBg = [239, 246, 255]; // blue-50
+      const white = [255, 255, 255];
+
+      // Helper: check page overflow
+      const checkPage = (needed: number) => {
+        if (y + needed > pageHeight - margin) {
+          pdf.addPage();
+          y = margin;
+        }
+      };
+
+      // Helper: draw section header
+      const drawSectionHeader = (title: string) => {
+        checkPage(14);
+        pdf.setFillColor(...primaryColor);
+        pdf.rect(margin, y, contentWidth, 9, 'F');
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(11);
+        pdf.setTextColor(...white);
+        pdf.text(title, margin + 4, y + 6.5);
+        y += 13;
+      };
+
+      // ========== HEADER ==========
+      pdf.setFillColor(...primaryColor);
+      pdf.rect(0, 0, pageWidth, 42, 'F');
+
+      // Name
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(22);
+      pdf.setTextColor(...white);
+      pdf.text((studentData.name || "").toUpperCase(), margin, 16);
+
+      // Roll Number & Branch
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(11);
+      pdf.setTextColor(220, 230, 255);
+      const headerBranch = branchShortName(studentData.branch);
+      pdf.text(`${studentData.collegeId}  |  ${headerBranch}  |  Semester ${studentData.semester || "N/A"}`, margin, 24);
+
+      // Contact info row
+      pdf.setFontSize(9);
+      const contactParts: string[] = [];
+      if (studentData.email) contactParts.push(studentData.email);
+      if (studentData.phone) contactParts.push(studentData.phone);
+      if (contactParts.length > 0) {
+        pdf.text(contactParts.join('  •  '), margin, 31);
+      }
+
+      // Social links row
+      const socialParts: string[] = [];
+      if (studentData.linkedin) socialParts.push(`LinkedIn: ${studentData.linkedin.replace(/^https?:\/\/(www\.)?/, '')}`);
+      if (studentData.github) socialParts.push(`GitHub: ${studentData.github.replace(/^https?:\/\/(www\.)?/, '')}`);
+      if (studentData.portfolio) socialParts.push(`Portfolio: ${studentData.portfolio.replace(/^https?:\/\/(www\.)?/, '')}`);
+      if (socialParts.length > 0) {
+        pdf.setFontSize(8);
+        pdf.text(socialParts.join('  |  '), margin, 37);
+      }
+
+      y = 50;
+
+      // ========== ABOUT ==========
+      if (studentData.bio) {
+        drawSectionHeader('ABOUT');
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(10);
+        pdf.setTextColor(...darkColor);
+        const bioLines = pdf.splitTextToSize(studentData.bio, contentWidth - 4);
+        checkPage(bioLines.length * 5 + 4);
+        pdf.text(bioLines, margin + 2, y);
+        y += bioLines.length * 4.5 + 6;
+      }
+
+      // ========== PROJECTS ==========
+      if (studentData.projects && studentData.projects.length > 0) {
+        drawSectionHeader('PROJECTS');
+        studentData.projects.forEach((project: any) => {
+          checkPage(22);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setFontSize(11);
+          pdf.setTextColor(...darkColor);
+          pdf.text(project.title, margin + 2, y);
+          y += 5;
+          if (project.techStack) {
+            pdf.setFont('helvetica', 'italic');
+            pdf.setFontSize(9);
+            pdf.setTextColor(...primaryColor);
+            pdf.text(`Tech: ${project.techStack}`, margin + 2, y);
+            y += 4.5;
+          }
+          if (project.description) {
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(9);
+            pdf.setTextColor(...mutedColor);
+            // Replace bullets seamlessly with standard hyphens across multiline text
+            const descStr = project.description;
+            const descLines = pdf.splitTextToSize(descStr, contentWidth - 4);
+            checkPage(descLines.length * 4);
+            pdf.text(descLines, margin + 2, y);
+            y += descLines.length * 4 + 1;
+          }
+          if (project.link) {
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(8);
+            pdf.setTextColor(...primaryColor);
+            pdf.textWithLink(project.link, margin + 2, y, { url: project.link });
+            y += 4;
+          }
+          y += 3;
+        });
+      }
+
+      // ========== SKILLS ==========
+      if (studentData.skills && studentData.skills.length > 0) {
+        drawSectionHeader('SKILLS');
+        checkPage(12);
+        let skillX = margin + 2;
+        studentData.skills.forEach((skill: string) => {
+          const textWidth = pdf.getTextWidth(skill) + 6;
+          if (skillX + textWidth > pageWidth - margin) {
+            skillX = margin + 2;
+            y += 7;
+          }
+          checkPage(8);
+          pdf.setFillColor(...accentBg);
+          pdf.roundedRect(skillX, y - 4, textWidth, 6, 1.5, 1.5, 'F');
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(9);
+          pdf.setTextColor(...primaryColor);
+          pdf.text(skill, skillX + 3, y);
+          skillX += textWidth + 3;
+        });
+        y += 8;
+      }
+
+      // ========== CERTIFICATIONS ==========
+      if (studentData.certifications && studentData.certifications.length > 0) {
+        drawSectionHeader('CERTIFICATIONS');
+        studentData.certifications.forEach((cert: any) => {
+          checkPage(16);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setFontSize(10);
+          pdf.setTextColor(...darkColor);
+          pdf.text(cert.name, margin + 2, y);
+
+          const metaParts: string[] = [];
+          if (cert.issuer) metaParts.push(cert.issuer);
+          if (cert.date) metaParts.push(cert.date);
+
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(9);
+          pdf.setTextColor(...mutedColor);
+          if (metaParts.length > 0) {
+            pdf.text(metaParts.join(' | '), margin + 2, y + 4.5);
+          }
+          
+          if (cert.credentialLink) {
+            pdf.setTextColor(...primaryColor);
+            try {
+              pdf.textWithLink('View Credential', margin + 2 + pdf.getTextWidth(metaParts.join(' | ')) + 2, y + 4.5, { url: cert.credentialLink });
+            } catch (e) {
+              // ignore invalid url schema failures
+            }
+          }
+          y += 8;
+        });
+      }
+      
+      // ========== ACHIEVEMENTS ==========
+      if (studentData.achievements && studentData.achievements.length > 0) {
+        drawSectionHeader('ACHIEVEMENTS');
+        studentData.achievements.forEach((ach: string) => {
+          checkPage(10);
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(9);
+          pdf.setTextColor(...darkColor);
+          const lines = pdf.splitTextToSize(`• ${ach}`, contentWidth - 4);
+          pdf.text(lines, margin + 2, y);
+          y += lines.length * 4.5 + 1;
+        });
+      }
+
+      const blobUrl = pdf.output('bloburl');
+      window.open(blobUrl, '_blank');
+      
+    } catch (err) {
+      console.error("Resume generation error:", err);
+      toast({ title: "Error", description: "Failed to generate resume.", variant: "destructive" });
+    } finally {
+      setIsGeneratingResume(null);
+    }
+  };
+
+  const handleExportExcel = () => {
+    if (!applicants.length || !viewJob) return;
+    const data = applicants.map((app, idx) => ({
+      "S.No": idx + 1,
+      "Student Name": app.studentId?.name || "Unknown",
+      "Roll No": app.studentId?.collegeId || "—",
+      "Branch": branchShortName(app.studentId?.branch),
+      "Status": app.status,
+      "Timestamp": app.appliedDate ? new Date(app.appliedDate).toLocaleString("en-IN") : "—",
+      "Resume Link": app.studentId?.resumeUrl || "Not Uploaded"
+    }));
+    
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Applications");
+    XLSX.writeFile(wb, `${viewJob.company}_${viewJob.job_id}_Applications.xlsx`);
   };
 
   return (
@@ -719,46 +1049,172 @@ const AdminPlacement = () => {
                     </div>
                   </div>
 
-                  {/* Description */}
-                  <div className="space-y-2">
-                    <Label htmlFor="description" className="text-sm font-semibold">Job Description</Label>
-                    <Textarea
-                      id="description"
-                      value={newJob.description}
-                      onChange={(e) =>
-                        setNewJob({ ...newJob, description: e.target.value })
-                      }
-                      placeholder="Describe the role, responsibilities, requirements..."
-                      rows={4}
-                    />
+                  {/* Visibility & Student Selection Section */}
+                  <div className="pt-4 mt-6 border-t border-muted">
+                    <h3 className="text-lg font-bold mb-4">Job Visibility & Student Selection</h3>
+                    
+                    <div className="space-y-4">
+                      {/* Branch Selection Dropdown */}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold">Target Branch</Label>
+                        <Select 
+                          value={newJob.filters.branch} 
+                          onValueChange={(val) => setNewJob({ ...newJob, filters: { ...newJob.filters, branch: val } })}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select Branch" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {availableBranches.map(b => (
+                                    <SelectItem key={b} value={b}>{b}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-xs">Degree</Label>
+                          <Select
+                            value={newJob.filters.degree}
+                            onValueChange={(val) => setNewJob({ ...newJob, filters: { ...newJob.filters, degree: val === "clear" ? "" : val } })}
+                          >
+                            <SelectTrigger><SelectValue placeholder="Any" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="clear">Any Degree</SelectItem>
+                              <SelectItem value="Major">Major</SelectItem>
+                              <SelectItem value="Minor">Minor</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label className="text-xs">Year</Label>
+                          <Select
+                            value={newJob.filters.year}
+                            onValueChange={(val) => setNewJob({ ...newJob, filters: { ...newJob.filters, year: val === "clear" ? "" : val } })}
+                          >
+                            <SelectTrigger><SelectValue placeholder="Any" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="clear">Any Year</SelectItem>
+                              <SelectItem value="22">IV Year (22 Batch)</SelectItem>
+                              <SelectItem value="23">III Year (23 Batch)</SelectItem>
+                              <SelectItem value="24">II Year (24 Batch)</SelectItem>
+                              <SelectItem value="25">I Year (25 Batch)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-xs">Semester</Label>
+                          <Select
+                            value={newJob.filters.semester}
+                            onValueChange={(val) => setNewJob({ ...newJob, filters: { ...newJob.filters, semester: val === "clear" ? "" : val } })}
+                          >
+                            <SelectTrigger><SelectValue placeholder="Any" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="clear">Any Semester</SelectItem>
+                              <SelectItem value="Semester I">Semester I</SelectItem>
+                              <SelectItem value="Semester II">Semester II</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-xs">Section</Label>
+                          <Select
+                            value={newJob.filters.section}
+                            onValueChange={(val) => setNewJob({ ...newJob, filters: { ...newJob.filters, section: val === "clear" ? "" : val } })}
+                          >
+                            <SelectTrigger><SelectValue placeholder="Any" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="clear">Any Section</SelectItem>
+                              {["A", "B", "C"].map(sec => (
+                                <SelectItem key={sec} value={sec}>Section {sec}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Student Selection List */}
+                      <div className="mt-6 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <Label className="text-sm font-semibold">Select Students ({studentList.length} found)</Label>
+                            <div className="flex items-center gap-4 text-xs">
+                                <div className="flex items-center gap-1">
+                                    <Checkbox 
+                                        id="select-all" 
+                                        checked={studentList.length > 0 && selectedRollNumbers.length === studentList.length}
+                                        onCheckedChange={(checked) => {
+                                            if (checked) {
+                                                setSelectedRollNumbers(studentList.map(s => s.rollNumber));
+                                            } else {
+                                                setSelectedRollNumbers([]);
+                                            }
+                                        }}
+                                    />
+                                    <label htmlFor="select-all">Select All</label>
+                                </div>
+                                <span className="text-primary font-medium">{selectedRollNumbers.length} selected</span>
+                            </div>
+                        </div>
+
+                        <ScrollArea className="h-[200px] border rounded-md p-2 bg-muted/20">
+                            {loadingStudents ? (
+                                <div className="flex items-center justify-center h-full">
+                                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                                </div>
+                            ) : studentList.length === 0 ? (
+                                <div className="flex items-center justify-center h-full text-xs text-muted-foreground italic">
+                                    No students found for these filters
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 gap-2">
+                                    {studentList.map((student) => {
+                                        const isIVYearCSEB = newJob.filters.year === "22" && newJob.filters.branch === "CSE" && newJob.filters.section === "B";
+                                        return (
+                                            <div key={student.rollNumber} className="flex items-center gap-3 p-1.5 hover:bg-muted/50 rounded-md transition-colors">
+                                                <Checkbox 
+                                                    id={`std-${student.rollNumber}`} 
+                                                    checked={selectedRollNumbers.includes(student.rollNumber)}
+                                                    onCheckedChange={(checked) => {
+                                                        if (checked) {
+                                                            setSelectedRollNumbers([...selectedRollNumbers, student.rollNumber]);
+                                                        } else {
+                                                            setSelectedRollNumbers(selectedRollNumbers.filter(r => r !== student.rollNumber));
+                                                        }
+                                                    }}
+                                                />
+                                                <label htmlFor={`std-${student.rollNumber}`} className="text-xs cursor-pointer truncate">
+                                                    <span className="font-bold mr-2">{student.rollNumber}</span>
+                                                    {isIVYearCSEB && <span>{student.name}</span>}
+                                                </label>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </ScrollArea>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Eligibility */}
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold">Eligible Branches</Label>
-                    <Select
-                      value={newJob.eligibility.length > 0 ? newJob.eligibility[0] : ""}
-                      onValueChange={(value) =>
-                        setNewJob({
-                          ...newJob,
-                          eligibility: value === "All Branches" ? ["All Branches"] : [value],
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select eligible branches" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="All Branches">All Branches</SelectItem>
-                        <SelectItem value="CSE">Computer Science & Engineering</SelectItem>
-                        <SelectItem value="IT">Information Technology</SelectItem>
-                        <SelectItem value="ECE">Electronics & Communication</SelectItem>
-                        <SelectItem value="EEE">Electrical & Electronics</SelectItem>
-                        <SelectItem value="MECH">Mechanical Engineering</SelectItem>
-                        <SelectItem value="CIVIL">Civil Engineering</SelectItem>
-                        <SelectItem value="DS">Data Science</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="pt-4 mt-6 border-t border-muted space-y-4">
+                    <h3 className="text-lg font-bold mb-4">Job Details & Requirements</h3>
+                    {/* Description */}
+                    <div className="space-y-2">
+                      <Label htmlFor="description" className="text-sm font-semibold">Job Description</Label>
+                      <Textarea
+                        id="description"
+                        value={newJob.description}
+                        onChange={(e) =>
+                          setNewJob({ ...newJob, description: e.target.value })
+                        }
+                        placeholder="Describe the role, responsibilities, requirements..."
+                        rows={4}
+                      />
+                    </div>
                   </div>
 
                   {/* Bond and Rounds */}
@@ -1100,7 +1556,7 @@ const AdminPlacement = () => {
 
       {/* ═══ VIEW MODAL ═══ */}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl w-[95vw] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
               <Building2 className="w-5 h-5 text-primary" />
@@ -1130,10 +1586,18 @@ const AdminPlacement = () => {
 
             {/* Registered Students */}
             <div>
-              <h3 className="font-semibold text-sm flex items-center gap-2 mb-3">
-                <Users className="w-4 h-4 text-primary" />
-                Registered Students ({applicants.length})
-              </h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-sm flex items-center gap-2">
+                  <Users className="w-4 h-4 text-primary" />
+                  Registered Students ({applicants.length})
+                </h3>
+                {applicants.length > 0 && (
+                  <Button onClick={handleExportExcel} size="sm" className="h-8 text-xs bg-primary text-primary-foreground shadow-sm">
+                    <Download className="w-3.5 h-3.5 mr-1.5" />
+                    Download Extracted (Excel)
+                  </Button>
+                )}
+              </div>
 
               {loadingApplicants ? (
                 <div className="py-8 text-center">
@@ -1146,16 +1610,17 @@ const AdminPlacement = () => {
                   <p className="text-sm text-muted-foreground">No students have registered yet</p>
                 </div>
               ) : (
-                <div className="border rounded-lg overflow-hidden">
+                <div className="border rounded-lg overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-muted/50 border-b">
-                        <th className="text-left py-2.5 px-3 font-medium text-muted-foreground">#</th>
-                        <th className="text-left py-2.5 px-3 font-medium text-muted-foreground">Student</th>
-                        <th className="text-left py-2.5 px-3 font-medium text-muted-foreground">Roll No</th>
+                        <th className="text-left py-2.5 px-3 font-medium text-muted-foreground whitespace-nowrap">S.No</th>
+                        <th className="text-left py-2.5 px-3 font-medium text-muted-foreground">Student Name</th>
+                        <th className="text-left py-2.5 px-3 font-medium text-muted-foreground whitespace-nowrap">Roll No</th>
                         <th className="text-left py-2.5 px-3 font-medium text-muted-foreground">Branch</th>
+                        <th className="text-left py-2.5 px-3 font-medium text-muted-foreground">Resume</th>
                         <th className="text-left py-2.5 px-3 font-medium text-muted-foreground">Status</th>
-                        <th className="text-left py-2.5 px-3 font-medium text-muted-foreground">Applied</th>
+                        <th className="text-left py-2.5 px-3 font-medium text-muted-foreground whitespace-nowrap">Timestamp</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1170,14 +1635,34 @@ const AdminPlacement = () => {
                               <span className="font-medium">{app.studentId?.name || "Unknown"}</span>
                             </div>
                           </td>
-                          <td className="py-2.5 px-3 font-mono text-xs">{app.studentId?.collegeId || "—"}</td>
+                          <td className="py-2.5 px-3 font-mono text-xs whitespace-nowrap">{app.studentId?.collegeId || "—"}</td>
                           <td className="py-2.5 px-3">{branchShortName(app.studentId?.branch)}</td>
                           <td className="py-2.5 px-3">
+                            {(!app.studentId?.email || !app.studentId?.name) ? (
+                              <span className="text-muted-foreground text-xs italic">Incomplete Profile</span>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={isGeneratingResume === app.studentId._id}
+                                className="h-7 text-xs border-primary text-primary hover:bg-primary/10"
+                                onClick={() => handleViewResume(app.studentId)}
+                                title="Auto-generated from student profile"
+                              >
+                                {isGeneratingResume === app.studentId._id ? (
+                                  <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Generating</>
+                                ) : (
+                                  "View Resume"
+                                )}
+                              </Button>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-3 whitespace-nowrap">
                             <Badge variant="outline" className={`text-xs ${getApplicationStatusColor(app.status)}`}>
                               {app.status}
                             </Badge>
                           </td>
-                          <td className="py-2.5 px-3 text-muted-foreground text-xs">
+                          <td className="py-2.5 px-3 text-muted-foreground text-xs whitespace-nowrap">
                             {app.appliedDate ? new Date(app.appliedDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }) + ", " + new Date(app.appliedDate).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "—"}
                           </td>
                         </tr>
@@ -1244,7 +1729,156 @@ const AdminPlacement = () => {
                 </div>
               </div>
 
-              {/* Stipend & Location */}
+              {/* Visibility & Selection */}
+              <div className="pt-4 mt-2 border-t border-muted">
+                <h3 className="text-sm font-bold mb-4 uppercase tracking-wider text-muted-foreground">Job Visibility & Student Selection</h3>
+                
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold">Target Branch</Label>
+                    <Select 
+                      value={editJob.filters.branch} 
+                      onValueChange={(val) => setEditJob({ ...editJob, filters: { ...editJob.filters, branch: val } })}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select Branch" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {availableBranches.map(b => (
+                                <SelectItem key={b} value={b}>{b}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs">Degree</Label>
+                      <Select
+                        value={editJob.filters.degree}
+                        onValueChange={(val) => setEditJob({ ...editJob, filters: { ...editJob.filters, degree: val === "clear" ? "" : val } })}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Any" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="clear">Any Degree</SelectItem>
+                          <SelectItem value="Major">Major</SelectItem>
+                          <SelectItem value="Minor">Minor</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-xs">Year</Label>
+                      <Select
+                        value={editJob.filters.year}
+                        onValueChange={(val) => setEditJob({ ...editJob, filters: { ...editJob.filters, year: val === "clear" ? "" : val } })}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Any" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="clear">Any Year</SelectItem>
+                          <SelectItem value="22">IV Year (22 Batch)</SelectItem>
+                          <SelectItem value="23">III Year (23 Batch)</SelectItem>
+                          <SelectItem value="24">II Year (24 Batch)</SelectItem>
+                          <SelectItem value="25">I Year (25 Batch)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs">Semester</Label>
+                      <Select
+                        value={editJob.filters.semester}
+                        onValueChange={(val) => setEditJob({ ...editJob, filters: { ...editJob.filters, semester: val === "clear" ? "" : val } })}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Any" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="clear">Any Semester</SelectItem>
+                          <SelectItem value="Semester I">Semester I</SelectItem>
+                          <SelectItem value="Semester II">Semester II</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs">Section</Label>
+                      <Select
+                        value={editJob.filters.section}
+                        onValueChange={(val) => setEditJob({ ...editJob, filters: { ...editJob.filters, section: val === "clear" ? "" : val } })}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Any" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="clear">Any Section</SelectItem>
+                          {["A", "B", "C"].map(sec => (
+                            <SelectItem key={sec} value={sec}>Section {sec}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                        <Label className="text-sm font-semibold">Select Students ({studentList.length} found)</Label>
+                        <div className="flex items-center gap-4 text-xs">
+                             <div className="flex items-center gap-1">
+                                <Checkbox 
+                                    id="edit-select-all" 
+                                    checked={studentList.length > 0 && selectedRollNumbers.length === studentList.length}
+                                    onCheckedChange={(checked) => {
+                                        if (checked) {
+                                            setSelectedRollNumbers(studentList.map(s => s.rollNumber));
+                                        } else {
+                                            setSelectedRollNumbers([]);
+                                        }
+                                    }}
+                                />
+                                <label htmlFor="edit-select-all">Select All</label>
+                            </div>
+                            <span className="text-primary font-medium">{selectedRollNumbers.length} selected</span>
+                        </div>
+                    </div>
+
+                    <ScrollArea className="h-[180px] border rounded-md p-2 bg-muted/20">
+                        {loadingStudents ? (
+                            <div className="flex items-center justify-center h-full">
+                                <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                            </div>
+                        ) : studentList.length === 0 ? (
+                            <div className="flex items-center justify-center h-full text-xs text-muted-foreground italic">
+                                No students found for these filters
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-2 gap-2">
+                                {studentList.map((student) => {
+                                    const isIVYearCSEB = editJob.filters.year === "22" && editJob.filters.branch === "CSE" && editJob.filters.section === "B";
+                                    return (
+                                        <div key={student.rollNumber} className="flex items-center gap-3 p-1.5 hover:bg-muted/50 rounded-md transition-colors">
+                                            <Checkbox 
+                                                id={`edit-std-${student.rollNumber}`} 
+                                                checked={selectedRollNumbers.includes(student.rollNumber)}
+                                                onCheckedChange={(checked) => {
+                                                    if (checked) {
+                                                        setSelectedRollNumbers([...selectedRollNumbers, student.rollNumber]);
+                                                    } else {
+                                                        setSelectedRollNumbers(selectedRollNumbers.filter(r => r !== student.rollNumber));
+                                                    }
+                                                }}
+                                            />
+                                            <label htmlFor={`edit-std-${student.rollNumber}`} className="text-xs cursor-pointer truncate">
+                                                <span className="font-bold mr-2">{student.rollNumber}</span>
+                                                {isIVYearCSEB && <span>{student.name}</span>}
+                                            </label>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </ScrollArea>
+                  </div>
+                </div>
+              </div>
+
+              {/* Deadline & Location */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold">Stipend</Label>

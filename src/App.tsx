@@ -46,7 +46,9 @@ import StudentAssignments from "./pages/student/Assignments";
 
 import StudentPlacement from "./pages/student/Placement";
 import StudentEvents from "./pages/student/Events";
+import StudentEventDetail from "./pages/student/EventDetail";
 import StudentClubs from "./pages/student/Clubs";
+import StudentClubDetail from "./pages/student/ClubDetail";
 import StudentProfile from "./pages/student/Profile";
 import StudentSettings from "./pages/student/Settings";
 import StudentFees from "./pages/student/Fees";
@@ -194,10 +196,26 @@ const AppContent = () => {
           }
         />
         <Route
+          path="/student/events/:slug"
+          element={
+            <ProtectedRoute requiredRole="student">
+              <StudentEventDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/student/clubs"
           element={
             <ProtectedRoute requiredRole="student">
               <StudentClubs />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/clubs/:slug"
+          element={
+            <ProtectedRoute requiredRole="student">
+              <StudentClubDetail />
             </ProtectedRoute>
           }
         />

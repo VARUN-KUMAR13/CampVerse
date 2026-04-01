@@ -56,18 +56,32 @@ const placementJobSchema = new mongoose.Schema(
       enum: ["Open", "Closed", "Draft"],
       default: "Draft",
     },
-    eligibility: [
+    filters: {
+      branch: { type: String, default: "" },
+      degree: { type: String, default: "" },
+      year: { type: String, default: "" },
+      semester: { type: String, default: "" },
+      section: { type: String, default: "" },
+    },
+    selectedStudents: [
       {
         type: String,
-        required: true,
+        trim: true,
+        uppercase: true,
+      },
+    ],
+    // Legacy support
+    eligibleBranches: [
+      {
+        type: String,
         enum: [
           "All Branches",
           "CSE",
           "IT",
           "ECE",
           "EEE",
-          "MECH",
-          "CIVIL",
+          "ME",
+          "CE",
           "CHEM",
           "AERO",
           "BIOTECH",
@@ -75,6 +89,12 @@ const placementJobSchema = new mongoose.Schema(
         ],
       },
     ],
+    degree: String,
+    year: String,
+    semester: String,
+    section: String,
+    allowedRollNumbers: [String],
+    eligibility: [String],
     description: {
       type: String,
       trim: true,
@@ -245,28 +265,17 @@ placementJobSchema.methods.canUserApply = function (user) {
   // Admin can apply to any job
   if (user.role === "admin") return true;
 
-  // Check if user is a student
+  // Note: For students, check visibility criteria based on strict schema filter rules
   if (user.role !== "student") return false;
 
-  // Check eligibility criteria
-  if (this.eligibility.includes("All Branches")) return true;
+  // 1. Explicit Student Selection
+  const userRoll = (user.collegeId || "").toUpperCase();
+  if (this.selectedStudents && this.selectedStudents.length > 0) {
+    return this.selectedStudents.includes(userRoll);
+  }
 
-  // Check if user's branch is in eligibility list
-  const branchMap = {
-    "05": "CSE",
-    "06": "IT",
-    "04": "ECE",
-    "03": "EEE",
-    "02": "MECH",
-    "01": "CIVIL",
-    "07": "CHEM",
-    "08": "AERO",
-    "09": "BIOTECH",
-    "10": "DS",
-  };
-
-  const userBranch = branchMap[user.branch];
-  return this.eligibility.includes(userBranch);
+  // Fallback: If no students explicitly selected, it is visible to all
+  return true;
 };
 
 placementJobSchema.methods.incrementViewCount = function () {

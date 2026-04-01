@@ -224,7 +224,7 @@ export const DEFAULT_ACADEMIC_SLOTS: Omit<TimeSlot, 'id' | 'subjectCode' | 'subj
 // Attendance Threshold Constants
 export const ATTENDANCE_THRESHOLDS = {
     SATISFACTORY: 75,
-    WARNING: 65,
+    WARNING: 50,
     CRITICAL: 50,
 } as const;
 

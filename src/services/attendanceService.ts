@@ -106,8 +106,10 @@ export const isSlotOpen = (
  * Admin: admin
  */
 export const getRoleFromCollegeId = (collegeId: string): AttendanceRole => {
-    if (collegeId === 'admin') return 'ADMIN';
-    if (collegeId.length >= 6 && collegeId[5] === 'Z') return 'FACULTY';
+    if (!collegeId) return 'STUDENT';
+    const id = collegeId.toUpperCase();
+    if (id === 'ADMIN' || id.includes('ADMIN')) return 'ADMIN';
+    if (id.length >= 6 && id[5] === 'Z') return 'FACULTY';
     return 'STUDENT';
 };
 
@@ -227,7 +229,7 @@ export const lockSlot = async (
  * Development mode: Set to true to bypass slot time restrictions
  * This allows faculty/admin to mark attendance at any time for testing
  */
-const DEVELOPMENT_MODE_BYPASS_SLOT = true;
+const DEVELOPMENT_MODE_BYPASS_SLOT = false;
 
 /**
  * Check if user can mark attendance for a slot
@@ -237,7 +239,9 @@ export const checkMarkingPermission = async (
     userRole: AttendanceRole,
     slotId: string,
     date: string,
-    category: AttendanceCategory
+    category: AttendanceCategory,
+    slotStartTime?: string,
+    slotEndTime?: string
 ): Promise<PermissionCheck> => {
     // DEVELOPMENT MODE: Bypass slot timing restrictions
     if (DEVELOPMENT_MODE_BYPASS_SLOT && (userRole === 'FACULTY' || userRole === 'ADMIN')) {
@@ -313,17 +317,16 @@ export const checkMarkingPermission = async (
 
     // For time-bound roles, check slot timing
     if (permissions.isTimeBound && category === 'ACADEMIC') {
-        // Get slot details - in real implementation, fetch from DB
-        const slotEndTime = '10:00'; // This should come from actual slot data
-
-        if (!isSlotOpen(currentTime, slotEndTime, 15)) {
-            return {
-                canMark: false,
-                reason: 'Slot time has expired. Contact admin for override.',
-                isTimeValid: false,
-                isSlotOpen: false,
-                hasPermission: true,
-            };
+        if (slotStartTime && slotEndTime) {
+            if (!isWithinSlotTime(currentTime, slotStartTime, slotEndTime, 0)) { // Strict slot time, no buffer
+                return {
+                    canMark: false,
+                    reason: `Attendance window closed for this slot. Permitted time: ${slotStartTime} - ${slotEndTime}. Contact admin for override.`,
+                    isTimeValid: false,
+                    isSlotOpen: false,
+                    hasPermission: true,
+                };
+            }
         }
     }
 
@@ -1000,14 +1003,20 @@ export const getHistoricalSubjectAttendance = async (
     section: string,
     subjects: { subjectCode: string; subjectName: string }[]
 ): Promise<SubjectAttendanceSummary[]> => {
+        const emptyResult = subjects.map(s => ({
+            subjectCode: s.subjectCode,
+            subjectName: s.subjectName,
+            totalClasses: 0,
+            attended: 0,
+            absent: 0,
+            notMarked: 0,
+            percentage: 0,
+            status: 'CRITICAL' as const
+        }));
+
     if (!database) {
         console.log('[getHistoricalSubjectAttendance] Firebase not ready');
-        return [
-            { subjectCode: '22CS401', subjectName: 'Linux Programming', totalClasses: 30, attended: 24, absent: 6, notMarked: 0, percentage: 80, status: 'SATISFACTORY' as const },
-            { subjectCode: '22HS301', subjectName: 'Business Economics', totalClasses: 28, attended: 22, absent: 5, notMarked: 1, percentage: 78, status: 'SATISFACTORY' as const },
-            { subjectCode: '22HS501', subjectName: 'Professional Elective III', totalClasses: 25, attended: 20, absent: 5, notMarked: 0, percentage: 80, status: 'SATISFACTORY' as const },
-            { subjectCode: '22HS601', subjectName: 'Professional Elective IV', totalClasses: 22, attended: 15, absent: 7, notMarked: 0, percentage: 68, status: 'WARNING' as const },
-        ].filter(m => subjects.some(s => s.subjectCode === m.subjectCode));
+        return emptyResult;
     }
 
     try {
@@ -1018,12 +1027,7 @@ export const getHistoricalSubjectAttendance = async (
 
         if (!snapshot.exists()) {
             console.log('[getHistoricalSubjectAttendance] No records found');
-            return [
-                { subjectCode: '22CS401', subjectName: 'Linux Programming', totalClasses: 30, attended: 24, absent: 6, notMarked: 0, percentage: 80, status: 'SATISFACTORY' as const },
-                { subjectCode: '22HS301', subjectName: 'Business Economics', totalClasses: 28, attended: 22, absent: 5, notMarked: 1, percentage: 78, status: 'SATISFACTORY' as const },
-                { subjectCode: '22HS501', subjectName: 'Professional Elective III', totalClasses: 25, attended: 20, absent: 5, notMarked: 0, percentage: 80, status: 'SATISFACTORY' as const },
-                { subjectCode: '22HS601', subjectName: 'Professional Elective IV', totalClasses: 22, attended: 15, absent: 7, notMarked: 0, percentage: 68, status: 'WARNING' as const },
-            ].filter(m => subjects.some(s => s.subjectCode === m.subjectCode));
+            return emptyResult;
         }
 
         // Parse all records across all dates
@@ -1070,7 +1074,7 @@ export const getHistoricalSubjectAttendance = async (
 
             let status: 'SATISFACTORY' | 'WARNING' | 'CRITICAL' = 'WARNING';
             if (percentage >= 75) status = 'SATISFACTORY';
-            else if (percentage < 65) status = 'CRITICAL';
+            else if (percentage < 50) status = 'CRITICAL';
 
             return {
                 subjectCode: s.subjectCode,
@@ -1089,12 +1093,7 @@ export const getHistoricalSubjectAttendance = async (
 
     } catch (error) {
         console.error('[getHistoricalSubjectAttendance] Error:', error);
-        return [
-            { subjectCode: '22CS401', subjectName: 'Linux Programming', totalClasses: 30, attended: 24, absent: 6, notMarked: 0, percentage: 80, status: 'SATISFACTORY' as const },
-            { subjectCode: '22HS301', subjectName: 'Business Economics', totalClasses: 28, attended: 22, absent: 5, notMarked: 1, percentage: 78, status: 'SATISFACTORY' as const },
-            { subjectCode: '22HS501', subjectName: 'Professional Elective III', totalClasses: 25, attended: 20, absent: 5, notMarked: 0, percentage: 80, status: 'SATISFACTORY' as const },
-            { subjectCode: '22HS601', subjectName: 'Professional Elective IV', totalClasses: 22, attended: 15, absent: 7, notMarked: 0, percentage: 68, status: 'WARNING' as const },
-        ].filter(m => subjects.some(s => s.subjectCode === m.subjectCode));
+        return emptyResult;
     }
 };
 

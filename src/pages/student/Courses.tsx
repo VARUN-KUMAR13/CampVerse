@@ -81,7 +81,9 @@ const StudentCourses = () => {
 
   const [degree, setDegree] = useState("Major");
   const [selectedYear, setSelectedYear] = useState(() => getStudentCurrentYear());
-  const [selectedSemester, setSelectedSemester] = useState("Semester-I");
+  const [selectedSemester, setSelectedSemester] = useState(() => {
+    return userData?.collegeId?.startsWith('22') ? "Semester-II" : "Semester-I";
+  });
 
   // Dynamically configure dropdown defaults mapping exactly to the backend student Current Semester logic
   useEffect(() => {
@@ -92,7 +94,12 @@ const StudentCourses = () => {
         const res = await fetch(`${apiBaseUrl}/users/${userData.uid}`);
         if (res.ok) {
           const profile = await res.json();
-          const currentSem = profile.academicInformation?.currentSemester || profile.semester;
+          let currentSem = profile.academicInformation?.currentSemester || profile.semester;
+          
+          if (userData?.collegeId?.startsWith('22')) {
+            currentSem = "VIII";
+          }
+          
           if (currentSem) {
             const romanMap: Record<string, { year: string; semLabel: string }> = {
               "I": { year: "I Year", semLabel: "Semester-I" },

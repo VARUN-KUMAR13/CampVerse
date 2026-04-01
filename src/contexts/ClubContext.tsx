@@ -48,6 +48,7 @@ export interface Club {
     status: 'Active' | 'Inactive' | 'On Hold';
     postedBy?: { name: string; collegeId: string };
     isRecruitmentOpen?: boolean;
+    coordinatorRollNo?: string;
     createdAt?: string;
 }
 

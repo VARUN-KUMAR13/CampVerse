@@ -246,4 +246,159 @@ router.post('/:id/join', authenticateToken, authorizeRoles(['student', 'admin'])
     }
 });
 
+// ═══════════════════════════════════════════════════
+// CLUB POSTS (Social Feed) ROUTES
+// ═══════════════════════════════════════════════════
+const ClubPost = require('../models/ClubPost');
+
+// @route   GET /api/clubs/slug/:slug
+// @desc    Get club by URL slug (name slugified)
+// @access  Authenticated
+router.get('/slug/:slug', authenticateToken, async (req, res) => {
+    try {
+        const slug = req.params.slug;
+        // Convert slug to flexible regex
+        const parts = slug.split('-').filter(Boolean);
+        const titlePattern = parts.join('.+');
+
+        const club = await Club.findOne({
+            name: { $regex: new RegExp(`^${titlePattern}$`, 'i') },
+            isActive: true,
+        }).populate('postedBy', 'name collegeId email');
+
+        if (!club) {
+            return res.status(404).json({ message: 'Club not found' });
+        }
+
+        res.json({
+            ...club.toObject(),
+            isRecruitmentOpen: club.isRecruitmentOpen(),
+        });
+    } catch (error) {
+        console.error('Error fetching club by slug:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// @route   GET /api/clubs/:clubId/posts
+// @desc    Get all posts for a club
+// @access  Authenticated
+router.get('/:clubId/posts', authenticateToken, async (req, res) => {
+    try {
+        const posts = await ClubPost.find({ clubId: req.params.clubId })
+            .populate('createdBy', 'name collegeId role')
+            .populate('comments.user', 'name collegeId')
+            .sort({ createdAt: -1 });
+
+        res.json({ posts });
+    } catch (error) {
+        console.error('Error fetching club posts:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// @route   POST /api/clubs/:clubId/posts
+// @desc    Create a post for a club (coordinator only)
+// @access  Authenticated (coordinator validated server-side)
+router.post('/:clubId/posts', authenticateToken, async (req, res) => {
+    try {
+        const club = await Club.findById(req.params.clubId);
+        if (!club) {
+            return res.status(404).json({ message: 'Club not found' });
+        }
+
+        // Security: Only the assigned coordinator can create posts
+        const userRollNo = (req.user.collegeId || '').toUpperCase();
+        const coordinatorRollNo = (club.coordinatorRollNo || '').toUpperCase();
+
+        if (!coordinatorRollNo) {
+            return res.status(403).json({ message: 'No coordinator assigned to this club.' });
+        }
+
+        if (userRollNo !== coordinatorRollNo) {
+            return res.status(403).json({ message: 'Only the club coordinator can create posts.' });
+        }
+
+        const { content, image } = req.body;
+        if (!content || !content.trim()) {
+            return res.status(400).json({ message: 'Post content is required' });
+        }
+
+        const post = new ClubPost({
+            clubId: req.params.clubId,
+            content: content.trim(),
+            image: image || null,
+            createdBy: req.user._id,
+        });
+
+        await post.save();
+        await post.populate('createdBy', 'name collegeId role');
+
+        res.status(201).json({ message: 'Post created', post });
+    } catch (error) {
+        console.error('Error creating club post:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// @route   POST /api/clubs/:clubId/posts/:postId/like
+// @desc    Toggle like on a club post
+// @access  Authenticated
+router.post('/:clubId/posts/:postId/like', authenticateToken, async (req, res) => {
+    try {
+        const post = await ClubPost.findById(req.params.postId);
+        if (!post) {
+            return res.status(404).json({ message: 'Post not found' });
+        }
+
+        const userId = req.user._id;
+        const idx = post.likes.indexOf(userId);
+
+        if (idx > -1) {
+            post.likes.splice(idx, 1);
+        } else {
+            post.likes.push(userId);
+        }
+
+        await post.save();
+
+        res.json({ liked: idx === -1, likesCount: post.likes.length });
+    } catch (error) {
+        console.error('Error toggling like:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// @route   POST /api/clubs/:clubId/posts/:postId/comment
+// @desc    Add a comment to a club post
+// @access  Authenticated
+router.post('/:clubId/posts/:postId/comment', authenticateToken, async (req, res) => {
+    try {
+        const post = await ClubPost.findById(req.params.postId);
+        if (!post) {
+            return res.status(404).json({ message: 'Post not found' });
+        }
+
+        const { text } = req.body;
+        if (!text || !text.trim()) {
+            return res.status(400).json({ message: 'Comment text is required' });
+        }
+
+        post.comments.push({
+            user: req.user._id,
+            text: text.trim(),
+        });
+
+        await post.save();
+        await post.populate('comments.user', 'name collegeId');
+
+        const newComment = post.comments[post.comments.length - 1];
+
+        res.status(201).json({ message: 'Comment added', comment: newComment });
+    } catch (error) {
+        console.error('Error adding comment:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
 module.exports = router;

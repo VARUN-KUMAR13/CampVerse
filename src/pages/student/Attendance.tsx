@@ -80,14 +80,58 @@ const StudentAttendance = () => {
     loadAttendanceData();
   }, [userData?.collegeId]);
 
+  const getMappedYear = (collegeId: string) => {
+    if (!collegeId) return "25";
+    const yearCode = collegeId.substring(0, 2);
+    if (!yearCode || !/^\d{2}$/.test(yearCode)) return "25";
+    const admissionYear = parseInt("20" + yearCode);
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const academicStartYear = now.getMonth() >= 6 ? curYear : curYear - 1;
+    const diff = Math.min(Math.max(academicStartYear - admissionYear, 0), 3);
+    const map = ["22", "23", "24", "25"];
+    return map[diff] || "25";
+  };
+
+  const getMappedBranch = (collegeId: string) => {
+    if (!collegeId) return "05";
+    const branchCode = collegeId.substring(6, 8);
+    if (branchCode === "04") return "04";
+    if (branchCode === "12") return "06";
+    return "05";
+  };
+
+  const getMappedSection = (rollNo: string): string => {
+    if (!rollNo) return "A";
+    const lastTwo = rollNo.slice(-2).toUpperCase();
+    if (lastTwo.length !== 2) return "A";
+
+    let value = 0;
+    const firstChar = lastTwo[0];
+    const secondChar = lastTwo[1];
+
+    if (firstChar >= '0' && firstChar <= '9') {
+      value = parseInt(lastTwo, 10);
+    } else if (firstChar >= 'A' && firstChar <= 'Z') {
+      const letterVal = firstChar.charCodeAt(0) - 65;
+      value = 100 + (letterVal * 10);
+      if (secondChar >= '0' && secondChar <= '9') {
+        value += parseInt(secondChar, 10);
+      } else {
+        value += (secondChar.charCodeAt(0) - 65 + 10);
+      }
+    }
+    return value <= 64 ? "A" : "B";
+  };
+
   const loadAttendanceData = async () => {
     if (!userData?.collegeId) return;
 
     setIsRefreshing(true);
     try {
-      const section = userData.section || "A";
-      const branch = userData.branch || "05";
-      const year = userData.year || "22";
+      const section = getMappedSection(userData.collegeId);
+      const branch = getMappedBranch(userData.collegeId);
+      const year = getMappedYear(userData.collegeId);
 
       // Get subject-wise attendance
       const subjectData = await getSubjectWiseAttendance(

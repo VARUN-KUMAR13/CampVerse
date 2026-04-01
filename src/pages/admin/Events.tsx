@@ -94,6 +94,7 @@ const AdminEvents = () => {
         featured: false,
         posterImage: "",
         registrationLink: "",
+        coordinatorRollNo: "",
     });
 
     const [newEvent, setNewEvent] = useState({
@@ -117,6 +118,7 @@ const AdminEvents = () => {
         featured: false,
         posterImage: "",
         registrationLink: "",
+        coordinatorRollNo: "",
     });
 
     // Handle image upload for create
@@ -170,6 +172,7 @@ const AdminEvents = () => {
             featured: event.featured || false,
             posterImage: event.posterImage || "",
             registrationLink: event.registrationLink || "",
+            coordinatorRollNo: (event as any).coordinatorRollNo || "",
         });
         setSelectedEvent(event);
         setIsEditModalOpen(true);
@@ -210,6 +213,7 @@ const AdminEvents = () => {
             featured: editEvent.featured,
             posterImage: editEvent.posterImage || undefined,
             registrationLink: editEvent.registrationLink || undefined,
+            coordinatorRollNo: editEvent.coordinatorRollNo || undefined,
         };
 
         try {
@@ -282,6 +286,7 @@ const AdminEvents = () => {
             featured: newEvent.featured,
             posterImage: newEvent.posterImage || undefined,
             registrationLink: newEvent.registrationLink || undefined,
+            coordinatorRollNo: newEvent.coordinatorRollNo || undefined,
             status: "Open",
         };
 
@@ -317,6 +322,7 @@ const AdminEvents = () => {
                 featured: false,
                 posterImage: "",
                 registrationLink: "",
+                coordinatorRollNo: "",
             });
             setIsAddModalOpen(false);
         } catch (err: any) {
@@ -515,6 +521,21 @@ const AdminEvents = () => {
                                             }
                                             placeholder="e.g., Main Auditorium, CS Block"
                                         />
+                                    </div>
+
+                                    {/* Student Coordinator */}
+                                    <div className="space-y-2">
+                                        <Label className="text-sm font-semibold">
+                                            Student Coordinator (Roll Number) <span className="text-destructive">*</span>
+                                        </Label>
+                                        <Input
+                                            value={newEvent.coordinatorRollNo}
+                                            onChange={(e) =>
+                                                setNewEvent({ ...newEvent, coordinatorRollNo: e.target.value.toUpperCase() })
+                                            }
+                                            placeholder="e.g., 22B81A0565"
+                                        />
+                                        <p className="text-xs text-muted-foreground">This student can post updates on the event feed</p>
                                     </div>
 
                                     {/* Dates and Times */}
@@ -1250,6 +1271,17 @@ const AdminEvents = () => {
                         <div className="space-y-2">
                             <Label className="text-sm font-semibold">Venue <span className="text-destructive">*</span></Label>
                             <Input value={editEvent.venue} onChange={(e) => setEditEvent({ ...editEvent, venue: e.target.value })} />
+                        </div>
+
+                        {/* Student Coordinator */}
+                        <div className="space-y-2">
+                            <Label className="text-sm font-semibold">Student Coordinator (Roll Number)</Label>
+                            <Input
+                                value={editEvent.coordinatorRollNo}
+                                onChange={(e) => setEditEvent({ ...editEvent, coordinatorRollNo: e.target.value.toUpperCase() })}
+                                placeholder="e.g., 22B81A0565"
+                            />
+                            <p className="text-xs text-muted-foreground">This student can post updates on the event feed</p>
                         </div>
 
                         {/* Dates and Times */}

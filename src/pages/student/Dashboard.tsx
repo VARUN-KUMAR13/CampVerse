@@ -133,22 +133,89 @@ const StudentDashboard = () => {
     return "1";
   };
 
-  // Validate if roll number is in Section B range (22B81A0565 to 22B81A05C8)
-  const isValidSectionBRollNumber = (rollNo: string): boolean => {
-    // Extract the numeric part from roll number (e.g., "22B81A0565" -> "0565")
-    const match = rollNo.match(/22B81A05([0-9A-F]{2})$/i);
-    if (!match) return false;
+  const getMappedYear = (collegeId: string) => {
+    if (!collegeId) return "25";
+    const yearCode = collegeId.substring(0, 2);
+    if (!yearCode || !/^\d{2}$/.test(yearCode)) return "25";
+    const admissionYear = parseInt("20" + yearCode);
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const academicStartYear = now.getMonth() >= 6 ? curYear : curYear - 1;
+    const diff = Math.min(Math.max(academicStartYear - admissionYear, 0), 3);
+    const map = ["22", "23", "24", "25"];
+    return map[diff] || "25";
+  };
 
-    const hexValue = match[1].toUpperCase();
-    const startHex = "65"; // 22B81A0565
-    const endHex = "C8"; // 22B81A05C8
+  const getMappedBranch = (collegeId: string) => {
+    if (!collegeId) return "05";
+    const branchCode = collegeId.substring(6, 8);
+    if (branchCode === "04") return "04";
+    if (branchCode === "12") return "06";
+    return "05";
+  };
 
-    // Convert hex to decimal for comparison
-    const value = parseInt(hexValue, 16);
-    const startValue = parseInt(startHex, 16); // 101
-    const endValue = parseInt(endHex, 16); // 200
+  const getMappedSemester = (roman: string) => {
+    if (!roman) return "I";
+    const r = String(roman).trim().toUpperCase().replace(/SEMESTER\s*-?\s*/g, '');
+    const dict: Record<string, string> = {
+      "I": "I", "II": "II", 
+      "III": "I", "IV": "II",
+      "V": "I", "VI": "II",
+      "VII": "I", "VIII": "II",
+      "1": "I", "2": "II"
+    };
+    return dict[r] || "I";
+  };
 
-    return value >= startValue && value <= endValue;
+  const getMappedSection = (rollNo: string): string => {
+    if (!rollNo) return "A";
+    const lastTwo = rollNo.slice(-2).toUpperCase();
+    if (lastTwo.length !== 2) return "A";
+
+    let value = 0;
+    const firstChar = lastTwo[0];
+    const secondChar = lastTwo[1];
+
+    if (firstChar >= '0' && firstChar <= '9') {
+      value = parseInt(lastTwo, 10);
+    } else if (firstChar >= 'A' && firstChar <= 'Z') {
+      const letterVal = firstChar.charCodeAt(0) - 65;
+      value = 100 + (letterVal * 10);
+      if (secondChar >= '0' && secondChar <= '9') {
+        value += parseInt(secondChar, 10);
+      } else {
+        value += (secondChar.charCodeAt(0) - 65 + 10);
+      }
+    }
+
+    const section = value <= 64 ? "A" : "B";
+    console.log(`[Section Mapping] Roll: ${rollNo}, Parsed Value: ${value}, Section: ${section}`);
+    return section;
+  };
+
+  // Normalize semester strings for comparison (handles "Semester-II", "Semester II", "Semester-I", etc.)
+  const normSemStr = (s: string) => s.replace(/[-\s]+/g, " ").trim().toLowerCase();
+
+  const getCourseMapping = (romanStr: string) => {
+    const cleanRoman = romanStr.replace(/SEMESTER\s*-?\s*/i, "").trim().toUpperCase();
+    // semesters array: first is the relative semester (I or II), second is the absolute semester (e.g. VIII)
+    const mapping: Record<string, { year: string; semesters: string[] }> = {
+      "VIII": { year: "IV Year", semesters: ["Semester II", "Semester VIII"] },
+      "VII":  { year: "IV Year", semesters: ["Semester I", "Semester VII"] },
+      "VI":   { year: "III Year", semesters: ["Semester II", "Semester VI"] },
+      "V":    { year: "III Year", semesters: ["Semester I", "Semester V"] },
+      "IV":   { year: "II Year", semesters: ["Semester II", "Semester IV"] },
+      "III":  { year: "II Year", semesters: ["Semester I", "Semester III"] },
+      "II":   { year: "I Year", semesters: ["Semester II"] },
+      "I":    { year: "I Year", semesters: ["Semester I"] },
+    };
+    return mapping[cleanRoman] || { year: "IV Year", semesters: ["Semester II", "Semester VIII"] };
+  };
+
+  // Check if a course's semester matches any of the mapped semesters
+  const matchesSemester = (courseSem: string, targetSemesters: string[]) => {
+    const normalized = normSemStr(courseSem || "");
+    return targetSemesters.some(ts => normSemStr(ts) === normalized);
   };
 
   // Fetch student name and validate section via Backend API
@@ -174,12 +241,9 @@ const StudentDashboard = () => {
             setStudentName(data.name);
           }
 
-          if (data.section) {
-            setStudentSection(data.section);
-          }
-
-          const isValidRollNumber = isValidSectionBRollNumber(rollNumber);
-          setIsEligibleForAttendance(isValidRollNumber);
+          // Dynamically derive section from roll number instead of using potentially incorrect DB section
+          setStudentSection(getMappedSection(rollNumber));
+          setIsEligibleForAttendance(true);
         }
 
         // If backend returned 404, student not found in Firebase or MongoDB
@@ -194,8 +258,8 @@ const StudentDashboard = () => {
 
       // Fallback: set eligibility based on roll number even if name not found
       console.log(`[StudentData] Using fallback for ${rollNumber}`);
-      const isValidRollNumber = isValidSectionBRollNumber(rollNumber);
-      setIsEligibleForAttendance(isValidRollNumber);
+      setStudentSection(getMappedSection(rollNumber));
+      setIsEligibleForAttendance(true);
     };
 
     fetchStudentData();
@@ -212,9 +276,14 @@ const StudentDashboard = () => {
         if (response.ok) {
           const profile = await response.json();
           console.log(`[StudentData] Profile data from /users/:uid:`, profile);
-
-          // Get semester as stored in profile (handle academicInformation.currentSemester as requested)
-          const semesterValue = profile.academicInformation?.currentSemester || profile.semester || null;
+          let semesterValue = profile.academicInformation?.currentSemester || profile.semester || null;
+          
+          if (userData?.collegeId?.startsWith("22")) {
+            semesterValue = "VIII";
+          } else if (semesterValue) {
+            semesterValue = semesterValue.replace(/SEMESTER\s*-?\s*/i, "").trim().toUpperCase();
+          }
+          
           console.log(`[StudentData] Profile semester: "${semesterValue}"`);
 
           if (semesterValue) {
@@ -227,6 +296,12 @@ const StudentDashboard = () => {
         }
       } catch (error) {
         console.warn("[StudentData] Failed to fetch profile semester:", error);
+      }
+      
+      // Fallback in case of fetch failure
+      if (userData?.collegeId?.startsWith("22")) {
+        setDisplaySemester("VIII");
+        setStudentSemester("8"); // "VIII" normalizes to "8"
       }
     };
 
@@ -257,41 +332,13 @@ const StudentDashboard = () => {
       let config = null;
 
       try {
-        const getStudentYear = (collegeId: string) => {
-          const yearCode = collegeId.substring(0, 2);
-          if (!yearCode || !/^\d{2}$/.test(yearCode)) return "IV Year";
-          const admissionYear = parseInt("20" + yearCode);
-          const now = new Date();
-          const curYear = now.getFullYear();
-          const academicStartYear = now.getMonth() >= 6 ? curYear : curYear - 1;
-          const map = ["I Year", "II Year", "III Year", "IV Year"];
-          return map[Math.min(Math.max(academicStartYear - admissionYear, 0), 3)] || "IV Year";
-        };
-
-        const getStudentBranch = (collegeId: string) => {
-          const branchCode = collegeId.substring(6, 8);
-          if (branchCode === "04") return "ECE";
-          if (branchCode === "12") return "IT";
-          return "CSE";
-        };
-
-        const mapRomanToSemesterStr = (roman: string) => {
-          const dict: Record<string, string> = {
-            "I": "Semester-I", "II": "Semester-II", 
-            "III": "Semester-I", "IV": "Semester-II",
-            "V": "Semester-I", "VI": "Semester-II",
-            "VII": "Semester-I", "VIII": "Semester-II"
-          };
-          return dict[String(roman).trim().toUpperCase()] || "Semester-I";
-        };
-
         const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
         const params = new URLSearchParams({
           scheduleType: "student",
           degree: "Major",
-          year: getStudentYear(userData.collegeId),
-          semester: mapRomanToSemesterStr(displaySemester),
-          branch: getStudentBranch(userData.collegeId),
+          year: getMappedYear(userData.collegeId),
+          semester: getMappedSemester(displaySemester),
+          branch: getMappedBranch(userData.collegeId),
           section: studentSection,
         });
 
@@ -312,9 +359,11 @@ const StudentDashboard = () => {
           const scheduleConfigStr = localStorage.getItem("campverse_schedule_config");
           if (scheduleConfigStr) {
             const parsedConfig = JSON.parse(scheduleConfigStr);
+            const yearCode = getMappedYear(userData.collegeId);
+            const branchCode = getMappedBranch(userData.collegeId);
             const possibleKeys = [
-              studentSection ? `22_05_${studentSection}` : null,
-              "22_05_B",
+              studentSection ? `${yearCode}_${branchCode}_${studentSection}` : null,
+              `${yearCode}_${branchCode}_B`,
               Object.keys(parsedConfig)[0]
             ].filter(Boolean);
 
@@ -420,8 +469,8 @@ const StudentDashboard = () => {
     const targetDate = date || serverTime;
     const today = formatDate(targetDate);
     const section = studentSection || "B";
-    const branch = userData.collegeId.substring(6, 8) || "05";
-    const year = userData.collegeId.substring(0, 2) || "22";
+    const branch = getMappedBranch(userData.collegeId);
+    const year = getMappedYear(userData.collegeId);
     const degree = "Major";
     const semester = "I";
     const studentId = userData.collegeId;
@@ -533,8 +582,8 @@ const StudentDashboard = () => {
     const targetDate = date || serverTime;
     const today = formatDate(targetDate);
     const section = studentSection || "B";
-    const branch = userData.collegeId.substring(6, 8) || "05";
-    const year = userData.collegeId.substring(0, 2) || "22";
+    const branch = getMappedBranch(userData.collegeId);
+    const year = getMappedYear(userData.collegeId);
     const studentId = userData.collegeId;
 
     const unsubscribe = subscribeToPerformanceMetrics(
@@ -579,9 +628,9 @@ const StudentDashboard = () => {
           try {
             const result = await autoMarkAllAsPresent(
               today,
-              "22", // year
-              "05", // branch (CSE)
-              "B",  // section
+              getMappedYear(userData.collegeId),
+              getMappedBranch(userData.collegeId),
+              studentSection || "B",
               slotsToMark
             );
 
@@ -639,13 +688,20 @@ const StudentDashboard = () => {
         
         if (coursesRes.ok) {
           const coursesData = await coursesRes.json();
-          // Filter to only active courses, relying on the backend to filter by section/student
+          const { year: targetYear, semesters: targetSems } = getCourseMapping(displaySemester || "");
+          console.log(`[AttendanceMetrics] displaySemester="${displaySemester}" → targetYear="${targetYear}", targetSems=${JSON.stringify(targetSems)}`);
+          console.log(`[AttendanceMetrics] Total courses from API: ${coursesData.length}`);
+          coursesData.slice(0, 5).forEach((c: any) => console.log(`  → ${c.courseName} | year="${c.year}" semester="${c.semester}" status="${c.status}"`));
+          
           subjects = coursesData
-             .filter((c: any) => c.status === "Active")
+              .filter((c: any) => {
+                 return c.year === targetYear && matchesSemester(c.semester, targetSems) && c.status === "Active";
+             })
              .map((c: any) => ({
                 subjectCode: c.courseCode,
                 subjectName: c.courseName,
              }));
+          console.log(`[AttendanceMetrics] Matched ${subjects.length} courses after filter`);
         }
 
         if (subjects.length === 0) {
@@ -655,18 +711,18 @@ const StudentDashboard = () => {
 
         const metrics = await getHistoricalSubjectAttendance(
           userData.collegeId,
-          "22", // year
-          "05", // branch (CSE)
-          "B",  // section
+          getMappedYear(userData.collegeId),
+          getMappedBranch(userData.collegeId),
+          studentSection || "B",
           subjects
         );
 
-        const validMetrics = (metrics || []).filter(m => m.totalClasses > 0);
+        const validMetrics = metrics || [];
         setPerformanceMetrics(validMetrics);
 
         // Calculate overall attendance
-        const totalClasses = metrics.reduce((sum, m) => sum + m.totalClasses, 0);
-        const totalAttended = metrics.reduce((sum, m) => sum + m.attended, 0);
+        const totalClasses = validMetrics.reduce((sum, m) => sum + m.totalClasses, 0);
+        const totalAttended = validMetrics.reduce((sum, m) => sum + m.attended, 0);
         const overallPercentage = totalClasses > 0
           ? Math.round((totalAttended / totalClasses) * 100)
           : 0;
@@ -700,9 +756,9 @@ const StudentDashboard = () => {
 
         const data = await getCalendarAttendanceData(
           userData.collegeId,
-          "22", // year
-          "05", // branch
-          "B",  // section
+          getMappedYear(userData.collegeId),
+          getMappedBranch(userData.collegeId),
+          studentSection || "B",
           startOfMonth,
           endOfMonth
         );
@@ -826,33 +882,28 @@ const StudentDashboard = () => {
     }
   };
 
-  const getStatusBadge = (status: AttendanceStatus, markedByRole?: AttendanceRole) => {
+  const getStatusBadge = (status: AttendanceStatus, markedByRole?: AttendanceRole, markedBy?: string) => {
     switch (status) {
       case "PRESENT":
-        // Color coding: Green=Faculty, Blue=Admin, Purple=Student (Demo)
         let bgColor = 'bg-blue-500/20';
         let textColor = 'text-blue-400';
         let borderColor = 'border-blue-500/30';
         let hoverBg = 'hover:bg-blue-500/30';
         let label = 'Present';
 
-        if (markedByRole === 'FACULTY') {
-          bgColor = 'bg-green-500/20';
-          textColor = 'text-green-400';
-          borderColor = 'border-green-500/30';
-          hoverBg = 'hover:bg-green-500/30';
-        } else if (markedByRole === 'STUDENT') {
-          // Green for student self-marked (Demo Mode) - same as faculty
-          bgColor = 'bg-green-500/20';
-          textColor = 'text-green-400';
-          borderColor = 'border-green-500/30';
-          hoverBg = 'hover:bg-green-500/30';
-          label = 'Present';
-        } else if (markedByRole === 'ADMIN' || markedByRole === 'SUB_ADMIN') {
+        const isAdminMarked = markedByRole === 'ADMIN' || markedByRole === 'SUB_ADMIN' || markedBy?.toLowerCase() === 'admin';
+
+        if (isAdminMarked) {
           bgColor = 'bg-blue-500/20';
           textColor = 'text-blue-400';
           borderColor = 'border-blue-500/30';
           hoverBg = 'hover:bg-blue-500/30';
+        } else if (markedByRole === 'FACULTY' || markedByRole === 'STUDENT') {
+          // Green for faculty or student self-marked
+          bgColor = 'bg-green-500/20';
+          textColor = 'text-green-400';
+          borderColor = 'border-green-500/30';
+          hoverBg = 'hover:bg-green-500/30';
         }
 
         return (
@@ -912,13 +963,15 @@ const StudentDashboard = () => {
         if (res.ok) {
           const allCourses = await res.json();
           
-          // Isolate courses belonging exactly strictly to the student's current mapped semester designation
+          // Isolate courses belonging exactly to the student's current mapped semester designation
+          const { year: targetYear, semesters: targetSems } = getCourseMapping(displaySemester || "");
+          console.log(`[DashboardStats] displaySemester="${displaySemester}" → targetYear="${targetYear}", targetSems=${JSON.stringify(targetSems)}`);
+          console.log(`[DashboardStats] Total courses from API: ${allCourses.length}`);
+          
           const activeSemesterCourses = allCourses.filter((c: any) => {
-             const cSem = String(c.semester || "").toLowerCase().trim();
-             const dSem = String(displaySemester).toLowerCase().trim();
-             const nSem = String(studentSemester).toLowerCase().trim();
-             return (cSem.includes(dSem) || cSem === nSem) && c.status === "Active";
+             return c.year === targetYear && matchesSemester(c.semester, targetSems) && c.status === "Active";
           });
+          console.log(`[DashboardStats] Matched ${activeSemesterCourses.length} courses`);
 
           // Compute explicit counts isolating strictly against exact classType field states natively
           const theoryCount = activeSemesterCourses.filter((c: any) => (!c.classType || c.classType === "Theory")).length;
@@ -948,19 +1001,19 @@ const StudentDashboard = () => {
     },
     {
       label: "Theory",
-      value: subjectsCount !== null ? String(subjectsCount) : "--",
+      value: subjectsCount !== null ? String(subjectsCount) : "0",
       icon: <Users className="w-4 h-4" />,
       color: "text-green-500",
     },
     {
       label: "Labs",
-      value: labsCount !== null ? String(labsCount) : "--",
+      value: labsCount !== null ? String(labsCount) : "0",
       icon: <CalendarIcon className="w-4 h-4" />,
       color: "text-blue-500",
     },
     {
       label: "Faculty",
-      value: facultyCount !== null ? String(facultyCount) : "--",
+      value: facultyCount !== null ? String(facultyCount) : "0",
       icon: <Users className="w-4 h-4" />,
       color: "text-purple-500",
     },
@@ -1078,19 +1131,18 @@ const StudentDashboard = () => {
               let borderClass = "";
 
               if (item.status === "PRESENT") {
-                if (markedByRole === "FACULTY") {
-                  bgClass = "bg-green-500/20 hover:bg-green-500/25";
-                  borderClass = "border-l-4 border-l-green-500";
-                } else if (markedByRole === "ADMIN" || markedByRole === "SUB_ADMIN") {
+                const isAdminMarked = markedByRole === "ADMIN" || markedByRole === "SUB_ADMIN" || item.markedBy?.toLowerCase() === "admin";
+
+                if (isAdminMarked) {
                   // More prominent blue background for admin-marked attendance
                   bgClass = "bg-blue-500/20 hover:bg-blue-500/25";
                   borderClass = "border-l-4 border-l-blue-500";
-                } else if (markedByRole === "STUDENT") {
-                  // Green for student self-marked (demo mode) - same as faculty
+                } else if (markedByRole === "FACULTY" || markedByRole === "STUDENT") {
+                  // Green for faculty or student self-marked
                   bgClass = "bg-green-500/20 hover:bg-green-500/25";
                   borderClass = "border-l-4 border-l-green-500";
                 } else {
-                  // Default for present - treat as admin-marked (blue)
+                  // Default for present - treat as admin-marked (blue) just in case
                   bgClass = "bg-blue-500/20 hover:bg-blue-500/25";
                   borderClass = "border-l-4 border-l-blue-500";
                 }
@@ -1139,7 +1191,7 @@ const StudentDashboard = () => {
                         {item.time}
                       </div>
                     )}
-                    {getStatusBadge(item.status, markedByRole)}
+                    {getStatusBadge(item.status, markedByRole, item.markedBy)}
                   </div>
                 </div>
               );
@@ -1189,8 +1241,8 @@ const StudentDashboard = () => {
                 <div className="text-center p-2 sm:p-3 rounded-lg bg-primary/10 border border-primary/20 col-span-2 sm:col-span-1">
                   <div className={cn(
                     "text-xl sm:text-2xl font-bold",
-                    percentage >= 76 ? "text-green-500" :
-                      percentage >= 65 ? "text-orange-500" : "text-red-500"
+                    percentage >= 75 ? "text-green-500" :
+                      percentage >= 50 ? "text-yellow-500" : "text-red-500"
                   )}>
                     {percentage}%
                   </div>
@@ -1221,13 +1273,13 @@ const StudentDashboard = () => {
             ))}
           </div>
 
-          {/* Performance Metrics */}
+          {/* Attendance Metrics */}
           <Card className="border-border/50 shadow-lg">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
                   <BarChart3 className="w-5 h-5 text-primary" />
-                  Performance Metrics
+                  Attendance Metrics
                 </CardTitle>
               </div>
             </CardHeader>
@@ -1253,17 +1305,16 @@ const StudentDashboard = () => {
                 // Empty Performance Metrics State
                 <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
                   <BarChart3 className="w-12 h-12 mb-4 text-muted-foreground/30" />
-                  <h3 className="text-lg font-medium text-foreground">No Performance Metrics</h3>
-                  <p>Performance data is not available yet.</p>
+                  <p className="text-lg font-medium">No courses available for this semester</p>
                 </div>
-              ) : performanceMetrics.map((metric, index) => (
+              ) : [...performanceMetrics].reverse().map((metric, index) => (
                 <div key={index}>
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-foreground">{metric.subjectName}</span>
                     <span className={cn(
                       "font-medium",
                       metric.percentage >= 75 ? "text-green-500" :
-                        metric.percentage >= 65 ? "text-yellow-500" : "text-red-500"
+                        metric.percentage >= 50 ? "text-yellow-500" : "text-red-500"
                     )}>
                       {metric.percentage}%
                     </span>

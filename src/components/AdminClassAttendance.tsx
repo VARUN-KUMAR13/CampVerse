@@ -37,6 +37,7 @@ interface StudentAttendanceState {
   status: AttendanceStatus;
   lastUpdated: string;
   isModified: boolean;
+  initialStatus?: AttendanceStatus;
 }
 
 export const AdminClassAttendance = ({
@@ -65,7 +66,7 @@ export const AdminClassAttendance = ({
   const [students, setStudents] = useState<StudentAttendanceState[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const hasUnsavedChanges = students.some(s => s.status !== (s.initialStatus || "NOT_MARKED"));
 
   const DEGREES = ["Major", "Minor"];
   const YEARS = [
@@ -125,7 +126,7 @@ export const AdminClassAttendance = ({
               const slots: TimeSlot[] = targetDaySchedule.slots
                 .filter((s: any) => s.subjectName || s.subjectCode)
                 .map((slot: any) => ({
-                  id: `slot_${slot.slotNumber}`,
+                  id: `slot_${slot.slotNumber}_${activeSchedule._id}`,
                   slotNumber: slot.slotNumber,
                   startTime: slot.startTime,
                   endTime: slot.endTime,
@@ -202,7 +203,8 @@ export const AdminClassAttendance = ({
                 fresh[idx] = {
                   ...fresh[idx],
                   status: record.status,
-                  lastUpdated: record.markedAt ? new Date(record.markedAt).toLocaleTimeString() : "",
+                  initialStatus: record.status,
+                  lastUpdated: record.markedAt ? new Date(record.markedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true }) : "Not marked",
                 };
                 updated = true;
               }
@@ -273,25 +275,40 @@ export const AdminClassAttendance = ({
   }, [students, selectedSlot, isLoading, onStatsUpdate]);
 
   const markAll = (status: AttendanceStatus) => {
+    const timeString = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true });
     setStudents(prev =>
-      prev.map(s => ({
-        ...s,
-        status,
-        isModified: true,
-      }))
+      prev.map(s => {
+        const initial = s.initialStatus || "NOT_MARKED";
+        let modified = false;
+        if (initial !== status && initial !== "NOT_MARKED") {
+           modified = true;
+        }
+        return {
+          ...s,
+          status,
+          lastUpdated: timeString,
+          isModified: modified,
+        };
+      })
     );
-    setHasUnsavedChanges(true);
   };
 
   const markIndividual = (studentId: string, status: AttendanceStatus) => {
+    const timeString = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true });
     setStudents(prev =>
-      prev.map(s =>
-        s.studentId === studentId
-          ? { ...s, status, isModified: true }
-          : s
-      )
+      prev.map(s => {
+        if (s.studentId === studentId) {
+          const newStatus = status === s.status ? "NOT_MARKED" : status;
+          const initial = s.initialStatus || "NOT_MARKED";
+          let modified = false;
+          if (initial !== newStatus && initial !== "NOT_MARKED") {
+             modified = true;
+          }
+          return { ...s, status: newStatus, lastUpdated: newStatus === "NOT_MARKED" ? "Not marked" : timeString, isModified: modified };
+        }
+        return s;
+      })
     );
-    setHasUnsavedChanges(true);
   };
 
   const handleSaveAttendance = async () => {
@@ -299,7 +316,7 @@ export const AdminClassAttendance = ({
 
     setIsSaving(true);
     try {
-      const modifiedStudents = students.filter(s => s.isModified);
+      const modifiedStudents = students.filter(s => s.status !== (s.initialStatus || "NOT_MARKED"));
       for (const student of modifiedStudents) {
         await markAttendance(
           student.studentId,
@@ -307,8 +324,8 @@ export const AdminClassAttendance = ({
           selectedDate,
           student.status,
           "ACADEMIC",
-          userData?.collegeId || "admin",
-          getRoleFromCollegeId(userData?.collegeId || "admin"),
+          userData?.collegeId || "ADMIN",
+          "ADMIN",
           selectedSlot.subjectCode,
           selectedSlot.subjectName,
           selectedSlot.section,
@@ -321,8 +338,7 @@ export const AdminClassAttendance = ({
         );
       }
 
-      setStudents(prev => prev.map(s => ({ ...s, isModified: false })));
-      setHasUnsavedChanges(false);
+      setStudents(prev => prev.map(s => ({ ...s, isModified: false, initialStatus: s.status })));
       toast.success(`Updated attendance for ${modifiedStudents.length} students`);
     } catch (e) {
       console.error("Save error:", e);
@@ -544,55 +560,58 @@ export const AdminClassAttendance = ({
                  <p className="text-sm text-muted-foreground max-w-md">No students are mapped to this specific section in the database. Try selecting another active section.</p>
               </div>
             ) : (
-              <div className="p-4 grid gap-2">
-                {students.map((student, index) => (
+              <div className="space-y-2 p-4">
+                <div className="grid grid-cols-3 gap-8 py-3 border-b text-sm font-medium text-muted-foreground px-4">
+                  <div>Student Details</div>
+                  <div>Status</div>
+                  <div>Last Updated</div>
+                </div>
+                {students.map((student) => (
                   <div
                     key={student.studentId}
                     className={cn(
-                      "flex items-center justify-between p-3.5 rounded-lg border transition-all duration-200 group relative overflow-hidden",
-                      student.isModified ? "border-primary/50 bg-primary/5" : "border-border/40 hover:border-border/80 bg-background",
-                      "hover:shadow-md hover:-translate-y-0.5"
+                      "grid grid-cols-3 gap-8 py-3 px-4 items-center rounded-lg transition-all duration-200",
+                      "hover:bg-muted/30",
+                      student.isModified && "bg-blue-500/5 border-l-2 border-l-blue-500"
                     )}
                   >
-                     <div className="flex items-center gap-4 min-w-0 pr-4 z-10">
-                        <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center font-medium text-sm border shadow-sm group-hover:scale-105 transition-transform flex-shrink-0">
-                           {index + 1}
-                        </div>
-                        <div className="min-w-0">
-                           <h4 className="font-semibold text-[15px] truncate text-foreground group-hover:text-primary transition-colors">{student.name}</h4>
-                           <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-sm text-muted-foreground font-medium">{student.studentId}</span>
-                              {student.lastUpdated && <span className="text-[10px] bg-secondary/50 px-1 rounded text-muted-foreground">Updated {student.lastUpdated}</span>}
-                           </div>
-                        </div>
+                     <div>
+                        <div className="text-foreground font-medium">{student.studentId}</div>
+                        <div className="text-xs text-muted-foreground truncate mt-0.5" title={student.name}>{student.name}</div>
                      </div>
-                     <div className="flex gap-2 z-10 shrink-0">
-                        <Button
-                           variant={student.status === "PRESENT" ? "default" : "outline"}
-                           size="sm"
-                           onClick={() => markIndividual(student.studentId, "PRESENT")}
-                           className={cn(
-                              "w-24 gap-1.5 transition-all",
-                              student.status === "PRESENT" 
-                              ? "bg-green-500 hover:bg-green-600 shadow-green-500/20 shadow-lg border-transparent" 
-                              : "hover:border-green-500/50 hover:bg-green-500/10 hover:text-green-500"
-                           )}
+                     <div className="flex gap-2">
+                        <button
+                          onClick={() => markIndividual(student.studentId, "PRESENT")}
+                          className={cn(
+                            "px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 border",
+                            student.status === "PRESENT"
+                              ? "bg-green-500 text-white border-green-500 shadow-sm"
+                              : "bg-transparent text-muted-foreground border-border hover:border-green-500/50 hover:bg-green-500/10 hover:text-green-500"
+                          )}
+                          title="Present"
                         >
-                           <CheckCircle2 className="w-4 h-4" /> Present
-                        </Button>
-                        <Button
-                           variant={student.status === "ABSENT" ? "default" : "outline"}
-                           size="sm"
-                           onClick={() => markIndividual(student.studentId, "ABSENT")}
-                           className={cn(
-                              "w-24 gap-1.5 transition-all",
-                              student.status === "ABSENT" 
-                              ? "bg-red-500 hover:bg-red-600 shadow-red-500/20 shadow-lg border-transparent" 
-                              : "hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-500"
-                           )}
+                          Present
+                        </button>
+                        <button
+                          onClick={() => markIndividual(student.studentId, "ABSENT")}
+                          className={cn(
+                            "px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 border",
+                            student.status === "ABSENT"
+                              ? "bg-red-500 text-white border-red-500 shadow-sm"
+                              : "bg-transparent text-muted-foreground border-border hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-500"
+                          )}
+                          title="Absent"
                         >
-                           <XCircle className="w-4 h-4" /> Absent
-                        </Button>
+                          Absent
+                        </button>
+                     </div>
+                     <div className="text-muted-foreground text-sm flex items-center gap-2">
+                        {student.lastUpdated || "Not marked"}
+                        {student.isModified && (
+                          <Badge variant="outline" className="text-xs text-blue-500 border-blue-500">
+                            Modified
+                          </Badge>
+                        )}
                      </div>
                   </div>
                 ))}

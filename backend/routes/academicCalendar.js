@@ -5,9 +5,13 @@ const AcademicCalendar = require("../models/AcademicCalendar");
 // Get all events
 router.get("/", async (req, res) => {
   try {
-    const { collegeId, semester, degree, year } = req.query;
+    console.log("Academic Calendar GET Query:", req.query);
+    let { collegeId, semester, degree, year } = req.query;
+    
+    if (!degree) degree = "Major";
+    
     if (!collegeId) {
-      return res.status(400).json({ error: "collegeId is required" });
+      return res.status(200).json([]);
     }
     const query = { collegeId };
     

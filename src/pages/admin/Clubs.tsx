@@ -110,6 +110,7 @@ const AdminClubs = () => {
         linkedin: "",
         website: "",
         featured: false,
+        coordinatorRollNo: "",
     });
 
     // Generate unique Club ID
@@ -157,6 +158,7 @@ const AdminClubs = () => {
                 website: newClub.website,
             },
             featured: newClub.featured,
+            coordinatorRollNo: newClub.coordinatorRollNo || undefined,
             status: "Active",
         };
 
@@ -193,6 +195,7 @@ const AdminClubs = () => {
                 linkedin: "",
                 website: "",
                 featured: false,
+                coordinatorRollNo: "",
             });
             setIsAddModalOpen(false);
         } catch (err: any) {
@@ -238,6 +241,7 @@ const AdminClubs = () => {
             website: club.socialLinks?.website || "",
             foundedYear: club.foundedYear ? String(club.foundedYear) : "",
             maxMembers: club.maxMembers ? String(club.maxMembers) : "",
+            coordinatorRollNo: (club as any).coordinatorRollNo || "",
         });
         setIsEditModalOpen(true);
     };
@@ -276,6 +280,7 @@ const AdminClubs = () => {
                     website: editClub.website,
                 },
                 featured: editClub.featured,
+                coordinatorRollNo: editClub.coordinatorRollNo || undefined,
                 status: editClub.status,
             };
 
@@ -566,6 +571,21 @@ const AdminClubs = () => {
                                                 placeholder="Every Saturday, 3 PM"
                                             />
                                         </div>
+                                    </div>
+
+                                    {/* Student Coordinator */}
+                                    <div className="space-y-2">
+                                        <Label className="text-sm font-semibold">
+                                            Student Coordinator (Roll Number)
+                                        </Label>
+                                        <Input
+                                            value={newClub.coordinatorRollNo}
+                                            onChange={(e) =>
+                                                setNewClub({ ...newClub, coordinatorRollNo: e.target.value.toUpperCase() })
+                                            }
+                                            placeholder="e.g., 22B81A0565"
+                                        />
+                                        <p className="text-xs text-muted-foreground">This student can post updates on the club feed</p>
                                     </div>
 
                                     {/* Featured Toggle */}
@@ -1085,6 +1105,17 @@ const AdminClubs = () => {
                                         onChange={(e) => setEditClub({ ...editClub, meetingSchedule: e.target.value })}
                                     />
                                 </div>
+                            </div>
+
+                            {/* Student Coordinator */}
+                            <div className="space-y-2">
+                                <Label className="text-sm font-semibold">Student Coordinator (Roll Number)</Label>
+                                <Input
+                                    value={editClub.coordinatorRollNo || ""}
+                                    onChange={(e) => setEditClub({ ...editClub, coordinatorRollNo: e.target.value.toUpperCase() })}
+                                    placeholder="e.g., 22B81A0565"
+                                />
+                                <p className="text-xs text-muted-foreground">This student can post updates on the club feed</p>
                             </div>
 
                             {/* Status & Recruitment */}

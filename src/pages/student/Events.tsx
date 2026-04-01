@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +45,10 @@ const StudentEvents = () => {
   const { userData } = useAuth();
   const { events, loading, error, fetchEvents, registerForEvent } = useEvents();
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const slugify = (text: string) =>
+    text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -418,7 +423,10 @@ const StudentEvents = () => {
                             </div>
                           )}
                           <div>
-                            <h3 className="text-xl font-semibold text-foreground">
+                            <h3
+                              className="text-xl font-semibold text-foreground hover:underline cursor-pointer transition-all"
+                              onClick={() => navigate(`/student/events/${slugify(event.title)}`)}
+                            >
                               {event.title}
                             </h3>
                             <p className="text-muted-foreground">
@@ -544,7 +552,7 @@ const StudentEvents = () => {
                             )}
                           </Button>
                         )}
-                        <Button variant="outline" onClick={() => handleOpenView(event)}>
+                        <Button variant="outline" onClick={() => navigate(`/student/events/${slugify(event.title)}`)}>
                           View Details
                           <Eye className="w-3 h-3 ml-1" />
                         </Button>

@@ -108,6 +108,11 @@ const eventSchema = new mongoose.Schema({
     viewCount: {
         type: Number,
         default: 0
+    },
+    coordinatorRollNo: {
+        type: String,
+        trim: true,
+        uppercase: true
     }
 }, {
     timestamps: true

@@ -81,7 +81,13 @@ export interface PlacementJob {
   stipend?: string;
   deadline: string;
   status: 'Open' | 'Closed' | 'Draft';
-  eligibility: string[];
+  eligibility?: string[];
+  eligibleBranches?: string[];
+  degree?: string;
+  year?: string;
+  semester?: string;
+  section?: string;
+  allowedRollNumbers?: string[] | string;
   description?: string;
   bond?: string;
   rounds?: string[];
@@ -103,6 +109,16 @@ export interface JobApplication {
   appliedDate: Date;
   documents: string[];
   notes?: string;
+  requirements?: string[];
+  benefits?: string[];
+  filters?: {
+    branch?: string;
+    degree?: string;
+    year?: string;
+    semester?: string;
+    section?: string;
+  };
+  selectedStudents?: string[];
 }
 
 export interface Announcement {

@@ -65,6 +65,7 @@ interface StudentAttendanceState {
   status: AttendanceStatus;
   lastUpdated: string;
   isModified: boolean;
+  initialStatus?: AttendanceStatus;
 }
 
 const FacultyStudents = () => {
@@ -89,7 +90,7 @@ const FacultyStudents = () => {
   const [students, setStudents] = useState<StudentAttendanceState[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const hasUnsavedChanges = students.some(s => s.status !== (s.initialStatus || "NOT_MARKED"));
 
   // Dialog state
   const [showLockWarning, setShowLockWarning] = useState(false);
@@ -161,13 +162,11 @@ const FacultyStudents = () => {
         getRoleFromCollegeId(userData.collegeId),
         selectedSlot.id,
         formatDate(serverTime),
-        "ACADEMIC"
+        "ACADEMIC",
+        selectedSlot.startTime,
+        selectedSlot.endTime
       );
       setPermission(perm);
-
-      if (!perm.canMark && perm.hasPermission) {
-        setShowLockWarning(true);
-      }
     };
 
     checkPerm();
@@ -266,6 +265,7 @@ const FacultyStudents = () => {
               return {
                 ...student,
                 status: record.status,
+                initialStatus: record.status,
                 lastUpdated: new Date(record.markedAt).toLocaleTimeString("en-US", {
                   hour: "2-digit",
                   minute: "2-digit",
@@ -392,7 +392,7 @@ const FacultyStudents = () => {
 
   const handleAttendanceStatus = (studentId: string, status: AttendanceStatus) => {
     if (!permission?.canMark) {
-      toast.error("You cannot mark attendance at this time");
+      setShowLockWarning(true);
       return;
     }
 
@@ -408,23 +408,28 @@ const FacultyStudents = () => {
       prev.map(student => {
         if (student.studentId === studentId) {
           const newStatus = status === student.status ? "NOT_MARKED" : status;
+          const initial = student.initialStatus || "NOT_MARKED";
+          
+          let modified = false;
+          if (initial !== newStatus && initial !== "NOT_MARKED") {
+             modified = true;
+          }
+
           return {
             ...student,
             status: newStatus,
             lastUpdated: newStatus === "NOT_MARKED" ? "Not marked" : timeString,
-            isModified: true,
+            isModified: modified,
           };
         }
         return student;
       })
     );
-
-    setHasUnsavedChanges(true);
   };
 
   const markAllPresent = () => {
     if (!permission?.canMark) {
-      toast.error("You cannot mark attendance at this time");
+      setShowLockWarning(true);
       return;
     }
 
@@ -437,21 +442,29 @@ const FacultyStudents = () => {
     });
 
     setStudents(prev =>
-      prev.map(student => ({
-        ...student,
-        status: "PRESENT",
-        lastUpdated: timeString,
-        isModified: true,
-      }))
+      prev.map(student => {
+        const newStatus = "PRESENT";
+        const initial = student.initialStatus || "NOT_MARKED";
+        let modified = false;
+        if (initial !== newStatus && initial !== "NOT_MARKED") {
+           modified = true;
+        }
+
+        return {
+          ...student,
+          status: newStatus,
+          lastUpdated: timeString,
+          isModified: modified,
+        };
+      })
     );
 
-    setHasUnsavedChanges(true);
     toast.success("All students marked as present");
   };
 
   const markAllAbsent = () => {
     if (!permission?.canMark) {
-      toast.error("You cannot mark attendance at this time");
+      setShowLockWarning(true);
       return;
     }
 
@@ -464,15 +477,23 @@ const FacultyStudents = () => {
     });
 
     setStudents(prev =>
-      prev.map(student => ({
-        ...student,
-        status: "ABSENT",
-        lastUpdated: timeString,
-        isModified: true,
-      }))
+      prev.map(student => {
+        const newStatus = "ABSENT";
+        const initial = student.initialStatus || "NOT_MARKED";
+        let modified = false;
+        if (initial !== newStatus && initial !== "NOT_MARKED") {
+           modified = true;
+        }
+
+        return {
+          ...student,
+          status: newStatus,
+          lastUpdated: timeString,
+          isModified: modified,
+        };
+      })
     );
 
-    setHasUnsavedChanges(true);
     toast.success("All students marked as absent");
   };
 
@@ -481,7 +502,7 @@ const FacultyStudents = () => {
 
     setIsSaving(true);
     try {
-      const modifiedStudents = students.filter(s => s.isModified);
+      const modifiedStudents = students.filter(s => s.status !== (s.initialStatus || "NOT_MARKED"));
       const today = formatDate(serverTime);
 
       for (const student of modifiedStudents) {
@@ -510,10 +531,10 @@ const FacultyStudents = () => {
         prev.map(student => ({
           ...student,
           isModified: false,
+          initialStatus: student.status,
         }))
       );
 
-      setHasUnsavedChanges(false);
       toast.success(`Attendance saved for ${modifiedStudents.length} students`);
     } catch (error) {
       console.error("Error saving attendance:", error);
@@ -527,9 +548,8 @@ const FacultyStudents = () => {
   const getStatusCount = () => {
     const present = students.filter(s => s.status === "PRESENT").length;
     const absent = students.filter(s => s.status === "ABSENT").length;
-    const late = students.filter(s => s.status === "LATE").length;
     const unmarked = students.filter(s => s.status === "NOT_MARKED").length;
-    return { present, absent, late, unmarked };
+    return { present, absent, unmarked };
   };
 
   const statusCounts = getStatusCount();
@@ -550,21 +570,7 @@ const FacultyStudents = () => {
           </div>
         </div>
 
-        {/* Time & Permission Alert */}
-        {permission && !permission.canMark && (
-          <Alert variant="destructive" className="border-red-500/50 bg-red-500/10">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Attendance Marking Restricted</AlertTitle>
-            <AlertDescription>
-              {permission.reason}
-              {!permission.isSlotOpen && (
-                <span className="block mt-1 text-sm">
-                  Contact your administrator for attendance override.
-                </span>
-              )}
-            </AlertDescription>
-          </Alert>
-        )}
+        {/* Time & Permission Alert Removed per request */}
 
         {/* Main Attendance Card */}
         <Card className="border-border/50 shadow-lg">
@@ -675,7 +681,6 @@ const FacultyStudents = () => {
                   variant="outline"
                   size="sm"
                   onClick={markAllPresent}
-                  disabled={!permission?.canMark}
                   className="gap-2"
                 >
                   <CheckCheck className="w-4 h-4" />
@@ -683,8 +688,14 @@ const FacultyStudents = () => {
                 </Button>
 
                 <Button
-                  onClick={() => setShowSaveConfirm(true)}
-                  disabled={!hasUnsavedChanges || !permission?.canMark}
+                  onClick={() => {
+                    if (!permission?.canMark) {
+                       setShowLockWarning(true);
+                       return;
+                    }
+                    setShowSaveConfirm(true);
+                  }}
+                  disabled={!hasUnsavedChanges}
                   className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
                 >
                   {isSaving ? (
@@ -725,7 +736,7 @@ const FacultyStudents = () => {
             ) : (
                 <>
                   {/* Status Summary */}
-                  <div className="grid grid-cols-4 gap-4 mb-6">
+                  <div className="grid grid-cols-3 gap-4 mb-6">
                     <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-center">
                       <div className="text-2xl font-bold text-green-500">{statusCounts.present}</div>
                       <div className="text-xs text-muted-foreground">Present</div>
@@ -733,10 +744,6 @@ const FacultyStudents = () => {
                     <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-center">
                       <div className="text-2xl font-bold text-red-500">{statusCounts.absent}</div>
                       <div className="text-xs text-muted-foreground">Absent</div>
-                    </div>
-                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-center">
-                      <div className="text-2xl font-bold text-yellow-500">{statusCounts.late}</div>
-                      <div className="text-xs text-muted-foreground">Late</div>
                     </div>
                     <div className="bg-gray-500/10 border border-gray-500/30 rounded-lg p-3 text-center">
                       <div className="text-2xl font-bold text-gray-500">{statusCounts.unmarked}</div>
@@ -763,68 +770,34 @@ const FacultyStudents = () => {
                     className={cn(
                       "grid grid-cols-3 gap-8 py-3 px-4 items-center rounded-lg transition-all duration-200",
                       "hover:bg-muted/30",
-                      student.isModified && "bg-blue-500/5 border-l-2 border-l-blue-500",
-                      !permission?.canMark && "opacity-60"
+                      student.isModified && "bg-blue-500/5 border-l-2 border-l-blue-500"
                     )}
                   >
                     <div className="text-foreground font-medium">{student.studentId}</div>
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleAttendanceStatus(student.studentId, "PRESENT")}
-                        disabled={!permission?.canMark}
                         className={cn(
-                          "p-2 rounded-lg transition-all duration-200",
-                          "hover:bg-green-500/20 hover:scale-110",
-                          "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                          "px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 border",
+                          student.status === "PRESENT"
+                            ? "bg-green-500 text-white border-green-500 shadow-sm"
+                            : "bg-transparent text-muted-foreground border-border hover:border-green-500/50 hover:bg-green-500/10 hover:text-green-500"
                         )}
                         title="Present"
                       >
-                        <CheckCircle2
-                          className={cn(
-                            "w-5 h-5 transition-colors",
-                            student.status === "PRESENT"
-                              ? "text-green-500"
-                              : "text-gray-400 hover:text-green-400"
-                          )}
-                        />
+                        Present
                       </button>
                       <button
                         onClick={() => handleAttendanceStatus(student.studentId, "ABSENT")}
-                        disabled={!permission?.canMark}
                         className={cn(
-                          "p-2 rounded-lg transition-all duration-200",
-                          "hover:bg-red-500/20 hover:scale-110",
-                          "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                          "px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 border",
+                          student.status === "ABSENT"
+                            ? "bg-red-500 text-white border-red-500 shadow-sm"
+                            : "bg-transparent text-muted-foreground border-border hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-500"
                         )}
                         title="Absent"
                       >
-                        <XCircle
-                          className={cn(
-                            "w-5 h-5 transition-colors",
-                            student.status === "ABSENT"
-                              ? "text-red-500"
-                              : "text-gray-400 hover:text-red-400"
-                          )}
-                        />
-                      </button>
-                      <button
-                        onClick={() => handleAttendanceStatus(student.studentId, "LATE")}
-                        disabled={!permission?.canMark}
-                        className={cn(
-                          "p-2 rounded-lg transition-all duration-200",
-                          "hover:bg-yellow-500/20 hover:scale-110",
-                          "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                        )}
-                        title="Late"
-                      >
-                        <Clock
-                          className={cn(
-                            "w-5 h-5 transition-colors",
-                            student.status === "LATE"
-                              ? "text-yellow-500"
-                              : "text-gray-400 hover:text-yellow-400"
-                          )}
-                        />
+                        Absent
                       </button>
                     </div>
                     <div className="text-muted-foreground text-sm flex items-center gap-2">
@@ -891,22 +864,18 @@ const FacultyStudents = () => {
           <DialogHeader>
             <DialogTitle>Confirm Attendance Submission</DialogTitle>
             <DialogDescription>
-              You are about to submit attendance for {students.filter(s => s.isModified).length} students.
+              You are about to submit attendance for {students.filter(s => s.status !== (s.initialStatus || "NOT_MARKED")).length} students.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-3">
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-green-500" />
-                <span>{students.filter(s => s.status === "PRESENT" && s.isModified).length} Present</span>
+                <span>{students.filter(s => s.status === "PRESENT" && s.status !== (s.initialStatus || "NOT_MARKED")).length} Present</span>
               </div>
               <div className="flex items-center gap-2">
                 <XCircle className="w-4 h-4 text-red-500" />
-                <span>{students.filter(s => s.status === "ABSENT" && s.isModified).length} Absent</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-yellow-500" />
-                <span>{students.filter(s => s.status === "LATE" && s.isModified).length} Late</span>
+                <span>{students.filter(s => s.status === "ABSENT" && s.status !== (s.initialStatus || "NOT_MARKED")).length} Absent</span>
               </div>
             </div>
           </div>

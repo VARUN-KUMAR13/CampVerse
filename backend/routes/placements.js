@@ -91,31 +91,17 @@ router.get("/", authenticateToken, async (req, res) => {
       }
     }
 
-    // Filter by eligibility for students (only if branch is known)
+    // Filter by Selection/Academic visibility for students
     if (user.role === "student") {
-      const branchMap = {
-        "05": "CSE",
-        "06": "IT",
-        "04": "ECE",
-        "03": "EEE",
-        "02": "MECH",
-        "01": "CIVIL",
-        "07": "CHEM",
-        "08": "AERO",
-        "09": "BIOTECH",
-        "10": "DS",
-      };
-
-      const userBranch = branchMap[user.branch];
-      console.log("Student branch code:", user.branch, "-> mapped:", userBranch);
-
-      if (userBranch) {
-        filter.$or = [
-          { eligibility: "All Branches" },
-          { eligibility: userBranch },
-        ];
-      }
-      // If branch is unknown, show all open jobs (no eligibility filter)
+      const studentRoll = (user.collegeId || "").toUpperCase();
+      
+      filter.$or = [
+        // Role is in selective list
+        { selectedStudents: studentRoll },
+        // NO students selected means visible to everyone
+        { selectedStudents: { $exists: true, $size: 0 } },
+        { selectedStudents: { $exists: false } }
+      ];
     }
 
     // Additional filters
@@ -428,7 +414,7 @@ router.get("/:id/applications", authenticateToken, authorizeRoles(["admin", "fac
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const applications = await JobApplication.find(filter)
-      .populate("studentId", "name collegeId email year section branch")
+      .populate("studentId", "name collegeId email year section branch phone dateOfBirth bio cgpa semester skills achievements avatar projects certifications linkedin github portfolio")
       .sort({ appliedDate: -1 })
       .skip(skip)
       .limit(parseInt(limit));
