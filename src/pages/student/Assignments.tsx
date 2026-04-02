@@ -393,9 +393,6 @@ const StudentAssignments = () => {
                         {assignment.courseCode && ` (${assignment.courseCode})`}
                       </p>
 
-                      <p className="text-sm text-muted-foreground mb-4">
-                        {assignment.description || "No description provided."}
-                      </p>
 
                       <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">

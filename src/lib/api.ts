@@ -64,6 +64,9 @@ export const api = {
         if (!response.ok) {
             if (response.status === 401) {
                 console.warn("Unauthorized API call - token may be expired or missing");
+                clearAuthToken();
+                localStorage.removeItem("dev-user");
+                window.location.href = "/login";
             }
             throw new Error(`API Error: ${response.statusText}`);
         }
@@ -78,6 +81,11 @@ export const api = {
             body: JSON.stringify(data),
         });
         if (!response.ok) {
+            if (response.status === 401) {
+                clearAuthToken();
+                localStorage.removeItem("dev-user");
+                window.location.href = "/login";
+            }
             const errorData = await response.json().catch(() => ({}));
             throw new Error(errorData.message || `API Error: ${response.statusText}`);
         }
@@ -92,6 +100,11 @@ export const api = {
             body: JSON.stringify(data),
         });
         if (!response.ok) {
+            if (response.status === 401) {
+                clearAuthToken();
+                localStorage.removeItem("dev-user");
+                window.location.href = "/login";
+            }
             const errorData = await response.json().catch(() => ({}));
             throw new Error(errorData.message || `API Error: ${response.statusText}`);
         }
@@ -106,6 +119,11 @@ export const api = {
             body: JSON.stringify(data),
         });
         if (!response.ok) {
+            if (response.status === 401) {
+                clearAuthToken();
+                localStorage.removeItem("dev-user");
+                window.location.href = "/login";
+            }
             const errorData = await response.json().catch(() => ({}));
             throw new Error(errorData.message || `API Error: ${response.statusText}`);
         }
@@ -119,6 +137,11 @@ export const api = {
             headers,
         });
         if (!response.ok) {
+            if (response.status === 401) {
+                clearAuthToken();
+                localStorage.removeItem("dev-user");
+                window.location.href = "/login";
+            }
             const errorData = await response.json().catch(() => ({}));
             throw new Error(errorData.message || `API Error: ${response.statusText}`);
         }

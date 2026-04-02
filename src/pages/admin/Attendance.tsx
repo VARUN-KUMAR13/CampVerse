@@ -731,7 +731,6 @@ const AdminAttendance = () => {
                                                 <SelectItem value="all">All Status</SelectItem>
                                                 <SelectItem value="PRESENT">Present</SelectItem>
                                                 <SelectItem value="ABSENT">Absent</SelectItem>
-                                                <SelectItem value="LATE">Late</SelectItem>
                                                 <SelectItem value="EXCUSED">Excused</SelectItem>
                                             </SelectContent>
                                         </Select>

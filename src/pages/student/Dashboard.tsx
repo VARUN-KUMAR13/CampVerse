@@ -37,8 +37,7 @@ import {
   subscribeToStudentAttendance,
   resetDailyAttendance,
   subscribeToPerformanceMetrics,
-  autoMarkAllAsPresent,
-  shouldAutoMarkAsPresent,
+
   getHistoricalSubjectAttendance,
   getCalendarAttendanceData,
   CalendarDayStatus,
@@ -495,6 +494,8 @@ const StudentDashboard = () => {
             if (saved) {
               try {
                 const record: AttendanceRecord = JSON.parse(saved);
+                // Skip SYSTEM auto-marked records — treat them as NOT_MARKED
+                if (record.markedByRole === 'SYSTEM') continue;
                 const slotNumMatch = item.slotId.replace('slot_', '');
                 if (record.studentId === studentId && (record.slotId === item.slotId || record.slotId.startsWith(`slot_${slotNumMatch}_`))) {
                   console.log(`[Attendance] Found in localStorage: ${item.slotId} = ${record.status}, markedBy: ${record.markedByRole}`);
@@ -514,6 +515,8 @@ const StudentDashboard = () => {
                 const saved = localStorage.getItem(key);
                 if (saved) {
                   const record: AttendanceRecord = JSON.parse(saved);
+                  // Skip SYSTEM auto-marked records
+                  if (record.markedByRole === 'SYSTEM') continue;
                   const slotNumMatch = item.slotId.replace('slot_', '');
                   if (record.studentId === studentId && (record.slotId === item.slotId || record.slotId.startsWith(`slot_${slotNumMatch}_`))) {
                     console.log(`[Attendance] Found matching record: ${record.status}, markedBy: ${record.markedByRole}`);
@@ -547,15 +550,17 @@ const StudentDashboard = () => {
     const unsubscribe = subscribeToStudentAttendance(
       studentId, today, year, branch, section,
       (records) => {
-        if (records.length > 0) {
-          console.log(`[Attendance] Firebase: ${records.length} records`);
+        // Filter out SYSTEM auto-marked records so they appear as NOT_MARKED
+        const validRecords = records.filter((r) => r.markedByRole !== 'SYSTEM');
+        if (validRecords.length > 0) {
+          console.log(`[Attendance] Firebase: ${validRecords.length} valid records (${records.length - validRecords.length} SYSTEM records ignored)`);
           const markedByMap: Record<string, AttendanceRole> = {};
 
           setTodaySchedule((prev) =>
             prev.map((item) => {
               // Match by exact slotId OR by slot number prefix (faculty uses slot_1_<mongoId> format)
               const slotNum = item.slotId.replace('slot_', '');
-              const record = records.find((r) => r.slotId === item.slotId || r.slotId.startsWith(`slot_${slotNum}_`));
+              const record = validRecords.find((r) => r.slotId === item.slotId || r.slotId.startsWith(`slot_${slotNum}_`));
               if (record) {
                 markedByMap[item.slotId] = record.markedByRole;
                 return { ...item, status: record.status, markedBy: record.markedBy, markedByRole: record.markedByRole };
@@ -601,69 +606,8 @@ const StudentDashboard = () => {
     return () => unsubscribe();
   }, [userData?.collegeId, serverTime, isEligibleForAttendance, date]);
 
-  // Automatic attendance marking after 4:00 PM (16:00)
-  // If faculty/admin hasn't marked attendance, auto-mark ALL students as PRESENT
-  useEffect(() => {
-    if (!isEligibleForAttendance) return;
-
-    const checkAndAutoMark = async () => {
-      const targetDate = date || serverTime;
-      const isViewingToday = targetDate.toLocaleDateString() === serverTime.toLocaleDateString();
-
-      // Check if it's 4:00 PM (16:00) or later and we are viewing today
-      if (shouldAutoMarkAsPresent(serverTime) && isViewingToday) {
-        const notMarkedSlots = todaySchedule.filter(s => s.status === "NOT_MARKED");
-
-        if (notMarkedSlots.length > 0) {
-          const today = formatDate(serverTime);
-          console.log(`[AutoMark] Time is ${serverTime.getHours()}:${serverTime.getMinutes()}, auto-marking ${notMarkedSlots.length} slots for ALL students`);
-
-          // Auto-mark ALL students in Section B as PRESENT
-          const slotsToMark = notMarkedSlots.map(s => ({
-            slotId: s.slotId,
-            subjectCode: s.subjectCode,
-            subjectName: s.subjectName,
-          }));
-
-          try {
-            const result = await autoMarkAllAsPresent(
-              today,
-              getMappedYear(userData.collegeId),
-              getMappedBranch(userData.collegeId),
-              studentSection || "B",
-              slotsToMark
-            );
-
-            if (result.success && result.markedCount > 0) {
-              console.log(`[AutoMark] Successfully marked ${result.markedCount} records as PRESENT in database`);
-
-              // Update local state for current student
-              setTodaySchedule((prev) =>
-                prev.map((s) =>
-                  notMarkedSlots.some(nm => nm.slotId === s.slotId)
-                    ? { ...s, status: "PRESENT" as AttendanceStatus, markedByRole: "SYSTEM" as AttendanceRole }
-                    : s
-                )
-              );
-
-              toast.success(`Auto-marked ${notMarkedSlots.length} subject(s) as PRESENT`, {
-                description: "All students marked - saved to database (after 4:00 PM)",
-              });
-            }
-          } catch (error) {
-            console.error("[AutoMark] Error:", error);
-          }
-        }
-      }
-    };
-
-    // Check every minute
-    const interval = setInterval(checkAndAutoMark, 60000);
-    // Also check on mount
-    checkAndAutoMark();
-
-    return () => clearInterval(interval);
-  }, [isEligibleForAttendance, todaySchedule, serverTime, date]);
+  // Auto-attendance after 4 PM has been disabled.
+  // Unmarked attendance slots will remain as "Not Marked" until faculty/admin explicitly marks them.
 
   // Load performance metrics - fetches historical attendance across ALL dates
   useEffect(() => {
@@ -882,7 +826,7 @@ const StudentDashboard = () => {
     }
   };
 
-  const getStatusBadge = (status: AttendanceStatus, markedByRole?: AttendanceRole, markedBy?: string) => {
+  const getStatusBadge = (status: AttendanceStatus, markedByRole?: AttendanceRole, markedBy?: string, classType?: string) => {
     switch (status) {
       case "PRESENT":
         let bgColor = 'bg-blue-500/20';
@@ -934,6 +878,10 @@ const StudentDashboard = () => {
           </Badge>
         );
       default:
+        // Do not show "Not Marked" for Sports
+        if (classType && classType.toLowerCase() === 'sports') {
+          return null;
+        }
         return (
           <Badge variant="outline" className="text-xs text-muted-foreground">
             Not Marked
@@ -1191,7 +1139,7 @@ const StudentDashboard = () => {
                         {item.time}
                       </div>
                     )}
-                    {getStatusBadge(item.status, markedByRole, item.markedBy)}
+                    {getStatusBadge(item.status, markedByRole, item.markedBy, item.classType)}
                   </div>
                 </div>
               );

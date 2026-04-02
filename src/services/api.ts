@@ -18,10 +18,11 @@ const apiRequest = async <T>(
   };
 
   // Add authorization token if available
-  const token = localStorage.getItem('auth_token');
+  const token = localStorage.getItem('campverse_auth_token');
   if (token) {
     defaultHeaders['Authorization'] = `Bearer ${token}`;
   }
+
 
   const config: RequestInit = {
     ...options,
@@ -35,6 +36,11 @@ const apiRequest = async <T>(
     const response = await fetch(url, config);
     
     if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('campverse_auth_token');
+        localStorage.removeItem('dev-user');
+        window.location.href = '/login';
+      }
       const errorData = await response.json().catch(() => ({ 
         message: 'Unknown error occurred' 
       }));
@@ -455,7 +461,7 @@ export const uploadFile = async (file: File, folder: string = 'uploads'): Promis
     method: 'POST',
     body: formData,
     headers: {
-      'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+      'Authorization': `Bearer ${localStorage.getItem('campverse_auth_token')}`,
     },
   });
 
@@ -478,7 +484,7 @@ export class RealTimeConnection {
     this.ws.onopen = () => {
       console.log('WebSocket connected');
       // Send authentication token
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('campverse_auth_token');
       if (token) {
         this.send('auth', { token });
       }

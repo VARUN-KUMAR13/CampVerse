@@ -74,7 +74,7 @@ const FacultyGrades = () => {
     year: "IV Year",
     branch: "CSE",
     section: "B",
-    semester: "Semester-I",
+    semester: "Semester I",
   });
 
   // Fetch grade sheets
@@ -132,7 +132,7 @@ const FacultyGrades = () => {
         year: "IV Year",
         branch: "CSE",
         section: "B",
-        semester: "Semester-I",
+        semester: "Semester I",
       });
       fetchGradeSheets();
     } catch (error: any) {
@@ -376,8 +376,8 @@ const FacultyGrades = () => {
                     >
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Semester-I">Semester-I</SelectItem>
-                        <SelectItem value="Semester-II">Semester-II</SelectItem>
+                        <SelectItem value="Semester I">Semester I</SelectItem>
+                        <SelectItem value="Semester II">Semester II</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

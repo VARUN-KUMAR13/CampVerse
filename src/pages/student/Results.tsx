@@ -30,7 +30,7 @@ const StudentResults = () => {
   const [degree, setDegree] = useState("Major");
   const [year, setYear] = useState("IV Year");
   const [semester, setSemester] = useState(() => {
-    return userData?.collegeId?.startsWith('22') ? "Semester-II" : "Semester-I";
+    return userData?.collegeId?.startsWith('22') ? "Semester II" : "Semester I";
   });
 
   // Dynamically configure dropdown defaults mapping exactly to the backend student Current Semester logic
@@ -50,14 +50,22 @@ const StudentResults = () => {
           
           if (currentSem) {
             const romanMap: Record<string, { year: string; semLabel: string }> = {
-              "I": { year: "I Year", semLabel: "Semester-I" },
-              "II": { year: "I Year", semLabel: "Semester-II" },
-              "III": { year: "II Year", semLabel: "Semester-I" },
-              "IV": { year: "II Year", semLabel: "Semester-II" },
-              "V": { year: "III Year", semLabel: "Semester-I" },
-              "VI": { year: "III Year", semLabel: "Semester-II" },
-              "VII": { year: "IV Year", semLabel: "Semester-I" },
-              "VIII": { year: "IV Year", semLabel: "Semester-II" }
+              "I": { year: "I Year", semLabel: "Semester I" },
+              "1": { year: "I Year", semLabel: "Semester I" },
+              "II": { year: "I Year", semLabel: "Semester II" },
+              "2": { year: "I Year", semLabel: "Semester II" },
+              "III": { year: "II Year", semLabel: "Semester I" },
+              "3": { year: "II Year", semLabel: "Semester I" },
+              "IV": { year: "II Year", semLabel: "Semester II" },
+              "4": { year: "II Year", semLabel: "Semester II" },
+              "V": { year: "III Year", semLabel: "Semester I" },
+              "5": { year: "III Year", semLabel: "Semester I" },
+              "VI": { year: "III Year", semLabel: "Semester II" },
+              "6": { year: "III Year", semLabel: "Semester II" },
+              "VII": { year: "IV Year", semLabel: "Semester I" },
+              "7": { year: "IV Year", semLabel: "Semester I" },
+              "VIII": { year: "IV Year", semLabel: "Semester II" },
+              "8": { year: "IV Year", semLabel: "Semester II" }
             };
             const mapping = romanMap[String(currentSem).toUpperCase()];
             if (mapping) {
@@ -156,8 +164,8 @@ const StudentResults = () => {
               <SelectValue placeholder="Semester" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Semester-I">Semester-I</SelectItem>
-              <SelectItem value="Semester-II">Semester-II</SelectItem>
+              <SelectItem value="Semester I">Semester I</SelectItem>
+              <SelectItem value="Semester II">Semester II</SelectItem>
             </SelectContent>
           </Select>
         </div>

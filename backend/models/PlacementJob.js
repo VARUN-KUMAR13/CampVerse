@@ -356,12 +356,6 @@ placementJobSchema.statics.getPopularJobs = function (limit = 10) {
     .limit(limit);
 };
 
-// Middleware to update application counts after job application changes
-placementJobSchema.post("save", async function (doc) {
-  // Update counts when job is saved
-  if (doc.isModified("appliedCount") || doc.isModified("shortlistedCount") || doc.isModified("selectedCount")) {
-    return; // Avoid infinite loop
-  }
-});
+
 
 module.exports = mongoose.model("PlacementJob", placementJobSchema);

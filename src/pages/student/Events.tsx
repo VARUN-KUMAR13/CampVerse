@@ -53,18 +53,11 @@ const StudentEvents = () => {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [processingEventId, setProcessingEventId] = useState<string | null>(null);
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
 
   const toggleExpand = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setExpandedCards(prev => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const handleOpenView = (event: Event) => {
-    setSelectedEvent(event);
-    setIsViewModalOpen(true);
   };
 
   const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID as string | undefined;
@@ -94,7 +87,9 @@ const StudentEvents = () => {
   // Check if current user is registered for an event
   const isRegistered = (event: Event) => {
     if (!userData?.collegeId || !event.registeredStudents) return false;
-    return event.registeredStudents.includes(userData.collegeId);
+    return event.registeredStudents.some(
+      (id) => id.toLowerCase() === userData.collegeId.toLowerCase()
+    );
   };
 
   // Check if event is free
@@ -564,182 +559,6 @@ const StudentEvents = () => {
             )}
           </div>
         </div>
-
-        {/* View Details Modal */}
-        <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                <Eye className="w-6 h-6 text-primary" />
-                Event Details
-              </DialogTitle>
-            </DialogHeader>
-            {selectedEvent && (
-              <div className="space-y-5 py-4">
-                {/* Poster Image */}
-                {selectedEvent.posterImage && (
-                  <div className="rounded-lg overflow-hidden border border-border">
-                    <img
-                      src={selectedEvent.posterImage}
-                      alt={selectedEvent.title}
-                      className="w-full object-contain max-h-72"
-                    />
-                  </div>
-                )}
-
-                {/* Title & Badges */}
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground">{selectedEvent.title}</h2>
-                  <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <Badge variant="outline">{selectedEvent.category}</Badge>
-                    {getStatusBadge(selectedEvent)}
-                    {selectedEvent.featured && (
-                      <Badge className="bg-yellow-500">
-                        <Star className="w-3 h-3 mr-1 fill-current" /> Featured
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-
-                {/* Description */}
-                {selectedEvent.description && (
-                  <div>
-                    <Label className="text-sm font-semibold text-muted-foreground">Description</Label>
-                    <p className="text-foreground mt-1">{selectedEvent.description}</p>
-                  </div>
-                )}
-
-                {/* Details Grid */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Calendar className="w-3 h-3" /> Date
-                    </Label>
-                    <p className="font-medium">
-                      {formatDate(selectedEvent.date)}
-                      {selectedEvent.endDate && selectedEvent.endDate !== selectedEvent.date
-                        ? ` — ${formatDate(selectedEvent.endDate)}`
-                        : ""}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> Time
-                    </Label>
-                    <p className="font-medium">{formatTime(selectedEvent.date)}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                      <MapPin className="w-3 h-3" /> Venue
-                    </Label>
-                    <p className="font-medium">{selectedEvent.venue}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Organizer</Label>
-                    <p className="font-medium">{selectedEvent.organizer}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                      <DollarSign className="w-3 h-3" /> Entry Fee
-                    </Label>
-                    <p className="font-medium">{selectedEvent.entryFee}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Users className="w-3 h-3" /> Registered
-                    </Label>
-                    <p className="font-medium">
-                      {selectedEvent.registeredParticipants || 0}
-                      {selectedEvent.maxParticipants > 0
-                        ? ` / ${selectedEvent.maxParticipants}`
-                        : " (Unlimited)"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Prizes */}
-                {selectedEvent.prizes && (
-                  <div>
-                    <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Trophy className="w-3 h-3" /> Prizes
-                    </Label>
-                    <p className="font-medium mt-1">{selectedEvent.prizes}</p>
-                  </div>
-                )}
-
-                {/* Highlights */}
-                {selectedEvent.highlights && selectedEvent.highlights.length > 0 && (
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Highlights</Label>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {selectedEvent.highlights.map((h, i) => (
-                        <Badge key={i} variant="outline" className="text-xs">{h}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Registration Deadline */}
-                {selectedEvent.registrationDeadline && (
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Registration Deadline</Label>
-                    <p className="font-medium text-destructive mt-1">
-                      {formatDateTime(selectedEvent.registrationDeadline)}
-                    </p>
-                  </div>
-                )}
-
-                {/* Contact Info */}
-                {(selectedEvent.contactEmail || selectedEvent.contactPhone) && (
-                  <div className="grid grid-cols-2 gap-4">
-                    {selectedEvent.contactEmail && (
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Contact Email</Label>
-                        <p className="font-medium">{selectedEvent.contactEmail}</p>
-                      </div>
-                    )}
-                    {selectedEvent.contactPhone && (
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Contact Phone</Label>
-                        <p className="font-medium">{selectedEvent.contactPhone}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex justify-between items-center pt-4 border-t">
-                  <div>
-                    {isRegistered(selectedEvent) ? (
-                      <Button className="bg-green-600 hover:bg-green-700 opacity-100 disabled:opacity-100 cursor-default text-white" disabled>
-                        <CheckCircle className="w-4 h-4 mr-1" /> Registered
-                      </Button>
-                    ) : isPastDeadline(selectedEvent.registrationDeadline) ? (
-                      <Button className="bg-destructive hover:bg-destructive opacity-100 disabled:opacity-100 cursor-default text-destructive-foreground" disabled>
-                        <XCircle className="w-4 h-4 mr-1" /> Registration Closed
-                      </Button>
-                    ) : selectedEvent.status === "Open" &&
-                      (selectedEvent.maxParticipants === 0 ||
-                        selectedEvent.registeredParticipants < selectedEvent.maxParticipants) ? (
-                      <Button
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                        onClick={() => handleRegister(selectedEvent)}
-                        disabled={processingEventId === selectedEvent._id}
-                      >
-                        {processingEventId === selectedEvent._id ? (
-                          <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Processing...</>
-                        ) : (
-                          <>Register</>
-                        )}
-                      </Button>
-                    ) : null}
-                  </div>
-                  <Button variant="outline" onClick={() => setIsViewModalOpen(false)}>Close</Button>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
       </div>
     </StudentLayout>
   );

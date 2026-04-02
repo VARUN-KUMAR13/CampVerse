@@ -67,7 +67,7 @@ const AdminResults = () => {
     const [filterYear, setFilterYear] = useState("IV Year");
     const [filterBranch, setFilterBranch] = useState("CSE");
     const [filterSection, setFilterSection] = useState("B");
-    const [filterSemester, setFilterSemester] = useState("Semester-I");
+    const [filterSemester, setFilterSemester] = useState("Semester I");
 
     // Fetch submitted grade sheets
     const fetchGradeSheets = async () => {
@@ -440,8 +440,8 @@ const AdminResults = () => {
                                         <Select value={filterSemester} onValueChange={setFilterSemester}>
                                             <SelectTrigger><SelectValue /></SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="Semester-I">Semester-I</SelectItem>
-                                                <SelectItem value="Semester-II">Semester-II</SelectItem>
+                                                <SelectItem value="Semester I">Semester I</SelectItem>
+                                                <SelectItem value="Semester II">Semester II</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
