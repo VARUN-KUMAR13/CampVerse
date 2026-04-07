@@ -147,7 +147,7 @@ export const config: Config = {
   },
 
   // Third-party Integrations
-  CHATBASE_ID: getEnvVar('VITE_CHATBASE_ID') || 'hT0ZVaHT1raLPftpo9ddq',
+  CHATBASE_ID: getEnvVar('VITE_CHATBASE_ID') || 'thpD_mqYP7_kCSNQg7G0G',
 
   // Limits and Constraints
   LIMITS: {
