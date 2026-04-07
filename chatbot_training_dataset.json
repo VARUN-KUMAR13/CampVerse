@@ -1,0 +1,146 @@
+[
+  {
+    "question": "How can I check my attendance as a student?",
+    "answer": "To check your attendance, log in to the Student Dashboard and navigate to the 'Attendance' section from the sidebar. You will see an overview of your attendance for each course, including percentage and total classes attended.",
+    "role": "Student",
+    "category": "Attendance"
+  },
+  {
+    "question": "Where can I view my exam results?",
+    "answer": "Go to the 'Results' page on your Student Dashboard. There, you can view your semester-wise grades, SGPA, and cumulative CGPA.",
+    "role": "Student",
+    "category": "Grades & Results"
+  },
+  {
+    "question": "How do I submit an assignment?",
+    "answer": "1. Navigate to the 'Assignments' section.\n2. Find the active assignment you want to submit.\n3. Click on the assignment to open the details.\n4. Click the 'Upload' button, select your file (PDF preferred), and click 'Submit'. Ensure you submit before the due date.",
+    "role": "Student",
+    "category": "Assignments"
+  },
+  {
+    "question": "How do I join a student club?",
+    "answer": "Browse the 'Clubs' section in your dashboard to see active clubs like the Coding Club or Drama Club. Click 'View Details' on any club and select 'Join' or 'Register' to become a member.",
+    "role": "Student",
+    "category": "Events & Clubs"
+  },
+  {
+    "question": "Can I see my upcoming class schedule?",
+    "answer": "Yes, your daily and weekly class schedule is available on the 'Schedule' page. It lists your courses, timings, and classroom locations.",
+    "role": "Student",
+    "category": "Courses"
+  },
+  {
+    "question": "Where can I find placement opportunities?",
+    "answer": "The 'Placement' module lists current job openings and internship opportunities. You can view job descriptions, eligibility criteria, and apply directly through the portal.",
+    "role": "Student",
+    "category": "Placements"
+  },
+  {
+    "question": "What should I do if I cannot login?",
+    "answer": "If you are facing login issues:\n1. Double-check your College ID and password.\n2. Ensure your internet connection is stable.\n3. If you forgot your password, contact the IT administrator via the support email listed on the login page.",
+    "role": "Student",
+    "category": "Issue Handling"
+  },
+  {
+    "question": "My dashboard data is not loading. What should I do?",
+    "answer": "Try refreshing the page (F5). If the problem persists, clear your browser cache or try logging in using an incognito window. If the issue is still there, report it to the administrator.",
+    "role": "Student",
+    "category": "Issue Handling"
+  },
+  {
+    "question": "How do I mark student attendance for my course?",
+    "answer": "As a faculty member:\n1. Go to the 'Courses' section in your Faculty Dashboard.\n2. Select the specific course.\n3. Click on 'Mark Attendance'.\n4. Select the date and session, then toggle the attendance status for each student. Click 'Save' when finished.",
+    "role": "Faculty",
+    "category": "Attendance"
+  },
+  {
+    "question": "How can I create a new assignment for my students?",
+    "answer": "1. Navigate to 'Assignments' in the Faculty Dashboard.\n2. Click the 'Create New Assignment' button.\n3. Fill in the title, description, due date, and select the target course/section.\n4. Click 'Publish' to make it visible to students.",
+    "role": "Faculty",
+    "category": "Assignments"
+  },
+  {
+    "question": "How do I input grades for an exam?",
+    "answer": "Navigate to the 'Grades' section. Select the course and the specific assessment (e.g., Mid-term, Final). Enter the marks obtained by each student in the provided list and click 'Submit' to finalize.",
+    "role": "Faculty",
+    "category": "Grades & Results"
+  },
+  {
+    "question": "Can I send an urgent alert to my students?",
+    "answer": "Yes, use the 'Alerts' section in the Faculty Dashboard. You can type a message, select the target audience (e.g., a specific section), and click 'Send Alert'. This will appear on the students' dashboards immediately.",
+    "role": "Faculty",
+    "category": "Announcements"
+  },
+  {
+    "question": "How do I view the list of students enrolled in my course?",
+    "answer": "Go to the 'Students' page in your dashboard. You can search by name or ID and view details for every student enrolled in the courses you teach.",
+    "role": "Faculty",
+    "category": "Courses"
+  },
+  {
+    "question": "What do I do if I see a 'Submission Error' when creating an assignment?",
+    "answer": "Ensure all required fields (marked with *) are filled correctly. Check if the due date is in the future. If the error persists, please check your network connection or contact the Admin.",
+    "role": "Faculty",
+    "category": "Issue Handling"
+  },
+  {
+    "question": "How do I manage user accounts in the system?",
+    "answer": "As an Admin, use the 'User Management' module. Here you can add new students, faculty members, or administrators. Integrated search allows you to find and edit existing user profiles or deactivate accounts if necessary.",
+    "role": "Admin",
+    "category": "User Management"
+  },
+  {
+    "question": "How can I post a global announcement with an image?",
+    "answer": "1. Go to 'Announcements' on the Admin Dashboard.\n2. Click 'New Announcement'.\n3. Enter the title and message.\n4. Use the 'Upload Image' option to attach a circular or visual content.\n5. Select the target audience (Students, Faculty, or Both) and click 'Publish'.",
+    "role": "Admin",
+    "category": "Announcements"
+  },
+  {
+    "question": "Where can I download system-wide reports?",
+    "answer": "Navigate to the 'Reports' section. You can generate and download various reports such as consolidated attendance, academic performance summaries, and placement statistics in Excel/PDF formats.",
+    "role": "Admin",
+    "category": "Reports"
+  },
+  {
+    "question": "How do I update the official Academic Calendar?",
+    "answer": "Go to the 'Academic Calendar' page. You can add important dates like holidays, exam schedules, and registration deadlines. Changes made here are reflected on all user dashboards.",
+    "role": "Admin",
+    "category": "Academic Calendar"
+  },
+  {
+    "question": "How can I schedule a new campus event?",
+    "answer": "Use the 'Events' module. Click 'Create Event', provide the description, date, venue, and organizer details. You can also upload a banner image for the event.",
+    "role": "Admin",
+    "category": "Events & Clubs"
+  },
+  {
+    "question": "How do I backup the system database?",
+    "answer": "Navigate to 'Backup Database' in your Admin Dashboard. Click the 'Initiate Backup' button to create a snapshot of the current database state for security and recovery purposes.",
+    "role": "Admin",
+    "category": "BackupDatabase"
+  },
+  {
+    "question": "What if a student reports 'Permission Denied' for a specific feature?",
+    "answer": "Verify the student's role and assigned permissions in the 'User Management' section. Ensure their profile is active and correctly mapped to their current batch/section. Permissions are role-based and section-specific.",
+    "role": "Admin",
+    "category": "Issue Handling"
+  },
+  {
+    "question": "How to change system-wide settings like the institute name?",
+    "answer": "Go to 'System Settings'. Here you can update institutional details, branding (logo/titles), and global configuration parameters for the CampVerse platform.",
+    "role": "Admin",
+    "category": "SystemSettings"
+  },
+  {
+    "question": "How do I view payment/fee status of students?",
+    "answer": "Go to the 'Fees' or 'Reports' section (as an Admin). Search for a student to view their paid and pending semester fees. You can also send automated fee reminders from here.",
+    "role": "Admin",
+    "category": "Payments"
+  },
+  {
+    "question": "Chatbot Personality Guidelines",
+    "answer": "Be friendly, professional, and clear. If a user asks a vague question, ask for details. For instructions, use bullet points or numbered lists. Always verify if the solution worked.",
+    "role": "System",
+    "category": "Interaction Style"
+  }
+]

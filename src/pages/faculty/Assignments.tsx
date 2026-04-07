@@ -42,6 +42,7 @@ import {
   getFacultyAssignments,
   getAllAssignments,
   createAssignment,
+  updateAssignment,
   deleteAssignment,
   getSubmissions,
   downloadSubmission,
@@ -89,6 +90,19 @@ const FacultyAssignments = () => {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [submissionsLoading, setSubmissionsLoading] = useState(false);
   const [creating, setCreating] = useState(false);
+
+  // Edit dialog state
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    title: "",
+    description: "",
+    course: "",
+    courseCode: "",
+    dueDate: "",
+    status: "Active" as "Active" | "Completed" | "Draft",
+  });
+  const [updating, setUpdating] = useState(false);
 
   // Form state for create assignment
   const [formData, setFormData] = useState({
@@ -179,6 +193,42 @@ const FacultyAssignments = () => {
     } catch (error) {
       console.error("Error deleting assignment:", error);
       toast.error("Failed to delete assignment");
+    }
+  };
+
+  // Edit assignment handler
+  const handleEditAssignment = (assignment: Assignment) => {
+    setEditingAssignment(assignment);
+    setEditFormData({
+      title: assignment.title,
+      description: assignment.description || "",
+      course: assignment.course,
+      courseCode: assignment.courseCode || "",
+      dueDate: assignment.dueDate ? new Date(assignment.dueDate).toISOString().split('T')[0] : "",
+      status: assignment.status,
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateAssignment = async () => {
+    if (!editingAssignment) return;
+    if (!editFormData.title || !editFormData.course || !editFormData.dueDate) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    try {
+      setUpdating(true);
+      await updateAssignment(editingAssignment._id, editFormData);
+      toast.success("Assignment updated successfully!");
+      setIsEditDialogOpen(false);
+      setEditingAssignment(null);
+      fetchAssignments();
+    } catch (error) {
+      console.error("Error updating assignment:", error);
+      toast.error("Failed to update assignment");
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -465,6 +515,113 @@ const FacultyAssignments = () => {
           </Dialog>
         </div>
 
+        {/* Edit Assignment Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Edit className="w-5 h-5 text-primary" />
+                Edit Assignment
+              </DialogTitle>
+              <DialogDescription>
+                Update the assignment details below.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label>Title *</Label>
+                <Input
+                  placeholder="Assignment Title"
+                  value={editFormData.title}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, title: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea
+                  placeholder="Assignment description..."
+                  rows={3}
+                  value={editFormData.description}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, description: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Course *</Label>
+                  <Input
+                    placeholder="Course Name"
+                    value={editFormData.course}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, course: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Course Code</Label>
+                  <Input
+                    placeholder="e.g. CS401"
+                    value={editFormData.courseCode}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, courseCode: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Due Date *</Label>
+                  <Input
+                    type="date"
+                    value={editFormData.dueDate}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, dueDate: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select
+                    value={editFormData.status}
+                    onValueChange={(val: any) =>
+                      setEditFormData({ ...editFormData, status: val })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Completed">Completed</SelectItem>
+                      <SelectItem value="Draft">Draft</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleUpdateAssignment} disabled={updating}>
+                {updating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -527,6 +684,7 @@ const FacultyAssignments = () => {
                         variant="ghost" 
                         className="w-full h-10 bg-transparent hover:bg-blue-500/20 text-white hover:text-blue-100 transition-all duration-300"
                         title="Edit Assignment"
+                        onClick={() => handleEditAssignment(assignment)}
                      >
                        <Edit className="w-5 h-5" />
                      </Button>

@@ -1,0 +1,803 @@
+
+> campverse@1.0.0 lint
+> eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0
+
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\AIChatbot.tsx
+   8:16  warning  Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  11:22  warning  Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  19:11  warning  'userData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  31:35  warning  Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  35:27  warning  Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  93:18  warning  'e' is defined but never used                  @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\AdminClassAttendance.tsx
+    1:29  warning  'CardHeader' is defined but never used                                                                           @typescript-eslint/no-unused-vars
+    1:41  warning  'CardTitle' is defined but never used                                                                            @typescript-eslint/no-unused-vars
+    1:52  warning  'CardDescription' is defined but never used                                                                      @typescript-eslint/no-unused-vars
+   13:3   warning  'CheckCircle2' is defined but never used                                                                         @typescript-eslint/no-unused-vars
+   14:3   warning  'XCircle' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+   31:3   warning  'getRoleFromCollegeId' is defined but never used                                                                 @typescript-eslint/no-unused-vars
+  115:52  warning  Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+  123:73  warning  Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+  127:29  warning  Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+  128:29  warning  Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+  183:6   warning  React Hook useEffect has a missing dependency: 'loadStudents'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\AdminLayout.tsx
+  3:10  warning  'Badge' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\AdminSidebar.tsx
+   8:3   warning  'LogOut' is defined but never used                 @typescript-eslint/no-unused-vars
+  10:3   warning  'ChevronLeft' is defined but never used            @typescript-eslint/no-unused-vars
+  15:10  warning  'Button' is defined but never used                 @typescript-eslint/no-unused-vars
+  24:34  warning  'isOpen' is defined but never used                 @typescript-eslint/no-unused-vars
+  82:9   warning  'handleLogout' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\AdminTopbar.tsx
+  16:42  warning  'User' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\ClubShowcase.tsx
+  283:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\CustomStudentDashboard.tsx
+  19:3   warning  'TrendingUp' is defined but never used                    @typescript-eslint/no-unused-vars
+  83:9   warning  'handleUpdateProfile' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  83:47  warning  Unexpected any. Specify a different type                  @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\DeskIllustration.tsx
+  4:3  error  ES2015 module syntax is preferred over namespaces  @typescript-eslint/no-namespace
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\ErrorBoundary.tsx
+  251:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  259:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\EventShowcase.tsx
+  735:47  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  738:32  warning  'loading' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  867:32  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  880:56  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  907:53  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  912:23  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  927:23  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\FacultySidebar.tsx
+   8:3   warning  'LogOut' is defined but never used                 @typescript-eslint/no-unused-vars
+  11:10  warning  'Button' is defined but never used                 @typescript-eslint/no-unused-vars
+  57:9   warning  'handleLogout' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\FirebaseUserSetup.tsx
+  12:3   warning  'AlertCircle' is defined but never used   @typescript-eslint/no-unused-vars
+  66:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\LoadingSystem.tsx
+  342:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\NotificationBell.tsx
+    9:32   warning  'AlertTriangle' is defined but never used  @typescript-eslint/no-unused-vars
+    9:47   warning  'CheckCircle' is defined but never used    @typescript-eslint/no-unused-vars
+  119:111  warning  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\StudentSidebar.tsx
+   5:3   warning  'Clock' is defined but never used                  @typescript-eslint/no-unused-vars
+   8:3   warning  'Menu' is defined but never used                   @typescript-eslint/no-unused-vars
+   9:3   warning  'LogOut' is defined but never used                 @typescript-eslint/no-unused-vars
+  15:10  warning  'Button' is defined but never used                 @typescript-eslint/no-unused-vars
+  71:9   warning  'handleLogout' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\StudentTopbar.tsx
+   3:34  warning  'AvatarImage' is defined but never used  @typescript-eslint/no-unused-vars
+  11:10  warning  'Bell' is defined but never used         @typescript-eslint/no-unused-vars
+  11:16  warning  'Search' is defined but never used       @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\ui\badge.tsx
+  36:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\ui\button.tsx
+  56:18  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\ui\calendar.tsx
+  55:25  warning  '_props' is defined but never used  @typescript-eslint/no-unused-vars
+  56:26  warning  '_props' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\ui\chart.tsx
+  70:7  warning  '_' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\ui\command.tsx
+  24:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\ui\form.tsx
+  169:3  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\ui\navigation-menu.tsx
+  119:3  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\ui\searchable-select.tsx
+  2:30  warning  'Search' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\ui\sidebar.tsx
+  768:3  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\ui\textarea.tsx
+  5:18  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\components\ui\toggle.tsx
+  43:18  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\contexts\AttendanceContext.tsx
+    2:65  warning  'useCallback' is defined but never used                                                                                                                        @typescript-eslint/no-unused-vars
+   25:5   warning  'markBulkAttendance' is defined but never used                                                                                                                 @typescript-eslint/no-unused-vars
+   26:5   warning  'getStudentAttendanceForDate' is defined but never used                                                                                                        @typescript-eslint/no-unused-vars
+   34:5   warning  'timeToMinutes' is defined but never used                                                                                                                      @typescript-eslint/no-unused-vars
+   77:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                 react-refresh/only-export-components
+  133:8   warning  React Hook useEffect has a missing dependency: 'loadTodaySchedule'. Either include it or remove the dependency array                                           react-hooks/exhaustive-deps
+  156:8   warning  React Hook useEffect has missing dependencies: 'userData.branch', 'userData.section', and 'userData.year'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  196:19  warning  'slots' is assigned a value but never used                                                                                                                     @typescript-eslint/no-unused-vars
+  263:23  warning  Unexpected any. Specify a different type                                                                                                                       @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\contexts\AuthContext.tsx
+   3:16  warning  'isDevelopment' is defined but never used                                                                                       @typescript-eslint/no-unused-vars
+  18:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\contexts\ClubContext.tsx
+   68:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+   97:23  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  123:23  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  137:23  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  151:23  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  165:23  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\contexts\EventContext.tsx
+   52:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+   81:23  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  107:23  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  121:23  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  135:23  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  146:25  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  151:23  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\contexts\ExamContext.tsx
+   54:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+   75:23  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   90:23  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  114:23  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  128:23  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  148:23  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  162:23  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\contexts\NotificationContext.tsx
+   72:14   warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                 react-refresh/only-export-components
+   89:11   warning  'previousUnreadCount' is assigned a value but never used                                                                                       @typescript-eslint/no-unused-vars
+   92:83   warning  Unexpected any. Specify a different type                                                                                                       @typescript-eslint/no-explicit-any
+  245:115  warning  Unexpected any. Specify a different type                                                                                                       @typescript-eslint/no-explicit-any
+  270:8    warning  React Hook useCallback has an unnecessary dependency: 'userData.role'. Either exclude it or remove the dependency array                        react-hooks/exhaustive-deps
+  284:8    warning  React Hook useEffect has missing dependencies: 'fetchNotifications' and 'useLocalStorage'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  317:29   warning  'id' is assigned a value but never used                                                                                                        @typescript-eslint/no-unused-vars
+  322:39   warning  Unexpected any. Specify a different type                                                                                                       @typescript-eslint/no-explicit-any
+  334:23   warning  Unexpected any. Specify a different type                                                                                                       @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\contexts\PlacementContext.tsx
+  113:51  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  129:19  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  177:42  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  193:19  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  217:19  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  243:19  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  275:19  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  305:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\contexts\PlacementContextV2.tsx
+    2:10  warning  'placementAPI' is defined but never used                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+   40:40  warning  Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+   44:49  warning  Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+   48:25  warning  Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+   61:36  warning  Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+   79:40  warning  'page' is assigned a value but never used                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+   79:58  warning  'customFilters' is assigned a value but never used                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+   79:73  warning  Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  141:14  warning  'err' is defined but never used                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  148:6   warning  React Hook useCallback has an unnecessary dependency: 'filters'. Either exclude it or remove the dependency array                                                                                                                          react-hooks/exhaustive-deps
+  299:56  warning  'applicationData' is assigned a value but never used                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+  299:73  warning  Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  408:5   warning  'jobId' is defined but never used                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  409:5   warning  'applicationId' is defined but never used                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+  410:5   warning  'status' is defined but never used                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+  465:47  warning  Unexpected any. Specify a different type                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  481:6   warning  React Hook useCallback has a missing dependency: 'pagination'. Either include it or remove the dependency array. Mutable values like 'pagination.current' aren't valid dependencies because mutating them doesn't re-render the component  react-hooks/exhaustive-deps
+  534:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                             react-refresh/only-export-components
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\hooks\use-toast.ts
+  15:7  warning  'actionTypes' is assigned a value but only used as a type  @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\hooks\useFirestore.ts
+   69:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   83:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   94:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  133:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  169:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  181:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  192:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  230:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  242:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  248:81  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  253:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  326:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  342:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\lib\api.ts
+    1:16  warning  'isDevelopment' is defined but never used  @typescript-eslint/no-unused-vars
+    1:31  warning  'firebaseReady' is defined but never used  @typescript-eslint/no-unused-vars
+   76:42  warning  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+   95:41  warning  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  114:43  warning  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\lib\auth.ts
+    3:3   warning  'createUserWithEmailAndPassword' is defined but never used  @typescript-eslint/no-unused-vars
+    8:16  warning  'isDevelopment' is defined but never used                   @typescript-eslint/no-unused-vars
+  204:29  warning  Unexpected any. Specify a different type                    @typescript-eslint/no-explicit-any
+  220:34  warning  Unexpected any. Specify a different type                    @typescript-eslint/no-explicit-any
+  237:32  warning  Unexpected any. Specify a different type                    @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\lib\firebase.ts
+  24:10  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  25:11  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  26:16  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  27:15  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  28:14  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  29:16  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  47:18  warning  'analyticsError' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\About.tsx
+  1:10  warning  'Card' is defined but never used         @typescript-eslint/no-unused-vars
+  1:16  warning  'CardContent' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\Features.tsx
+   7:3   warning  'BookOpen' is defined but never used       @typescript-eslint/no-unused-vars
+   8:3   warning  'MessageSquare' is defined but never used  @typescript-eslint/no-unused-vars
+   9:16  warning  'Event' is defined but never used          @typescript-eslint/no-unused-vars
+  10:3   warning  'TrendingUp' is defined but never used     @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\Index.tsx
+  5:29  warning  'CardHeader' is defined but never used  @typescript-eslint/no-unused-vars
+  5:41  warning  'CardTitle' is defined but never used   @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\Login.tsx
+  42:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  85:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\admin\AcademicCalendar.tsx
+  102:6  warning  React Hook useEffect has a missing dependency: 'fetchEvents'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\admin\Alerts.tsx
+    2:29  warning  'CardHeader' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+    2:41  warning  'CardTitle' is defined but never used                                                                                  @typescript-eslint/no-unused-vars
+   18:5   warning  'DialogTrigger' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+   39:5   warning  'RefreshCw' is defined but never used                                                                                  @typescript-eslint/no-unused-vars
+   53:13  warning  'userData' is assigned a value but never used                                                                          @typescript-eslint/no-unused-vars
+   87:35  warning  Unexpected any. Specify a different type                                                                               @typescript-eslint/no-explicit-any
+  117:23  warning  Unexpected any. Specify a different type                                                                               @typescript-eslint/no-explicit-any
+  131:8   warning  React Hook useEffect has a missing dependency: 'fetchNotifications'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  169:44  warning  Unexpected any. Specify a different type                                                                               @typescript-eslint/no-explicit-any
+  192:18  warning  'err' is defined but never used                                                                                        @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\admin\Announcements.tsx
+  158:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  236:67  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  250:67  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\admin\Attendance.tsx
+   37:10  warning  'ScrollArea' is defined but never used                                                                           @typescript-eslint/no-unused-vars
+   38:10  warning  'Alert' is defined but never used                                                                                @typescript-eslint/no-unused-vars
+   38:17  warning  'AlertDescription' is defined but never used                                                                     @typescript-eslint/no-unused-vars
+   38:35  warning  'AlertTitle' is defined but never used                                                                           @typescript-eslint/no-unused-vars
+   43:5   warning  'Clock' is defined but never used                                                                                @typescript-eslint/no-unused-vars
+   46:5   warning  'Calendar' is defined but never used                                                                             @typescript-eslint/no-unused-vars
+   48:5   warning  'Filter' is defined but never used                                                                               @typescript-eslint/no-unused-vars
+   50:5   warning  'Upload' is defined but never used                                                                               @typescript-eslint/no-unused-vars
+   54:5   warning  'Building2' is defined but never used                                                                            @typescript-eslint/no-unused-vars
+   56:5   warning  'Briefcase' is defined but never used                                                                            @typescript-eslint/no-unused-vars
+   66:31  warning  'useCallback' is defined but never used                                                                          @typescript-eslint/no-unused-vars
+   71:5   warning  'AttendanceRecord' is defined but never used                                                                     @typescript-eslint/no-unused-vars
+   76:5   warning  'StudentAttendanceSummary' is defined but never used                                                             @typescript-eslint/no-unused-vars
+   82:5   warning  'formatTime' is defined but never used                                                                           @typescript-eslint/no-unused-vars
+   85:5   warning  'calculateFourWeekAttendance' is defined but never used                                                          @typescript-eslint/no-unused-vars
+  104:12  warning  'selectedCategory' is assigned a value but never used                                                            @typescript-eslint/no-unused-vars
+  104:30  warning  'setSelectedCategory' is assigned a value but never used                                                         @typescript-eslint/no-unused-vars
+  121:12  warning  'serverTime' is assigned a value but never used                                                                  @typescript-eslint/no-unused-vars
+  169:8   warning  React Hook useEffect has a missing dependency: 'loadStudents'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  179:94  warning  'index' is defined but never used                                                                                @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\admin\BackupDatabase.tsx
+  29:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\admin\Clubs.tsx
+    2:29  warning  'CardHeader' is defined but never used           @typescript-eslint/no-unused-vars
+    2:41  warning  'CardTitle' is defined but never used            @typescript-eslint/no-unused-vars
+   52:5   warning  'GraduationCap' is defined but never used        @typescript-eslint/no-unused-vars
+   66:13  warning  'userData' is assigned a value but never used    @typescript-eslint/no-unused-vars
+   67:69  warning  'fetchClubs' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   82:46  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  167:39  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  201:23  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  244:41  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  290:23  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  318:23  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\admin\Dashboard.tsx
+     6:10  warning  'Badge' is defined but never used                                                                                         @typescript-eslint/no-unused-vars
+    15:3   warning  'DialogTrigger' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+    17:16  warning  'TabsContent' is defined but never used                                                                                   @typescript-eslint/no-unused-vars
+    35:3   warning  'Search' is defined but never used                                                                                        @typescript-eslint/no-unused-vars
+    56:3   warning  'Menu' is defined but never used                                                                                          @typescript-eslint/no-unused-vars
+    57:3   warning  'PanelLeftClose' is defined but never used                                                                                @typescript-eslint/no-unused-vars
+    58:3   warning  'PanelLeft' is defined but never used                                                                                     @typescript-eslint/no-unused-vars
+    59:3   warning  'ChevronRight' is defined but never used                                                                                  @typescript-eslint/no-unused-vars
+    60:3   warning  'ChevronLeft' is defined but never used                                                                                   @typescript-eslint/no-unused-vars
+    83:21  warning  'logout' is assigned a value but never used                                                                               @typescript-eslint/no-unused-vars
+   129:46  warning  Unexpected any. Specify a different type                                                                                  @typescript-eslint/no-explicit-any
+   132:44  warning  Unexpected any. Specify a different type                                                                                  @typescript-eslint/no-explicit-any
+   324:21  warning  Unexpected any. Specify a different type                                                                                  @typescript-eslint/no-explicit-any
+   391:60  warning  Unexpected any. Specify a different type                                                                                  @typescript-eslint/no-explicit-any
+   399:13  error    Empty block statement                                                                                                     no-empty
+   404:6   warning  React Hook useEffect has a missing dependency: 'fetchRecentActivities'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   430:13  error    Empty block statement                                                                                                     no-empty
+   443:18  warning  Unexpected any. Specify a different type                                                                                  @typescript-eslint/no-explicit-any
+   460:19  warning  Unexpected any. Specify a different type                                                                                  @typescript-eslint/no-explicit-any
+   508:19  warning  Unexpected any. Specify a different type                                                                                  @typescript-eslint/no-explicit-any
+   522:19  warning  Unexpected any. Specify a different type                                                                                  @typescript-eslint/no-explicit-any
+   735:19  warning  Unexpected any. Specify a different type                                                                                  @typescript-eslint/no-explicit-any
+   799:35  warning  Unexpected any. Specify a different type                                                                                  @typescript-eslint/no-explicit-any
+   829:19  warning  Unexpected any. Specify a different type                                                                                  @typescript-eslint/no-explicit-any
+   894:33  warning  Unexpected any. Specify a different type                                                                                  @typescript-eslint/no-explicit-any
+   929:19  warning  Unexpected any. Specify a different type                                                                                  @typescript-eslint/no-explicit-any
+   962:23  warning  Unexpected any. Specify a different type                                                                                  @typescript-eslint/no-explicit-any
+   994:19  warning  Unexpected any. Specify a different type                                                                                  @typescript-eslint/no-explicit-any
+  1021:29  warning  Unexpected any. Specify a different type                                                                                  @typescript-eslint/no-explicit-any
+  1064:19  warning  Unexpected any. Specify a different type                                                                                  @typescript-eslint/no-explicit-any
+  1981:76  warning  Unexpected any. Specify a different type                                                                                  @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\admin\Events.tsx
+    2:29  warning  'CardHeader' is defined but never used            @typescript-eslint/no-unused-vars
+    2:41  warning  'CardTitle' is defined but never used             @typescript-eslint/no-unused-vars
+   35:5   warning  'RefreshCw' is defined but never used             @typescript-eslint/no-unused-vars
+   49:13  warning  'userData' is assigned a value but never used     @typescript-eslint/no-unused-vars
+   50:73  warning  'fetchEvents' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  175:42  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  221:61  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  225:23  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  296:41  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  328:23  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  349:23  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\admin\Exams.tsx
+    2:29  warning  'CardHeader' is defined but never used                                                                         @typescript-eslint/no-unused-vars
+    2:41  warning  'CardTitle' is defined but never used                                                                          @typescript-eslint/no-unused-vars
+   76:8   warning  React Hook useEffect has a missing dependency: 'fetchExams'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  111:29  warning  Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+  141:23  warning  Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+  160:23  warning  Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+  178:23  warning  Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\admin\Placement.tsx
+   41:8   warning  'jsPDF' is defined but never used                                                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+   57:3   warning  'UserCheck' is defined but never used                                                                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+   58:3   warning  'Mail' is defined but never used                                                                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+   59:3   warning  'GraduationCap' is defined but never used                                                                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+   89:11  warning  'userData' is assigned a value but never used                                                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+   90:63  warning  'refreshJobs' is assigned a value but never used                                                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+  104:42  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  110:42  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  118:50  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  124:52  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  156:9   warning  'yearMapping' is assigned a value but never used                                                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+  163:53  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  193:6   warning  React Hook useEffect has missing dependencies: 'editJob', 'fetchStudents', 'isEditModalOpen', and 'newJob'. Either include them or remove the dependency array                                                                                                                                                             react-hooks/exhaustive-deps
+  202:6   warning  React Hook useEffect has missing dependencies: 'editJob.filters', 'editJob.selectedStudents', and 'fetchStudents'. Either include them or remove the dependency array. You can also replace multiple useState variables with useReducer if 'setSelectedRollNumbers' needs the current value of 'editJob.selectedStudents'  react-hooks/exhaustive-deps
+  411:19  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  424:37  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  440:32  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  453:81  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  553:19  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  561:35  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  574:19  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  611:36  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  640:48  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  650:24  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  650:46  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  650:76  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  738:48  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  800:51  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  822:22  warning  'e' is defined but never used                                                                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\admin\Reports.tsx
+  10:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  26:22  warning  'err' is defined but never used           @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\admin\Results.tsx
+  23:5  warning  'Dialog' is defined but never used             @typescript-eslint/no-unused-vars
+  24:5  warning  'DialogContent' is defined but never used      @typescript-eslint/no-unused-vars
+  25:5  warning  'DialogDescription' is defined but never used  @typescript-eslint/no-unused-vars
+  26:5  warning  'DialogFooter' is defined but never used       @typescript-eslint/no-unused-vars
+  27:5  warning  'DialogHeader' is defined but never used       @typescript-eslint/no-unused-vars
+  28:5  warning  'DialogTitle' is defined but never used        @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\admin\Scheduler.tsx
+    2:29  warning  'CardHeader' is defined but never used                                                                            @typescript-eslint/no-unused-vars
+    2:41  warning  'CardTitle' is defined but never used                                                                             @typescript-eslint/no-unused-vars
+   14:10  warning  'SearchableSelect' is defined but never used                                                                      @typescript-eslint/no-unused-vars
+   45:5   warning  'Clock' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+  156:8   warning  React Hook useEffect has a missing dependency: 'loadSchedules'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  176:25  warning  Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+  185:81  warning  Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+  231:23  warning  Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+  284:25  warning  Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+  303:55  warning  Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+  403:19  warning  'updated' is assigned a value but never used                                                                      @typescript-eslint/no-unused-vars
+  426:25  warning  Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+  452:25  warning  Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+  480:11  warning  'formatTime' is assigned a value but never used                                                                   @typescript-eslint/no-unused-vars
+  499:11  warning  'getYearLabel' is assigned a value but never used                                                                 @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\admin\StudentDataManagement.tsx
+  14:3  warning  'Filter' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\admin\SystemSettings.tsx
+  11:25  warning  'Download' is defined but never used                                                                            @typescript-eslint/no-unused-vars
+  15:42  warning  Unexpected any. Specify a different type                                                                        @typescript-eslint/no-explicit-any
+  23:8   warning  React Hook useEffect has a missing dependency: 'fetchConfig'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  53:18  warning  'err' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+  79:23  warning  Unexpected any. Specify a different type                                                                        @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\admin\UserManagement.tsx
+   7:16  warning  'TabsContent' is defined but never used        @typescript-eslint/no-unused-vars
+  15:13  warning  'userData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  49:22  warning  Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  83:23  warning  Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\faculty\Alerts.tsx
+    2:29  warning  'CardHeader' is defined but never used                                                                                                          @typescript-eslint/no-unused-vars
+    2:41  warning  'CardTitle' is defined but never used                                                                                                           @typescript-eslint/no-unused-vars
+   39:5   warning  'RefreshCw' is defined but never used                                                                                                           @typescript-eslint/no-unused-vars
+   42:5   warning  'AlertTriangle' is defined but never used                                                                                                       @typescript-eslint/no-unused-vars
+   43:5   warning  'CheckCircle' is defined but never used                                                                                                         @typescript-eslint/no-unused-vars
+   44:5   warning  'User' is defined but never used                                                                                                                @typescript-eslint/no-unused-vars
+   63:40  warning  'error' is assigned a value but never used                                                                                                      @typescript-eslint/no-unused-vars
+   91:8   warning  React Hook useEffect has missing dependencies: 'fetchAssignments' and 'fetchNotifications'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  118:35  warning  Unexpected any. Specify a different type                                                                                                        @typescript-eslint/no-explicit-any
+  148:25  warning  Unexpected any. Specify a different type                                                                                                        @typescript-eslint/no-explicit-any
+  204:18  warning  'err' is defined but never used                                                                                                                 @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\faculty\Assignments.tsx
+    2:29  warning  'CardHeader' is defined but never used                                                                               @typescript-eslint/no-unused-vars
+    2:41  warning  'CardTitle' is defined but never used                                                                                @typescript-eslint/no-unused-vars
+   33:3   warning  'Download' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+   36:3   warning  'Users' is defined but never used                                                                                    @typescript-eslint/no-unused-vars
+   38:3   warning  'X' is defined but never used                                                                                        @typescript-eslint/no-unused-vars
+   43:3   warning  'getAllAssignments' is defined but never used                                                                        @typescript-eslint/no-unused-vars
+   48:3   warning  'gradeSubmission' is defined but never used                                                                          @typescript-eslint/no-unused-vars
+  130:6   warning  React Hook useEffect has a missing dependency: 'fetchAssignments'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\faculty\Courses.tsx
+    2:29  warning  'CardHeader' is defined but never used                                                                           @typescript-eslint/no-unused-vars
+    2:41  warning  'CardTitle' is defined but never used                                                                            @typescript-eslint/no-unused-vars
+  165:6   warning  React Hook useEffect has a missing dependency: 'fetchCourses'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  189:43  warning  Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+  333:22  warning  Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+  432:14  warning  'error' is defined but never used                                                                                @typescript-eslint/no-unused-vars
+  468:9   warning  'totalCredits' is assigned a value but never used                                                                @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\faculty\Dashboard.tsx
+   20:42  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+   23:56  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+   26:54  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+   30:54  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+   34:56  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+   67:23  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  118:17  error    'today' is never reassigned. Use 'const' instead  prefer-const
+  121:34  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  123:45  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  124:64  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  127:69  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  141:55  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  190:46  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  203:29  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  203:37  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  205:31  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  567:59  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  591:64  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\faculty\Grades.tsx
+   35:3   warning  'Search' is defined but never used                                                                                   @typescript-eslint/no-unused-vars
+  101:6   warning  React Hook useEffect has a missing dependency: 'fetchGradeSheets'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  140:21  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\faculty\Profile.tsx
+    6:3   warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars
+   53:35  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  114:23  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\faculty\Students.tsx
+    2:10  warning  'Input' is defined but never used                                                                                      @typescript-eslint/no-unused-vars
+   20:10  warning  'Alert' is defined but never used                                                                                      @typescript-eslint/no-unused-vars
+   20:17  warning  'AlertDescription' is defined but never used                                                                           @typescript-eslint/no-unused-vars
+   20:35  warning  'AlertTitle' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+   32:3   warning  'Timer' is defined but never used                                                                                      @typescript-eslint/no-unused-vars
+   36:31  warning  'useCallback' is defined but never used                                                                                @typescript-eslint/no-unused-vars
+   41:3   warning  'AttendanceRecord' is defined but never used                                                                           @typescript-eslint/no-unused-vars
+   43:3   warning  'AttendanceStudent' is defined but never used                                                                          @typescript-eslint/no-unused-vars
+   51:3   warning  'isSlotOpen' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+   55:3   warning  'markBulkAttendance' is defined but never used                                                                         @typescript-eslint/no-unused-vars
+   59:3   warning  'lockSlot' is defined but never used                                                                                   @typescript-eslint/no-unused-vars
+   87:10  warning  'remainingTime' is assigned a value but never used                                                                     @typescript-eslint/no-unused-vars
+  193:40  warning  Unexpected any. Specify a different type                                                                               @typescript-eslint/no-explicit-any
+  197:68  warning  Unexpected any. Specify a different type                                                                               @typescript-eslint/no-explicit-any
+  201:31  warning  Unexpected any. Specify a different type                                                                               @typescript-eslint/no-explicit-any
+  205:31  warning  Unexpected any. Specify a different type                                                                               @typescript-eslint/no-explicit-any
+  234:6   warning  React Hook useEffect has a missing dependency: 'userData.collegeId'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  240:6   warning  React Hook useEffect has a missing dependency: 'loadStudents'. Either include it or remove the dependency array        react-hooks/exhaustive-deps
+  465:9   warning  'markAllAbsent' is assigned a value but never used                                                                     @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\student\Assignments.tsx
+   30:3   warning  'Download' is defined but never used                                                                                    @typescript-eslint/no-unused-vars
+   31:3   warning  'X' is defined but never used                                                                                           @typescript-eslint/no-unused-vars
+   40:3   warning  'formatFileSize' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+  136:6   warning  React Hook useEffect has a missing dependency: 'userData?.collegeId'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  196:6   warning  React Hook useEffect has a missing dependency: 'fetchAssignments'. Either include it or remove the dependency array     react-hooks/exhaustive-deps
+  255:61  warning  'title' is defined but never used                                                                                       @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\student\Attendance.tsx
+   3:10  warning  'Progress' is defined but never used                                                                                   @typescript-eslint/no-unused-vars
+   9:3   warning  'CheckCircle2' is defined but never used                                                                               @typescript-eslint/no-unused-vars
+  10:3   warning  'XCircle' is defined but never used                                                                                    @typescript-eslint/no-unused-vars
+  11:3   warning  'Clock' is defined but never used                                                                                      @typescript-eslint/no-unused-vars
+  13:3   warning  'TrendingUp' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+  14:3   warning  'TrendingDown' is defined but never used                                                                               @typescript-eslint/no-unused-vars
+  25:3   warning  'AttendanceStatus' is defined but never used                                                                           @typescript-eslint/no-unused-vars
+  27:3   warning  'AttendanceCategory' is defined but never used                                                                         @typescript-eslint/no-unused-vars
+  32:3   warning  'formatDate' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+  35:3   warning  'subscribeToStudentAttendance' is defined but never used                                                               @typescript-eslint/no-unused-vars
+  55:10  warning  'serverTime' is assigned a value but never used                                                                        @typescript-eslint/no-unused-vars
+  81:6   warning  React Hook useEffect has a missing dependency: 'loadAttendanceData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\student\ClubDetail.tsx
+  119:19  warning  Unexpected any. Specify a different type                                                                    @typescript-eslint/no-explicit-any
+  125:6   warning  React Hook useCallback has a missing dependency: 'toast'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  132:19  warning  Unexpected any. Specify a different type                                                                    @typescript-eslint/no-explicit-any
+  156:19  warning  Unexpected any. Specify a different type                                                                    @typescript-eslint/no-explicit-any
+  182:19  warning  Unexpected any. Specify a different type                                                                    @typescript-eslint/no-explicit-any
+  196:39  warning  Unexpected any. Specify a different type                                                                    @typescript-eslint/no-explicit-any
+  202:19  warning  Unexpected any. Specify a different type                                                                    @typescript-eslint/no-explicit-any
+  218:19  warning  Unexpected any. Specify a different type                                                                    @typescript-eslint/no-explicit-any
+  461:70  warning  Unexpected any. Specify a different type                                                                    @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\student\Clubs.tsx
+   21:3   warning  'Heart' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+   39:27  warning  'error' is assigned a value but never used                                                                     @typescript-eslint/no-unused-vars
+   47:27  warning  Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+   66:6   warning  React Hook useEffect has a missing dependency: 'fetchClubs'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   85:9   warning  'getCategoryIcon' is assigned a value but never used                                                           @typescript-eslint/no-unused-vars
+  135:19  warning  Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\student\Courses.tsx
+   66:10  warning  'selectedCourse' is assigned a value but never used                                                                     @typescript-eslint/no-unused-vars
+  127:6   warning  React Hook useEffect has a missing dependency: 'userData?.collegeId'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\student\Dashboard.tsx
+     3:10  warning  'Progress' is defined but never used                                                                                                                           @typescript-eslint/no-unused-vars
+    16:3   warning  'RefreshCw' is defined but never used                                                                                                                          @typescript-eslint/no-unused-vars
+    45:10  warning  'toast' is defined but never used                                                                                                                              @typescript-eslint/no-unused-vars
+    46:10  warning  'Button' is defined but never used                                                                                                                             @typescript-eslint/no-unused-vars
+    55:10  warning  'isRefreshing' is assigned a value but never used                                                                                                              @typescript-eslint/no-unused-vars
+    63:10  warning  'overallAttendance' is assigned a value but never used                                                                                                         @typescript-eslint/no-unused-vars
+    77:68  warning  Unexpected any. Specify a different type                                                                                                                       @typescript-eslint/no-explicit-any
+    80:10  warning  'realTimeMetrics' is assigned a value but never used                                                                                                           @typescript-eslint/no-unused-vars
+    92:54  warning  Unexpected any. Specify a different type                                                                                                                       @typescript-eslint/no-explicit-any
+   101:56  warning  Unexpected any. Specify a different type                                                                                                                       @typescript-eslint/no-explicit-any
+   105:20  warning  'setDemoMode' is assigned a value but never used                                                                                                               @typescript-eslint/no-unused-vars
+   311:6   warning  React Hook useEffect has a missing dependency: 'userData?.collegeId'. Either include it or remove the dependency array                                         react-hooks/exhaustive-deps
+   407:9   error    'dayOfWeek' is never reassigned. Use 'const' instead                                                                                                           prefer-const
+   409:23  warning  Unexpected any. Specify a different type                                                                                                                       @typescript-eslint/no-explicit-any
+   410:55  warning  Unexpected any. Specify a different type                                                                                                                       @typescript-eslint/no-explicit-any
+   413:59  warning  Unexpected any. Specify a different type                                                                                                                       @typescript-eslint/no-explicit-any
+   419:47  warning  Unexpected any. Specify a different type                                                                                                                       @typescript-eslint/no-explicit-any
+   476:11  warning  'degree' is assigned a value but never used                                                                                                                    @typescript-eslint/no-unused-vars
+   477:11  warning  'semester' is assigned a value but never used                                                                                                                  @typescript-eslint/no-unused-vars
+   509:24  warning  'e' is defined but never used                                                                                                                                  @typescript-eslint/no-unused-vars
+   531:24  warning  'e' is defined but never used                                                                                                                                  @typescript-eslint/no-unused-vars
+   584:6   warning  React Hook useEffect has a missing dependency: 'studentSection'. Either include it or remove the dependency array                                              react-hooks/exhaustive-deps
+   610:6   warning  React Hook useEffect has a missing dependency: 'studentSection'. Either include it or remove the dependency array                                              react-hooks/exhaustive-deps
+   641:47  warning  Unexpected any. Specify a different type                                                                                                                       @typescript-eslint/no-explicit-any
+   644:27  warning  Unexpected any. Specify a different type                                                                                                                       @typescript-eslint/no-explicit-any
+   647:23  warning  Unexpected any. Specify a different type                                                                                                                       @typescript-eslint/no-explicit-any
+   692:6   warning  React Hook useEffect has missing dependencies: 'displaySemester', 'matchesSemester', and 'studentSection'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+   721:6   warning  React Hook useEffect has a missing dependency: 'studentSection'. Either include it or remove the dependency array                                              react-hooks/exhaustive-deps
+   753:46  warning  Unexpected any. Specify a different type                                                                                                                       @typescript-eslint/no-explicit-any
+   756:44  warning  Unexpected any. Specify a different type                                                                                                                       @typescript-eslint/no-explicit-any
+   756:52  warning  Unexpected any. Specify a different type                                                                                                                       @typescript-eslint/no-explicit-any
+   777:9   warning  'refreshAttendance' is assigned a value but never used                                                                                                         @typescript-eslint/no-unused-vars
+   816:24  warning  'e' is defined but never used                                                                                                                                  @typescript-eslint/no-unused-vars
+   835:9   error    Unexpected lexical declaration in case block                                                                                                                   no-case-declarations
+   836:9   error    Unexpected lexical declaration in case block                                                                                                                   no-case-declarations
+   837:9   error    Unexpected lexical declaration in case block                                                                                                                   no-case-declarations
+   838:9   error    Unexpected lexical declaration in case block                                                                                                                   no-case-declarations
+   839:9   error    Unexpected lexical declaration in case block                                                                                                                   no-case-declarations
+   839:13  error    'label' is never reassigned. Use 'const' instead                                                                                                               prefer-const
+   841:9   error    Unexpected lexical declaration in case block                                                                                                                   no-case-declarations
+   903:3   error    React Hook "useEffect" is called conditionally. React Hooks must be called in the exact same order in every component render                                   react-hooks/rules-of-hooks
+   922:63  warning  Unexpected any. Specify a different type                                                                                                                       @typescript-eslint/no-explicit-any
+   928:64  warning  Unexpected any. Specify a different type                                                                                                                       @typescript-eslint/no-explicit-any
+   929:68  warning  Unexpected any. Specify a different type                                                                                                                       @typescript-eslint/no-explicit-any
+   944:6   warning  React Hook useEffect has a missing dependency: 'matchesSemester'. Either include it or remove the dependency array                                             react-hooks/exhaustive-deps
+  1086:80  warning  Unexpected any. Specify a different type                                                                                                                       @typescript-eslint/no-explicit-any
+  1398:29  warning  '_' is defined but never used                                                                                                                                  @typescript-eslint/no-unused-vars
+  1403:29  warning  '_' is defined but never used                                                                                                                                  @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\student\EventDetail.tsx
+  119:19  warning  Unexpected any. Specify a different type                                                                    @typescript-eslint/no-explicit-any
+  125:6   warning  React Hook useCallback has a missing dependency: 'toast'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  132:19  warning  Unexpected any. Specify a different type                                                                    @typescript-eslint/no-explicit-any
+  157:19  warning  Unexpected any. Specify a different type                                                                    @typescript-eslint/no-explicit-any
+  183:19  warning  Unexpected any. Specify a different type                                                                    @typescript-eslint/no-explicit-any
+  197:39  warning  Unexpected any. Specify a different type                                                                    @typescript-eslint/no-explicit-any
+  203:19  warning  Unexpected any. Specify a different type                                                                    @typescript-eslint/no-explicit-any
+  219:19  warning  Unexpected any. Specify a different type                                                                    @typescript-eslint/no-explicit-any
+  479:70  warning  Unexpected any. Specify a different type                                                                    @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\student\Events.tsx
+    7:10  warning  'Label' is defined but never used                                                                               @typescript-eslint/no-unused-vars
+    9:3   warning  'Dialog' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+   10:3   warning  'DialogContent' is defined but never used                                                                       @typescript-eslint/no-unused-vars
+   11:3   warning  'DialogHeader' is defined but never used                                                                        @typescript-eslint/no-unused-vars
+   12:3   warning  'DialogTitle' is defined but never used                                                                         @typescript-eslint/no-unused-vars
+   31:3   warning  'DollarSign' is defined but never used                                                                          @typescript-eslint/no-unused-vars
+   33:3   warning  'ExternalLink' is defined but never used                                                                        @typescript-eslint/no-unused-vars
+   35:3   warning  'AlertCircle' is defined but never used                                                                         @typescript-eslint/no-unused-vars
+   38:3   warning  'Trophy' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+   42:47  warning  Unexpected any. Specify a different type                                                                        @typescript-eslint/no-explicit-any
+   46:28  warning  'error' is assigned a value but never used                                                                      @typescript-eslint/no-unused-vars
+   69:6   warning  React Hook useEffect has a missing dependency: 'fetchEvents'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  168:24  warning  Unexpected any. Specify a different type                                                                        @typescript-eslint/no-explicit-any
+  181:46  warning  Unexpected any. Specify a different type                                                                        @typescript-eslint/no-explicit-any
+  216:54  warning  Unexpected any. Specify a different type                                                                        @typescript-eslint/no-explicit-any
+  221:19  warning  Unexpected any. Specify a different type                                                                        @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\student\Exams.tsx
+  11:11  warning  'userData' is assigned a value but never used                                                                          @typescript-eslint/no-unused-vars
+  17:6   warning  React Hook useEffect has a missing dependency: 'fetchUpcomingExams'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\student\Fees.tsx
+   38:3   warning  'X' is defined but never used             @typescript-eslint/no-unused-vars
+   43:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  354:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  367:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  401:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\student\Placement.tsx
+   34:41   warning  'error' is assigned a value but never used        @typescript-eslint/no-unused-vars
+   34:60   warning  'refreshJobs' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   82:32   warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  122:19   warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  331:102  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\student\Profile.tsx
+    7:10  warning  'Switch' is defined but never used                         @typescript-eslint/no-unused-vars
+   23:10  warning  'auth' is defined but never used                           @typescript-eslint/no-unused-vars
+   26:3   warning  'Mail' is defined but never used                           @typescript-eslint/no-unused-vars
+   27:3   warning  'Phone' is defined but never used                          @typescript-eslint/no-unused-vars
+   28:3   warning  'MapPin' is defined but never used                         @typescript-eslint/no-unused-vars
+   32:3   warning  'Bell' is defined but never used                           @typescript-eslint/no-unused-vars
+   33:3   warning  'Shield' is defined but never used                         @typescript-eslint/no-unused-vars
+   48:3   warning  'Loader2' is defined but never used                        @typescript-eslint/no-unused-vars
+   87:10  warning  'isGeneratingResume' is assigned a value but never used    @typescript-eslint/no-unused-vars
+   90:9   warning  'handleDownloadResume' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  101:24  warning  Unexpected any. Specify a different type                   @typescript-eslint/no-explicit-any
+  101:46  warning  Unexpected any. Specify a different type                   @typescript-eslint/no-explicit-any
+  101:76  warning  Unexpected any. Specify a different type                   @typescript-eslint/no-explicit-any
+  230:30  warning  Unexpected any. Specify a different type                   @typescript-eslint/no-explicit-any
+  406:17  warning  Unexpected any. Specify a different type                   @typescript-eslint/no-explicit-any
+  420:24  warning  Unexpected any. Specify a different type                   @typescript-eslint/no-explicit-any
+  420:46  warning  Unexpected any. Specify a different type                   @typescript-eslint/no-explicit-any
+  420:76  warning  Unexpected any. Specify a different type                   @typescript-eslint/no-explicit-any
+  457:13  warning  'drawField' is assigned a value but never used             @typescript-eslint/no-unused-vars
+  568:15  warning  'skillY' is assigned a value but never used                @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\student\Results.tsx
+   83:6  warning  React Hook useEffect has a missing dependency: 'userData?.collegeId'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  105:6  warning  React Hook useEffect has a missing dependency: 'fetchResults'. Either include it or remove the dependency array         react-hooks/exhaustive-deps
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\student\Schedule.tsx
+   15:9    warning  The 'timeSlots' array makes the dependencies of useMemo Hook (at line 154) change on every render. To fix this, wrap the initialization of 'timeSlots' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  137:106  warning  React Hook useMemo has a missing dependency: 'now'. Either include it or remove the dependency array                                                                              react-hooks/exhaustive-deps
+  194:32   warning  Unexpected any. Specify a different type                                                                                                                                          @typescript-eslint/no-explicit-any
+  194:54   warning  Unexpected any. Specify a different type                                                                                                                                          @typescript-eslint/no-explicit-any
+  194:84   warning  Unexpected any. Specify a different type                                                                                                                                          @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\pages\student\Settings.tsx
+   7:10  warning  'Textarea' is defined but never used           @typescript-eslint/no-unused-vars
+  27:3   warning  'Globe' is defined but never used              @typescript-eslint/no-unused-vars
+  31:11  warning  'userData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  62:52  warning  Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\services\api.ts
+  478:34  error    The `Function` type accepts any function-like value.
+Prefer explicitly defining any function parameters and return type  @typescript-eslint/no-unsafe-function-type
+  520:31  warning  Unexpected any. Specify a different type                                                                                 @typescript-eslint/no-explicit-any
+  526:31  error    The `Function` type accepts any function-like value.
+Prefer explicitly defining any function parameters and return type  @typescript-eslint/no-unsafe-function-type
+  533:32  error    The `Function` type accepts any function-like value.
+Prefer explicitly defining any function parameters and return type  @typescript-eslint/no-unsafe-function-type
+  543:37  warning  Unexpected any. Specify a different type                                                                                 @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\services\attendanceService.ts
+     2:20  warning  'isDevelopment' is defined but never used             @typescript-eslint/no-unused-vars
+     7:5   warning  'push' is defined but never used                      @typescript-eslint/no-unused-vars
+     8:5   warning  'update' is defined but never used                    @typescript-eslint/no-unused-vars
+    12:5   warning  'serverTimestamp' is defined but never used           @typescript-eslint/no-unused-vars
+    13:5   warning  'query' is defined but never used                     @typescript-eslint/no-unused-vars
+    14:5   warning  'orderByChild' is defined but never used              @typescript-eslint/no-unused-vars
+    15:5   warning  'equalTo' is defined but never used                   @typescript-eslint/no-unused-vars
+    16:5   warning  'DataSnapshot' is defined but never used              @typescript-eslint/no-unused-vars
+    27:5   warning  'DailyScheduleItem' is defined but never used         @typescript-eslint/no-unused-vars
+    32:5   warning  'AttendanceCourse' is defined but never used          @typescript-eslint/no-unused-vars
+    37:5   warning  'SlotConfig' is defined but never used                @typescript-eslint/no-unused-vars
+   161:50  warning  'index' is defined but never used                     @typescript-eslint/no-unused-vars
+   486:25  warning  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+   721:11  warning  'unsubscribe' is assigned a value but never used      @typescript-eslint/no-unused-vars
+   761:11  warning  'unsubscribe' is assigned a value but never used      @typescript-eslint/no-unused-vars
+   786:24  warning  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+   795:11  warning  'unsubscribe' is assigned a value but never used      @typescript-eslint/no-unused-vars
+   797:28  warning  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  1409:11  warning  'unsubscribe' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  1549:5   warning  'startDate' is defined but never used                 @typescript-eslint/no-unused-vars
+  1550:5   warning  'endDate' is defined but never used                   @typescript-eslint/no-unused-vars
+  1568:15  warning  'CLASSES_PER_DAY' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\services\firestoreService.ts
+   14:8   warning  'DocumentData' is defined but never used   @typescript-eslint/no-unused-vars
+   15:8   warning  'QuerySnapshot' is defined but never used  @typescript-eslint/no-unused-vars
+   18:8   warning  'app' is defined but never used            @typescript-eslint/no-unused-vars
+   18:47  warning  'firebaseReady' is defined but never used  @typescript-eslint/no-unused-vars
+   22:35  warning  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+   44:15  warning  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+   45:15  warning  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+   59:15  warning  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+   60:15  warning  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+   74:15  warning  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+   75:15  warning  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+   82:16  warning  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+   98:66  warning  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  119:69  warning  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  136:69  warning  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  174:46  warning  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  174:58  warning  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  176:14  warning  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  215:90  warning  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  219:87  warning  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  227:51  warning  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  254:22  warning  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  304:52  warning  'year' is defined but never used           @typescript-eslint/no-unused-vars
+  349:51  warning  'semester' is defined but never used       @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\services\realtimeService.ts
+  41:16  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\src\utils\errorHandling.ts
+    7:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   43:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   79:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  129:16  warning  'jsonError' is defined but never used     @typescript-eslint/no-unused-vars
+  201:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  207:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  211:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  215:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\tailwind.config.ts
+  125:5   error    A `require()` style import is forbidden   @typescript-eslint/no-require-imports
+  126:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Katakam Varun Kumar\Major Project\CampVerse\vite.config.ts
+  6:32  warning  'mode' is defined but never used  @typescript-eslint/no-unused-vars
+
+Γ£û 614 problems (19 errors, 595 warnings)
+  3 errors and 0 warnings potentially fixable with the `--fix` option.
+

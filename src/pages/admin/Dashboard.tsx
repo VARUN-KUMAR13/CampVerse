@@ -396,7 +396,9 @@ const AdminDashboard = () => {
         headers: { Authorization: `Bearer ${getStoredToken()}` },
       });
       if (res.ok) setRecentActivities(await res.json());
-    } catch { }
+    } catch (error) {
+      console.error("Failed to fetch recent activities:", error);
+    }
   };
 
   useEffect(() => {
@@ -427,7 +429,9 @@ const AdminDashboard = () => {
         body: JSON.stringify({ action, user: userData?.name || "System", type }),
       });
       fetchRecentActivities();
-    } catch { }
+    } catch (error) {
+      console.error("Failed to log admin activity:", error);
+    }
   };
 
   // ── Quick Action Handlers ──────────────────────────────────────────

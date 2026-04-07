@@ -23,6 +23,7 @@ interface Announcement {
   createdBy: string;
   createdAt: string;
   expiryDate: string | null;
+  image?: string;
 }
 
 const AdminAnnouncements = () => {
@@ -37,6 +38,9 @@ const AdminAnnouncements = () => {
   const [priority, setPriority] = useState<"Important" | "Normal" | "Low">("Important");
   const [audience, setAudience] = useState<"Students" | "Faculty" | "Both">("Both");
   const [expiryDate, setExpiryDate] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string>("");
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const fetchAnnouncements = async () => {
     try {
@@ -64,6 +68,9 @@ const AdminAnnouncements = () => {
     setPriority("Important");
     setAudience("Both");
     setExpiryDate("");
+    setImageFile(null);
+    setImagePreviewUrl("");
+    setUploadProgress(0);
   };
 
   const handleSubmit = async () => {
@@ -74,12 +81,31 @@ const AdminAnnouncements = () => {
 
     try {
       setSubmitting(true);
+      let imageBase64 = "";
+
+      if (imageFile) {
+        // Validate file size (max 5MB)
+        if (imageFile.size > 5 * 1024 * 1024) {
+          toast.error("Image must be smaller than 5MB.");
+          setSubmitting(false);
+          return;
+        }
+        // Convert to base64 data URL
+        imageBase64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(new Error("Failed to read image file."));
+          reader.readAsDataURL(imageFile);
+        });
+      }
+
       const payload = {
         title: title.trim(),
         message: message.trim(),
         priority,
         audience,
         expiryDate: expiryDate ? new Date(expiryDate).toISOString() : null,
+        image: imageBase64 || undefined,
       };
 
       const res = await fetch(`${API_BASE}/announcements`, {
@@ -231,6 +257,44 @@ const AdminAnnouncements = () => {
                     Leave empty if this announcement shouldn't expire automatically.
                   </p>
                 </div>
+
+                <div className="space-y-2">
+                  <Label>Image Upload (Optional)</Label>
+                  <Input
+                    type="file"
+                    accept="image/jpeg,image/png,image/jpg"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setImageFile(file);
+                        setImagePreviewUrl(URL.createObjectURL(file));
+                      }
+                    }}
+                  />
+                  {imagePreviewUrl && (
+                    <div className="relative mt-2 rounded-lg overflow-hidden border border-border/50 max-h-48 group">
+                      <img src={imagePreviewUrl} alt="Preview" className="w-full h-full object-scale-down bg-black/20" />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => {
+                          setImageFile(null);
+                          setImagePreviewUrl("");
+                          setUploadProgress(0);
+                        }}
+                      >
+                         <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                  {uploadProgress > 0 && uploadProgress < 100 && (
+                     <div className="w-full bg-secondary h-1.5 rounded-full mt-2 overflow-hidden">
+                       <div className="bg-primary h-full transition-all" style={{ width: `${uploadProgress}%` }}></div>
+                     </div>
+                  )}
+                </div>
               </div>
 
               <DialogFooter>
@@ -281,7 +345,18 @@ const AdminAnnouncements = () => {
                             <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">Expired</Badge>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground mt-2">{ann.message}</p>
+                        <p className="text-sm text-muted-foreground mt-2 whitespace-pre-wrap">{ann.message}</p>
+                        {ann.image && (
+                          <div className="mt-4 rounded-xl overflow-hidden border border-border/50 bg-black/20 w-full sm:w-[80%]">
+                            <img 
+                              src={ann.image} 
+                              alt={ann.title} 
+                              className="w-full max-h-[400px] object-contain cursor-pointer hover:opacity-90 transition-opacity" 
+                              loading="lazy" 
+                              onClick={() => window.open(ann.image, '_blank')}
+                            />
+                          </div>
+                        )}
                         <div className="flex items-center gap-4 text-xs text-muted-foreground mt-4 pt-2 border-t border-border/50">
                           <span className="flex items-center gap-1">
                             <CalendarIcon className="w-3 h-3" />

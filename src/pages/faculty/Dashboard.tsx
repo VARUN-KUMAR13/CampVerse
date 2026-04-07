@@ -115,7 +115,7 @@ const FacultyDashboard = () => {
           if (schedules.length > 0) {
             // Get today's day name
             const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-            let today = days[new Date().getDay()];
+            const today = days[new Date().getDay()];
             
             // Map to collect all assigned slots for today across all schedules
             const allTodaySlots: any[] = [];

@@ -26,6 +26,10 @@ const announcementSchema = new mongoose.Schema(
       type: String,
       default: "Admin",
     },
+    image: {
+      type: String,
+      default: null,
+    },
     expiryDate: {
       type: Date,
       default: null,

@@ -404,7 +404,7 @@ const StudentDashboard = () => {
     const currentTime = formatTime(serverTime);
     
     const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    let dayOfWeek = days[targetDate.getDay()];
+    const dayOfWeek = days[targetDate.getDay()];
     
     let scheduleData: any[] | null = null;
     const daySchedule = weeklyScheduleConfig.find((d: any) => d.day === dayOfWeek);
@@ -763,16 +763,7 @@ const StudentDashboard = () => {
     fetchAcademicCalendar();
   }, [userData?.collegeId, studentSemester]);
 
-  if (!userData) {
-    return (
-      <StudentLayout>
-        <div className="flex items-center justify-center h-screen">
-          <Skeleton className="w-12 h-12 rounded-full mb-4" />
-          <p className="text-muted-foreground">Loading dashboard...</p>
-        </div>
-      </StudentLayout>
-    );
-  }
+
 
   const refreshAttendance = async () => {
     setIsRefreshing(true);
@@ -831,12 +822,12 @@ const StudentDashboard = () => {
 
   const getStatusBadge = (status: AttendanceStatus, markedByRole?: AttendanceRole, markedBy?: string, classType?: string) => {
     switch (status) {
-      case "PRESENT":
+      case "PRESENT": {
         let bgColor = 'bg-blue-500/20';
         let textColor = 'text-blue-400';
         let borderColor = 'border-blue-500/30';
         let hoverBg = 'hover:bg-blue-500/30';
-        let label = 'Present';
+        const label = 'Present';
 
         const isAdminMarked = markedByRole === 'ADMIN' || markedByRole === 'SUB_ADMIN' || markedBy?.toLowerCase() === 'admin';
 
@@ -859,6 +850,7 @@ const StudentDashboard = () => {
             {label}
           </Badge>
         );
+      }
       case "ABSENT":
         return (
           <Badge className="bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30">
@@ -942,6 +934,17 @@ const StudentDashboard = () => {
     
     fetchSemesterCourses();
   }, [userData, displaySemester, studentSemester]);
+
+  if (!userData) {
+    return (
+      <StudentLayout>
+        <div className="flex items-center justify-center h-screen">
+          <Skeleton className="w-12 h-12 rounded-full mb-4" />
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </StudentLayout>
+    );
+  }
 
   const stats = [
     {
@@ -1307,80 +1310,98 @@ const StudentDashboard = () => {
 
           {/* Announcements Section */}
           <Card className="border-border/50 shadow-lg">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
-                  <Megaphone className="w-5 h-5 text-primary" />
-                  Latest Announcements
-                </CardTitle>
-              </div>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
+                <Megaphone className="w-5 h-5 text-primary" />
+                Latest Announcements
+              </CardTitle>
             </CardHeader>
-            <CardContent className="max-h-[680px] overflow-y-auto space-y-4 scroll-smooth">
+            <CardContent className="max-h-[720px] overflow-y-auto scroll-smooth px-4 sm:px-6">
                 {announcements.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-10 text-center">
                     <Megaphone className="w-10 h-10 text-muted-foreground/20 mb-3" />
                     <p className="text-sm text-muted-foreground font-medium">No active announcements at the moment</p>
                   </div>
                 ) : (
-                  <div className="grid gap-4">
+                  <div className="space-y-0 divide-y divide-border/30">
                     {announcements.map((ann) => {
                       const isExpanded = expandedAnnouncements[ann._id];
-                      return (
-                        <Card 
-                          key={ann._id} 
-                          className="group border-border/40 bg-muted/20 hover:bg-muted/30 transition-all duration-300 relative overflow-hidden"
-                        >
-                          <CardContent className="p-4 sm:p-5">
-                            <div className="flex flex-col gap-2">
-                              <div className="flex justify-between items-start gap-3">
-                                <h4 className="font-bold text-base sm:text-lg text-foreground leading-tight">
-                                  {ann.title}
-                                </h4>
-                                {ann.priority === "Important" && (
-                                  <Badge className="bg-red-500/10 text-red-500 border-red-500/20 shrink-0 text-[10px] px-2 py-0.5 uppercase tracking-wider font-bold">
-                                    Urgent
-                                  </Badge>
-                                )}
-                              </div>
-                              
-                              <div className="relative">
-                                <p className={cn(
-                                  "text-sm sm:text-base text-muted-foreground leading-relaxed transition-all duration-500 ease-in-out",
-                                  isExpanded ? "opacity-100" : "line-clamp-3 opacity-90"
-                                )}>
-                                  {ann.message}
-                                </p>
-                                
-                                {ann.message && ann.message.length > 150 && (
-                                  <button
-                                    onClick={(e) => toggleAnnouncement(ann._id, e)}
-                                    className="text-primary text-xs sm:text-sm font-semibold hover:underline mt-2 flex items-center gap-1 transition-all"
-                                  >
-                                    {isExpanded ? 'Show less' : 'Show more'}
-                                  </button>
-                                )}
-                              </div>
+                      const hasImage = !!ann.image;
+                      const hasLongText = ann.message && ann.message.length > 120;
+                      const isCollapsible = hasImage || hasLongText;
 
-                              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 pt-3 border-t border-border/30 text-[10px] sm:text-xs text-muted-foreground/70">
-                                <div className="flex items-center gap-1.5">
-                                  <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">
-                                    {ann.createdBy?.[0]?.toUpperCase() || 'A'}
-                                  </div>
-                                  <span className="font-semibold text-muted-foreground"> {ann.createdBy}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                  <Clock className="w-3.5 h-3.5" />
-                                  <span>{new Date(ann.createdAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 ml-auto">
-                                  <Badge variant="outline" className="text-[9px] h-4 bg-muted/40 uppercase tracking-tighter">
-                                    {ann.audience || "General"}
-                                  </Badge>
-                                </div>
-                              </div>
+                      return (
+                        <div key={ann._id} className="py-5 first:pt-0 last:pb-0">
+                          {/* Header: Avatar + Name + Date + Priority */}
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/80 to-blue-600 flex items-center justify-center text-sm font-bold text-white shadow-md shrink-0">
+                              {ann.createdBy?.[0]?.toUpperCase() || 'A'}
                             </div>
-                          </CardContent>
-                        </Card>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-foreground leading-none">{ann.createdBy || 'Admin'}</p>
+                              <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+                                {new Date(ann.createdAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}
+                                {" · "}
+                                {new Date(ann.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}
+                              </p>
+                            </div>
+                            {ann.priority === "Important" && (
+                              <span className="px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 text-[10px] font-bold uppercase tracking-wider border border-red-500/20">
+                                Urgent
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Title */}
+                          <h4 className="font-bold text-[15px] sm:text-base text-foreground leading-snug mb-2">
+                            {ann.title}
+                          </h4>
+
+                          {/* Message */}
+                          <div className="relative">
+                            <p className={cn(
+                              "text-[13px] sm:text-sm text-muted-foreground/90 leading-relaxed whitespace-pre-wrap transition-all duration-500",
+                              !isExpanded && isCollapsible && "line-clamp-2"
+                            )}>
+                              {ann.message}
+                            </p>
+                            {/* Gradient fade overlay when collapsed */}
+                            {!isExpanded && isCollapsible && (
+                              <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-card to-transparent pointer-events-none" />
+                            )}
+                          </div>
+
+                          {/* Image */}
+                          {hasImage && (
+                            <div
+                              className={cn(
+                                "mt-3 rounded-lg overflow-hidden transition-all duration-500 ease-in-out cursor-pointer",
+                                !isExpanded ? "max-h-[140px]" : "max-h-[700px]"
+                              )}
+                              onClick={() => window.open(ann.image, '_blank')}
+                            >
+                              <img
+                                src={ann.image}
+                                alt={ann.title}
+                                className={cn(
+                                  "w-full transition-all duration-500",
+                                  isExpanded ? "object-contain rounded-lg" : "object-cover object-top"
+                                )}
+                                loading="lazy"
+                              />
+                            </div>
+                          )}
+
+                          {/* Expand / Collapse */}
+                          {isCollapsible && (
+                            <button
+                              onClick={(e) => toggleAnnouncement(ann._id, e)}
+                              className="mt-2 text-primary/80 hover:text-primary text-xs font-medium hover:underline transition-colors flex items-center gap-1"
+                            >
+                              {isExpanded ? '— Show less' : '+ Read more'}
+                            </button>
+                          )}
+                        </div>
                       );
                     })}
                   </div>

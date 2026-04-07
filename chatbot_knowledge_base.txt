@@ -1,0 +1,112 @@
+CAMPVERSE CHATBOT TRAINING KNOWLEDGE BASE
+
+GENERAL SYSTEM INFORMATION
+Q: What is CampVerse?
+A: CampVerse is an integrated campus management platform designed for students, faculty, and administrators to manage academic activities, attendance, results, events, and placements seamlessly.
+
+Q: How do I log in to the system?
+A: Visit the login page, enter your unique College ID and password, and select your role (Student, Faculty, or Admin) to access your dashboard.
+Note: If you have forgotten your password, please contact the IT department for a reset.
+
+STUDENT DASHBOARD NAVIGATION & USAGE
+Q: How can I see my daily class schedule?
+A: To view your schedule, log in to the Student Dashboard and select the 'Schedule' tab from the sidebar. You will see a chronological list of your classes, including course names, timings, and venues.
+
+Q: Where can I check my attendance percentage?
+A: Navigate to the 'Attendance' module in your sidebar. You will see a summary card for each course showing your total attendance percentage and the number of classes attended versus total classes held.
+
+Q: Why is my attendance not visible for a recent class?
+A: Attendance is marked by faculty members. If it's not visible, the faculty might not have updated it yet. 
+Note: If the attendance is missing for more than 24 hours, please check with your respective course coordinator.
+
+Q: How do I view my semester results?
+A: Go to the 'Results' section in your dashboard. You can select your semester to view individual subject grades, SGPA, and cumulative CGPA.
+
+Q: How do I submit an assignment as a student?
+A: 1. Click on 'Assignments' in the sidebar.
+2. Select the active assignment you wish to submit.
+3. Review the instructions and click the 'Upload' button.
+4. Select your file (PDF is the recommended format) and click 'Submit'.
+Note: Ensure the file size is under 5MB. You will receive a success message upon successful upload.
+
+Q: How do I register for a campus event?
+A: Visit the 'Events' section to see all upcoming campus activities. Click on an event to view details, then click 'Register' to sign up. You can track your registrations in the 'My Registrations' tab.
+
+Q: How can I join a student club?
+A: Browse the 'Clubs' section to see active organizations like the Coding Club, Music Club, or Sports Club. Open a club profile and click 'Join' to receive updates and participate in their activities.
+
+Q: Where can I see official circulars and notices?
+A: Official notices appear in the 'Announcements' section of your dashboard. Important circulars often include images or documents for download.
+
+Q: How do I check for job opportunities or placements?
+A: The 'Placements' module lists all active job postings, internship opportunities, and eligibility criteria. You can apply directly through the 'Apply' button within each posting.
+
+FACULTY DASHBOARD NAVIGATION & USAGE
+Q: How do I mark attendance for my class?
+A: 1. Navigate to 'Courses' on your Faculty Dashboard.
+2. Select the specific course and section.
+3. Click 'Mark Attendance'.
+4. Select the correct date and session.
+5. Toggle the 'Present/Absent' status for each student and click 'Save'.
+Note: Attendance once saved can be edited within the same day by the faculty; later changes require admin approval.
+
+Q: How can I create a new assignment for my students?
+A: 1. Go to the 'Assignments' section.
+2. Click the 'Create Assignment' button.
+3. Enter the title, description, max marks, and due date.
+4. Select the target students by choosing the branch, year, semester, and section.
+5. Click 'Publish'.
+
+Q: How do I enter grades for students?
+A: Go to the 'Grades' module. Select your course and the type of assessment (Internal, Mid-term, or Final). Enter the marks for each student in the list and click 'Submit to ERP'.
+
+Q: Can I send a message to all students in my section?
+A: Yes, use the 'Alerts' feature. Select your target audience, type your message, and click 'Send'. This will appear as an urgent notification on the students' dashboards.
+
+Q: How do I view student profiles in my class?
+A: Use the 'Students' tab to see a comprehensive list of all students enrolled in your courses. You can view their basic details and overall academic progress here.
+
+ADMIN DASHBOARD NAVIGATION & USAGE
+Q: How do I add a new student or faculty member to the system?
+A: 1. Navigate to 'User Management'.
+2. Click 'Add User'.
+3. Enter the required details like Name, College ID, Email, and Role.
+4. Assign the initial password and click 'Save'.
+
+Q: How do I post a new campus-wide announcement?
+A: Go to the 'Announcements' section. Click 'New Announcement', enter the details, and upload any relevant circular images. Select whether the audience is Students, Faculty, or Both, then click 'Publish'.
+
+Q: How can I manage the Academic Calendar?
+A: In the 'Academic Calendar' module, you can add key dates like semester starts, holidays, and exam periods. These dates will automatically populate the calendars for students and faculty.
+
+Q: Where do I manage campus placements?
+A: Use the 'Placements' module to create new company profiles, post job openings, and track student applications. You can also generate reports on placement statistics.
+
+Q: How do I override or edit attendance records?
+A: Admins have the authority to edit any attendance record through the 'Attendance Management' section. Search for the student and the specific date to make necessary corrections.
+
+Q: How do I generate overall system reports?
+A: Visit the 'Reports' section. You can export data for attendance, results, fees, and placements in Excel or PDF formats for institutional analysis.
+
+TROUBLESHOOTING & ISSUE RESOLUTION
+Q: What should I do if my dashboard is showing 'Data Not Available'?
+A: This could be due to a synchronization delay or a weak network. 
+1. Try refreshing the page.
+2. Log out and log back in.
+3. If the data still doesn't load, contact the system administrator.
+
+Q: Why am I unable to submit my assignment?
+A: Possible reasons include:
+1. The deadline has passed.
+2. The file format is not supported (use PDF or JPG).
+3. Your file size exceeds the limit.
+Note: If the issue persists despite meeting all criteria, please email a screenshot of the error to the IT Helpdesk.
+
+Q: What if I see a 'Permission Denied' error?
+A: This happens if you try to access a module not assigned to your role. If you believe this is an error, please contact 'User Management' to verify your profile settings.
+
+Q: How do I report a bug in the CampVerse platform?
+A: Use the 'Support' or 'Contact' link at the bottom of the login page to send a detailed report to the maintenance team.
+
+CHATBOT BEHAVIOR SUMMARY
+A: The CampVerse chatbot is designed to be your friendly campus guide. It provides role-aware responses, precise navigation paths, and verified solutions to common technical issues. Always follow the step-by-step instructions for the best experience.

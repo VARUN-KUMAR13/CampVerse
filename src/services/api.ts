@@ -475,7 +475,7 @@ export const uploadFile = async (file: File, folder: string = 'uploads'): Promis
 // Real-time connection utility (WebSocket)
 export class RealTimeConnection {
   private ws: WebSocket | null = null;
-  private listeners: Map<string, Function[]> = new Map();
+  private listeners: Map<string, ((data: any) => void)[]> = new Map();
 
   connect() {
     const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:5000';
@@ -523,14 +523,14 @@ export class RealTimeConnection {
     }
   }
 
-  on(event: string, callback: Function) {
+  on(event: string, callback: (data: any) => void) {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, []);
     }
     this.listeners.get(event)!.push(callback);
   }
 
-  off(event: string, callback: Function) {
+  off(event: string, callback: (data: any) => void) {
     const listeners = this.listeners.get(event);
     if (listeners) {
       const index = listeners.indexOf(callback);
