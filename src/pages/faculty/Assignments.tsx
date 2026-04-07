@@ -220,13 +220,14 @@ const FacultyAssignments = () => {
   );
 
   const getStatusBadge = (assignment: Assignment) => {
+    const baseClasses = "text-white border-none shrink-0 cursor-default uppercase tracking-wider text-[10px] shadow-sm px-2 py-0.5";
     if (assignment.status === "Completed") {
-      return <Badge className="bg-green-500 text-white">Completed</Badge>;
+      return <Badge className={`bg-green-500 hover:bg-green-600 ${baseClasses}`}>Completed</Badge>;
     }
     if (isOverdue(assignment.dueDate)) {
-      return <Badge className="bg-red-500 text-white">Overdue</Badge>;
+      return <Badge className={`bg-red-500 hover:bg-red-600 ${baseClasses}`}>Overdue</Badge>;
     }
-    return <Badge className="bg-blue-500 text-white">Active</Badge>;
+    return <Badge className={`bg-blue-500 hover:bg-blue-600 ${baseClasses}`}>Active</Badge>;
   };
 
   return (
@@ -483,67 +484,65 @@ const FacultyAssignments = () => {
             </CardContent>
           </Card>
         ) : (
-          <Card>
-            <CardContent className="p-0">
-              <div className="space-y-1">
-                <div className="grid grid-cols-6 gap-4 p-4 border-b text-sm font-medium text-muted-foreground bg-muted/30">
-                  <div>Assignment</div>
-                  <div>Due Date</div>
-                  <div>Submissions</div>
-                  <div>Status</div>
-                  <div className="col-span-2">Actions</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredAssignments.map((assignment) => (
+              <Card
+                key={assignment._id}
+                className="overflow-hidden border-border/50 bg-card/50 hover:bg-card transition-all duration-300 flex flex-col group relative"
+              >
+                {/* Top colored section with assignment title */}
+                <div className={`m-3 h-[100px] rounded-xl flex flex-col items-center justify-center bg-blue-500 px-4 text-center`}>
+                   <h3 className="font-bold text-white text-lg tracking-wide line-clamp-2" title={assignment.title}>{assignment.title}</h3>
                 </div>
-
-                {filteredAssignments.map((assignment) => (
-                  <div
-                    key={assignment._id}
-                    className="grid grid-cols-6 gap-4 p-4 items-center hover:bg-muted/20 transition-colors"
-                  >
-                    <div>
-                      <div className="font-medium text-foreground">
-                        {assignment.title}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {assignment.course}
-                      </div>
+                
+                <CardContent className="px-5 pb-5 pt-2 flex flex-col flex-1">
+                  <div className="flex justify-between items-start gap-2 mb-4">
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground flex items-center">
+                         <Calendar className="w-3.5 h-3.5 mr-1.5 text-primary" />
+                         Due: {formatDate(assignment.dueDate)}
+                      </p>
                     </div>
-                    <div className="text-muted-foreground">
-                      {formatDate(assignment.dueDate)}
-                    </div>
-                    <div className="text-muted-foreground">
-                      <span className="font-medium text-foreground">
-                        {assignment.submissionCount}
-                      </span>{" "}
-                      submissions
-                    </div>
-                    <div>{getStatusBadge(assignment)}</div>
-                    <div className="col-span-2 flex items-center space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleViewSubmissions(assignment)}
-                        title="View Submissions"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" title="Edit">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-500"
-                        onClick={() => handleDeleteAssignment(assignment._id)}
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                    {getStatusBadge(assignment)}
+                  </div>
+                  
+                  <div className="grid grid-cols-1 gap-4 my-2 mb-6">
+                    <div className="text-center bg-muted/20 py-3 rounded-lg border border-border/50">
+                      <p className="text-2xl font-bold text-foreground">{assignment.submissionCount}</p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Submissions</p>
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  
+                  {/* Action Icons */}
+                  <div className="grid grid-cols-3 gap-2 mt-auto pt-4 border-t border-border/50">
+                     <Button 
+                        variant="ghost" 
+                        className="w-full h-10 bg-transparent hover:bg-primary/20 text-white hover:text-primary-foreground transition-all duration-300"
+                        title="View Submissions"
+                        onClick={() => handleViewSubmissions(assignment)}
+                     >
+                       <Eye className="w-5 h-5" />
+                     </Button>
+                     <Button 
+                        variant="ghost" 
+                        className="w-full h-10 bg-transparent hover:bg-blue-500/20 text-white hover:text-blue-100 transition-all duration-300"
+                        title="Edit Assignment"
+                     >
+                       <Edit className="w-5 h-5" />
+                     </Button>
+                     <Button 
+                        variant="ghost" 
+                        className="w-full h-10 bg-transparent hover:bg-red-500/20 text-white hover:text-red-100 transition-all duration-300"
+                        title="Delete Assignment"
+                        onClick={() => handleDeleteAssignment(assignment._id)}
+                     >
+                       <Trash2 className="w-5 h-5" />
+                     </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
 
         {/* Submissions Dialog */}

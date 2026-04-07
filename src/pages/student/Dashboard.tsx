@@ -101,6 +101,9 @@ const StudentDashboard = () => {
   const [academicEvents, setAcademicEvents] = useState<any[]>([]);
   const [studentSemester, setStudentSemester] = useState<string | null>(null);
 
+  // Toggle for presentation/demo purposes
+  const [demoMode, setDemoMode] = useState(true);
+
   // Dynamic Dashboard Stats
   const [displaySemester, setDisplaySemester] = useState<string | null>(null);
   const [subjectsCount, setSubjectsCount] = useState<number | null>(null);
@@ -978,6 +981,8 @@ const StudentDashboard = () => {
 
   // Check if current date falls on an Exam or Holiday block
   const isDateBlockedByAcademicCalendar = (checkDate: Date) => {
+    if (demoMode) return false; // Bypass calendar restrictions for presentation/demo purposes
+
     return academicEvents.some((evt) => {
       if (evt.type === "Academic") return false;
       const s = new Date(evt.startDate).setHours(0,0,0,0);
@@ -987,12 +992,24 @@ const StudentDashboard = () => {
     });
   };
 
+  const getScheduleTitle = () => {
+    if (!date) return "Schedule & Attendance for Today";
+    const dDate = new Date(date).setHours(0, 0, 0, 0);
+    const dToday = new Date(serverTime).setHours(0, 0, 0, 0);
+    const diffDays = Math.round((dDate - dToday) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return "Schedule & Attendance for Today";
+    if (diffDays === 1) return "Schedule & Attendance for Tomorrow";
+    if (diffDays === -1) return "Schedule & Attendance for Yesterday";
+    return `Schedule & Attendance on ${format(date, "MMM dd, yyyy")}`;
+  };
+
   return (
     <StudentLayout>
       {/* Welcome Section */}
       <div className="mb-4">
         <h1 className="text-xl md:text-2xl font-bold text-foreground flex flex-wrap items-center gap-2">
-          Hello <span className="text-primary truncate max-w-[200px] md:max-w-none">{studentName || userData?.collegeId}</span> <span className="text-xl">👋</span>
+          Hello, <span className="text-primary truncate max-w-[200px] md:max-w-none">{studentName || userData?.collegeId}</span> <span className="text-xl">👋</span>
         </h1>
         <p className="text-sm md:text-base text-muted-foreground">
           Let's learn something new today!
@@ -1007,9 +1024,7 @@ const StudentDashboard = () => {
         <CardHeader>
           <div>
             <CardTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
-              {date && date.toLocaleDateString() !== serverTime.toLocaleDateString()
-                ? `Schedule & Attendance for ${format(date, "dd MMM yyyy")}`
-                : "Schedule & Attendance for Today"}
+              {getScheduleTitle()}
             </CardTitle>
           </div>
         </CardHeader>

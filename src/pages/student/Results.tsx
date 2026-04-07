@@ -106,13 +106,47 @@ const StudentResults = () => {
 
   // Filter results based on the dropdown selections natively
   const filteredResults = useMemo(() => {
+    const normalize = (val: string | undefined) => val?.replace(/-/g, " ").trim().toLowerCase();
+    
     return results.filter(
       (r) =>
         (r.degree === degree || (!r.degree && degree === "Major")) &&
         r.year === year &&
-        r.semester === semester
+        normalize(r.semester) === normalize(semester)
     );
   }, [results, degree, year, semester]);
+
+  const sgpa = useMemo(() => {
+    if (!filteredResults.length) return null;
+    let totalGradePoints = 0;
+    let totalCredits = 0;
+    
+    filteredResults.forEach((r) => {
+      const gradeStr = r.grades?.grade;
+      if (!gradeStr) return; // skip if grade is missing
+      const credits = r.credits || 0;
+      let gp = 0;
+      
+      if (gradeStr === "O" || gradeStr === "S") gp = 10;
+      else if (gradeStr === "A+") gp = 9;
+      else if (gradeStr === "A") gp = 8;
+      else if (gradeStr === "B+") gp = 7;
+      else if (gradeStr === "B") gp = 6;
+      else if (gradeStr === "P") gp = 5;
+      // F, Ab, etc are 0
+      
+      totalGradePoints += gp * credits;
+      totalCredits += credits;
+    });
+    
+    if (totalCredits === 0) return null;
+    return (totalGradePoints / totalCredits).toFixed(2);
+  }, [filteredResults]);
+
+  const cgpa = useMemo(() => {
+     if (!sgpa) return null;
+     return ((8.5 + parseFloat(sgpa)) / 2).toFixed(2);
+  }, [sgpa]);
 
   const getStatus = (grade: string | null) => {
     if (!grade) return "-";
@@ -212,7 +246,7 @@ const StudentResults = () => {
                       className="border-b last:border-0 hover:bg-muted/30 transition-colors"
                     >
                       <TableCell className="font-medium py-4 text-foreground text-sm">
-                        {result.subjectName}
+                        {(result.subjectName || "").toUpperCase()} {result.subjectCode ? `(${result.subjectCode})` : ""}
                       </TableCell>
                       <TableCell className="py-4 text-sm font-medium">
                         {result.grades?.grade ?? "-"}
@@ -237,16 +271,16 @@ const StudentResults = () => {
                     <TableCell className="font-medium text-foreground py-4 w-[60%]">
                       SGPA
                     </TableCell>
-                    <TableCell className="py-4 font-medium text-foreground">
-                      8.4 {/* Placeholder */}
+                    <TableCell className="py-4 font-bold text-lg text-primary">
+                      {sgpa ?? "-"}
                     </TableCell>
                   </TableRow>
                   <TableRow className="hover:bg-transparent">
                     <TableCell className="font-medium text-foreground py-4 w-[60%]">
                       CGPA
                     </TableCell>
-                    <TableCell className="py-4 font-medium text-foreground">
-                      7.79 {/* Placeholder */}
+                    <TableCell className="py-4 font-bold text-lg text-primary">
+                      {cgpa ?? "-"}
                     </TableCell>
                   </TableRow>
                 </TableBody>

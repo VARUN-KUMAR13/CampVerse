@@ -52,6 +52,31 @@ const studentGradeSchema = new mongoose.Schema({
         max: 60,
         default: null,
     },
+    // Lab marks (out of 10)
+    labSecA: {
+        type: Number,
+        min: 0,
+        max: 10,
+        default: null,
+    },
+    labSecB: {
+        type: Number,
+        min: 0,
+        max: 10,
+        default: null,
+    },
+    labSecC: {
+        type: Number,
+        min: 0,
+        max: 10,
+        default: null,
+    },
+    labSecD: {
+        type: Number,
+        min: 0,
+        max: 10,
+        default: null,
+    },
     // Calculated fields (stored for quick access)
     mid1Converted: {
         type: Number,
@@ -107,6 +132,11 @@ const gradeSheetSchema = new mongoose.Schema({
         type: Number,
         default: 3,
     },
+    courseType: {
+        type: String,
+        enum: ["Class", "Lab"],
+        default: "Class",
+    },
     // Meta details
     degree: {
         type: String,
@@ -154,7 +184,7 @@ const gradeSheetSchema = new mongoose.Schema({
     // Status
     status: {
         type: String,
-        enum: ["Draft", "Submitted", "Published"],
+        enum: ["Draft", "Submitted", "Modified", "Published"],
         default: "Draft",
     },
     // Timestamps
@@ -202,14 +232,31 @@ gradeSheetSchema.pre("save", function (next) {
             student.mid2Total = student.mid2Converted + student.assignment2;
         }
 
-        // Internal = ((Mid-1 Total + Mid-2 Total) / 2) + Project
-        if (
-            student.mid1Total !== null &&
-            student.mid2Total !== null &&
-            student.project !== null
-        ) {
-            const average = (student.mid1Total + student.mid2Total) / 2;
-            student.internalMarks = Math.round((average + student.project) * 100) / 100;
+        // Internal computation depending on Class or Lab
+        if (this.courseType === "Lab") {
+            // Lab: Sum of Section A, B, C, D (max 40)
+            if (
+                student.labSecA !== null ||
+                student.labSecB !== null ||
+                student.labSecC !== null ||
+                student.labSecD !== null
+            ) {
+                student.internalMarks =
+                    (student.labSecA || 0) +
+                    (student.labSecB || 0) +
+                    (student.labSecC || 0) +
+                    (student.labSecD || 0);
+            }
+        } else {
+            // Class: ((Mid-1 Total + Mid-2 Total) / 2) + Project
+            if (
+                student.mid1Total !== null &&
+                student.mid2Total !== null &&
+                student.project !== null
+            ) {
+                const average = (student.mid1Total + student.mid2Total) / 2;
+                student.internalMarks = Math.round((average + student.project) * 100) / 100;
+            }
         }
 
         // Total = Internal + External
@@ -234,7 +281,7 @@ gradeSheetSchema.pre("save", function (next) {
                 student.grade = "B";
                 student.gradePoints = 6;
             } else if (total >= 40) {
-                student.grade = "C";
+                student.grade = "P";
                 student.gradePoints = 5;
             } else {
                 student.grade = "F";

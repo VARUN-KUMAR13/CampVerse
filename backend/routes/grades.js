@@ -57,6 +57,7 @@ router.post("/", async (req, res) => {
             degree,
             facultyId,
             facultyName,
+            courseType,
             students, // Array of { studentId, studentName }
         } = req.body;
 
@@ -70,6 +71,10 @@ router.post("/", async (req, res) => {
             assignment2: null,
             project: null,
             external: null,
+            labSecA: null,
+            labSecB: null,
+            labSecC: null,
+            labSecD: null,
         }));
 
         const gradeSheet = new GradeSheet({
@@ -82,6 +87,7 @@ router.post("/", async (req, res) => {
             semester,
             academicYear,
             degree: degree || "Major",
+            courseType: courseType || "Class",
             facultyId,
             facultyName,
             studentGrades,
@@ -120,8 +126,18 @@ router.put("/:id/grades", async (req, res) => {
                 if (update.assignment2 !== undefined)
                     student.assignment2 = update.assignment2;
                 if (update.project !== undefined) student.project = update.project;
+                
+                if (update.labSecA !== undefined) student.labSecA = update.labSecA;
+                if (update.labSecB !== undefined) student.labSecB = update.labSecB;
+                if (update.labSecC !== undefined) student.labSecC = update.labSecC;
+                if (update.labSecD !== undefined) student.labSecD = update.labSecD;
             }
         });
+
+        // Mark as Modified if edited after submission
+        if (gradeSheet.status === "Submitted" || gradeSheet.status === "Published") {
+            gradeSheet.status = "Modified";
+        }
 
         await gradeSheet.save();
         res.json(gradeSheet);
@@ -176,7 +192,7 @@ router.delete("/:id", async (req, res) => {
 router.get("/admin/submitted", async (req, res) => {
     try {
         const gradeSheets = await GradeSheet.find({
-            status: { $in: ["Submitted", "Published"] },
+            status: { $in: ["Submitted", "Modified", "Published"] },
         }).sort({ updatedAt: -1 });
 
         const sheetsWithCount = gradeSheets.map((sheet) => ({

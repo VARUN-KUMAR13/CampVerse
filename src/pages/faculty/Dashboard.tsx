@@ -273,7 +273,7 @@ const FacultyDashboard = () => {
       {/* Welcome Section */}
       <div>
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          Hello <span className="text-primary">{displayName}</span> 👋
+          Hello, <span className="text-primary">{displayName}</span> 👋
         </h1>
         <p className="text-muted-foreground mt-1">
           Manage your teaching schedule and track student progress.

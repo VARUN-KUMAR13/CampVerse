@@ -95,13 +95,16 @@ const Login = () => {
 
   // Auto-detect user type based on college ID
   const handleUserIdChange = (value: string) => {
-    setUserId(value);
+    let normalized = value.trim().toUpperCase();
+    if (normalized === "ADMIN") normalized = "admin";
+
+    setUserId(normalized);
     setError("");
     setResetEmailSent(false);
 
     // Auto-detect role based on section (6th character)
-    if (value.length >= 6 && value !== "admin") {
-      const section = value.charAt(5);
+    if (normalized.length >= 6 && normalized !== "admin") {
+      const section = normalized.charAt(5);
       if (section === "Z") {
         setUserType("Faculty");
       } else if (section.match(/[A-F]/)) {

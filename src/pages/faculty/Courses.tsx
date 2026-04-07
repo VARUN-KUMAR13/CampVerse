@@ -990,29 +990,10 @@ const FacultyCourses = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <div className="p-2 bg-blue-500/10 rounded-lg">
-                    <BookOpen className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-foreground">
-                      {totalCredits}
-                    </p>
-                    <p className="text-sm text-muted-foreground">Total Credits</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
-          {/* Courses Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle>My Courses</CardTitle>
-            </CardHeader>
-            <CardContent>
+          {/* Courses Grid */}
+          <div>
               {loading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
@@ -1030,85 +1011,77 @@ const FacultyCourses = () => {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-6 gap-4 py-2 border-b text-sm font-medium text-muted-foreground">
-                    <div>Course Code</div>
-                    <div>Course Name</div>
-                    <div>Credits</div>
-                    <div>Sections</div>
-                    <div>Status</div>
-                    <div>Actions</div>
-                  </div>
-
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredCourses.map((course) => (
-                    <div
+                    <Card
                       key={course._id}
-                      className="grid grid-cols-6 gap-4 py-3 items-center hover:bg-muted/30 rounded-lg transition-colors"
+                      className="overflow-hidden border-border/50 bg-card/50 hover:bg-card hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 flex flex-col group relative"
                     >
-                      <div className="font-medium text-foreground">{course.courseCode}</div>
-                      <div className="flex items-center gap-2 pr-2 text-foreground truncate max-w-full">
-                        <span className="truncate">{course.courseName}</span>
-                        {(!course.classType || course.classType === "Theory") ? (
-                          <Badge variant="outline" className="text-[9px] bg-orange-500/10 text-orange-500 border-orange-500/20 uppercase tracking-tighter shrink-0 cursor-default shadow-none">
-                            Theory
+                      {/* Top colored section with course code */}
+                      <div className={`m-3 h-[100px] rounded-xl flex items-center justify-center ${course.color || "bg-blue-500"} shadow-inner`}>
+                         <h3 className="font-bold text-white text-2xl tracking-wider uppercase">{course.courseCode}</h3>
+                      </div>
+                      
+                      <CardContent className="px-5 pb-5 pt-2 flex flex-col flex-1">
+                        <div className="flex justify-between items-start gap-2 mb-4">
+                          <div>
+                            <h3 className="font-semibold text-lg text-foreground line-clamp-1" title={course.courseName}>{course.courseName}</h3>
+                            <p className="text-sm text-muted-foreground flex items-center mt-1">
+                               <svg className="w-3.5 h-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                               </svg>
+                               {course.facultyName || "Faculty"}
+                            </p>
+                          </div>
+                          <Badge className="bg-green-500 hover:bg-green-600 text-white border-none shrink-0 cursor-default uppercase tracking-wider text-[10px] shadow-sm px-2 py-0.5" title="Active Course">
+                            Active
                           </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-[9px] bg-blue-500/10 text-blue-500 border-blue-500/20 uppercase tracking-tighter shrink-0 cursor-default shadow-none">
-                            Lab
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="text-muted-foreground">{course.credits}</div>
-                      <div className="flex items-center gap-1 flex-wrap">
-                        {course.sections && course.sections.length > 0 ? (
-                          course.sections.map((s) => (
-                            <Badge key={s} variant="outline" className="text-[10px] h-5">
-                              {s}
-                            </Badge>
-                          ))
-                        ) : (
-                          <span className="text-xs text-muted-foreground">All</span>
-                        )}
-                      </div>
-                      <div>
-                        <Badge variant={course.status === "Active" ? "default" : "secondary"}>
-                          {course.status}
-                        </Badge>
-                      </div>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedCourse(course);
-                            setViewDialogOpen(true);
-                          }}
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          View
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(course)}
-                        >
-                          <Edit2 className="w-4 h-4 text-blue-500" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => handleDelete(course._id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 my-2 mb-6">
+                          <div className="text-center">
+                            <p className="text-2xl font-bold text-foreground">{course.credits}</p>
+                            <p className="text-xs text-muted-foreground uppercase tracking-wider">Credits</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-2xl font-bold text-foreground">{course.assignedStudents?.length || course.maxStudents || 0}</p>
+                            <p className="text-xs text-muted-foreground uppercase tracking-wider">Students</p>
+                          </div>
+                        </div>
+                        
+                        {/* Action Icons */}
+                        <div className="grid grid-cols-3 gap-2 mt-auto pt-4 border-t border-border/50">
+                           <Button 
+                              variant="ghost" 
+                              className="w-full h-10 bg-transparent hover:bg-primary/20 text-white hover:text-primary-foreground transition-all duration-300" 
+                              title="View Details"
+                              onClick={() => { setSelectedCourse(course); setViewDialogOpen(true); }}
+                           >
+                             <Eye className="w-5 h-5" />
+                           </Button>
+                           <Button 
+                              variant="ghost" 
+                              className="w-full h-10 bg-transparent hover:bg-blue-500/20 text-white hover:text-blue-100 transition-all duration-300"
+                              title="Edit Course"
+                              onClick={() => handleEdit(course)}
+                           >
+                             <Edit2 className="w-5 h-5" />
+                           </Button>
+                           <Button 
+                              variant="ghost" 
+                              className="w-full h-10 bg-transparent hover:bg-red-500/20 text-white hover:text-red-100 transition-all duration-300"
+                              title="Delete Course"
+                              onClick={() => handleDelete(course._id)}
+                           >
+                             <Trash2 className="w-5 h-5" />
+                           </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
+          </div>
         </div>
 
         {/* ─── VIEW COURSE DETAILS DIALOG ─────────────────────────── */}

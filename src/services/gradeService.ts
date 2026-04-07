@@ -12,6 +12,10 @@ export type StudentGrade = {
     assignment2: number | null;
     project: number | null;
     external: number | null;
+    labSecA?: number | null;
+    labSecB?: number | null;
+    labSecC?: number | null;
+    labSecD?: number | null;
     mid1Converted: number | null;
     mid2Converted: number | null;
     mid1Total: number | null;
@@ -27,6 +31,7 @@ export type GradeSheet = {
     subjectCode: string;
     subjectName: string;
     credits: number;
+    courseType?: "Class" | "Lab";
     degree?: string;
     year: string;
     branch: string;
@@ -37,7 +42,7 @@ export type GradeSheet = {
     facultyName: string;
     studentGrades: StudentGrade[];
     studentCount: number;
-    status: "Draft" | "Submitted" | "Published";
+    status: "Draft" | "Submitted" | "Modified" | "Published";
     createdAt: string;
     updatedAt: string;
     publishedAt: string | null;
@@ -101,6 +106,7 @@ export const createGradeSheet = async (data: {
     semester: string;
     academicYear?: string;
     degree?: string;
+    courseType?: string;
     facultyId: string;
     facultyName?: string;
     students: { studentId: string; studentName: string }[];
@@ -256,7 +262,7 @@ export const calculateGrade = (
     if (totalMarks >= 70) return { grade: "A", gradePoints: 8 };
     if (totalMarks >= 60) return { grade: "B+", gradePoints: 7 };
     if (totalMarks >= 50) return { grade: "B", gradePoints: 6 };
-    if (totalMarks >= 40) return { grade: "C", gradePoints: 5 };
+    if (totalMarks >= 40) return { grade: "P", gradePoints: 5 };
     return { grade: "F", gradePoints: 0 };
 };
 

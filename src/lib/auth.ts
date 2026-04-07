@@ -24,7 +24,7 @@ export interface CollegeUser {
 
 // College ID pattern validation
 export const validateCollegeId = (id: string): boolean => {
-  const pattern = /^[0-9]{2}[A-Z0-9]{3}[A-Z][0-9]{2}[A-Z0-9]{1,2}$/;
+const pattern = /^[0-9]{2}[a-z0-9]{3}[a-z][0-9]{2}[a-z0-9]{1,2}$/i;
   return pattern.test(id);
 };
 

@@ -74,7 +74,7 @@ const FacultyStudents = () => {
   // Academic Selection State
   const [selectedDegree, setSelectedDegree] = useState("Major");
   const [selectedYear, setSelectedYear] = useState("25");
-  const [selectedSemester, setSelectedSemester] = useState("I");
+  const [selectedSemester, setSelectedSemester] = useState("II");
   const [selectedDepartment, setSelectedDepartment] = useState("05");
   const [selectedSection, setSelectedSection] = useState("B");
   
@@ -577,7 +577,7 @@ const FacultyStudents = () => {
           <CardHeader className="border-b border-border/50">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-xl">Student Attendance</CardTitle>
+                <CardTitle className="text-xl">Student Attendance Register</CardTitle>
                 <CardDescription className="mt-1">
                   Mark attendance for your class. Changes sync in real-time.
                 </CardDescription>

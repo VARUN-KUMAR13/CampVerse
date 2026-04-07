@@ -70,6 +70,7 @@ const FacultyGrades = () => {
     subjectCode: "",
     subjectName: "",
     credits: 3,
+    courseType: "Class",
     degree: "Major",
     year: "IV Year",
     branch: "CSE",
@@ -128,6 +129,7 @@ const FacultyGrades = () => {
         subjectCode: "",
         subjectName: "",
         credits: 3,
+        courseType: "Class",
         degree: "Major",
         year: "IV Year",
         branch: "CSE",
@@ -216,7 +218,11 @@ const FacultyGrades = () => {
   };
 
   // Calculate derived values for display
-  const calculateDerived = (g: StudentGrade) => {
+  const calculateDerived = (g: StudentGrade, isLab = false) => {
+    if (isLab) {
+      const internal = (g.labSecA || 0) + (g.labSecB || 0) + (g.labSecC || 0) + (g.labSecD || 0);
+      return { internal: g.labSecA !== null || g.labSecB !== null || g.labSecC !== null || g.labSecD !== null ? internal : null };
+    }
     const mid1Conv = g.mid1 !== null ? Math.round(g.mid1 * 0.75 * 100) / 100 : null;
     const mid2Conv = g.mid2 !== null ? Math.round(g.mid2 * 0.75 * 100) / 100 : null;
     const mid1Total = mid1Conv !== null && g.assignment1 !== null ? mid1Conv + g.assignment1 : null;
@@ -232,6 +238,8 @@ const FacultyGrades = () => {
         return <Badge className="bg-green-500 text-white">Published</Badge>;
       case "Submitted":
         return <Badge className="bg-blue-500 text-white">Submitted</Badge>;
+      case "Modified":
+        return <Badge className="bg-yellow-500 text-white">Modified</Badge>;
       default:
         return <Badge className="bg-gray-500 text-white">Draft</Badge>;
     }
@@ -304,19 +312,34 @@ const FacultyGrades = () => {
                   />
                 </div>
 
-                {/* Degree Add-in */}
-                <div className="grid gap-2">
-                  <Label>Degree</Label>
-                  <Select
-                    value={formData.degree}
-                    onValueChange={(v) => setFormData({ ...formData, degree: v })}
-                  >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Major">Major</SelectItem>
-                      <SelectItem value="Minor">Minor</SelectItem>
-                    </SelectContent>
-                  </Select>
+                {/* Degree and Course Type Add-ins */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>Degree</Label>
+                    <Select
+                      value={formData.degree}
+                      onValueChange={(v) => setFormData({ ...formData, degree: v })}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Major">Major</SelectItem>
+                        <SelectItem value="Minor">Minor</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Course Type</Label>
+                    <Select
+                      value={formData.courseType}
+                      onValueChange={(v) => setFormData({ ...formData, courseType: v })}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Class">Class</SelectItem>
+                        <SelectItem value="Lab">Lab</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
@@ -421,7 +444,7 @@ const FacultyGrades = () => {
                   {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                   Save
                 </Button>
-                {selectedSheet.status === "Draft" && (
+                {(selectedSheet.status === "Draft" || selectedSheet.status === "Modified") && (
                   <Button onClick={handleSubmitToAdmin} className="bg-green-600 hover:bg-green-700">
                     <Send className="w-4 h-4 mr-2" />
                     Submit to Admin
@@ -436,87 +459,89 @@ const FacultyGrades = () => {
                     <TableRow>
                       <TableHead className="w-[50px]">#</TableHead>
                       <TableHead className="w-[120px]">Roll No</TableHead>
-                      <TableHead className="w-[80px] text-center bg-blue-500/10">Mid-1 (40)</TableHead>
-                      <TableHead className="w-[60px] text-center bg-blue-500/10">×0.75</TableHead>
-                      <TableHead className="w-[80px] text-center bg-green-500/10">Assign-1 (5)</TableHead>
-                      <TableHead className="w-[60px] text-center bg-yellow-500/10">Mid-1 Total</TableHead>
-                      <TableHead className="w-[80px] text-center bg-blue-500/10">Mid-2 (40)</TableHead>
-                      <TableHead className="w-[60px] text-center bg-blue-500/10">×0.75</TableHead>
-                      <TableHead className="w-[80px] text-center bg-green-500/10">Assign-2 (5)</TableHead>
-                      <TableHead className="w-[60px] text-center bg-yellow-500/10">Mid-2 Total</TableHead>
-                      <TableHead className="w-[80px] text-center bg-purple-500/10">Project (5)</TableHead>
+                      {selectedSheet.courseType === "Lab" ? (
+                        <>
+                          <TableHead className="w-[80px] text-center bg-blue-500/10">Section A (10)</TableHead>
+                          <TableHead className="w-[80px] text-center bg-blue-500/10">Section B (10)</TableHead>
+                          <TableHead className="w-[80px] text-center bg-blue-500/10">Section C (10)</TableHead>
+                          <TableHead className="w-[80px] text-center bg-blue-500/10">Section D (10)</TableHead>
+                        </>
+                      ) : (
+                        <>
+                          <TableHead className="w-[80px] text-center bg-blue-500/10">Mid-1 (40)</TableHead>
+                          <TableHead className="w-[60px] text-center bg-blue-500/10">×0.75</TableHead>
+                          <TableHead className="w-[80px] text-center bg-green-500/10">Assign-1 (5)</TableHead>
+                          <TableHead className="w-[60px] text-center bg-yellow-500/10">Mid-1 Total</TableHead>
+                          <TableHead className="w-[80px] text-center bg-blue-500/10">Mid-2 (40)</TableHead>
+                          <TableHead className="w-[60px] text-center bg-blue-500/10">×0.75</TableHead>
+                          <TableHead className="w-[80px] text-center bg-green-500/10">Assign-2 (5)</TableHead>
+                          <TableHead className="w-[60px] text-center bg-yellow-500/10">Mid-2 Total</TableHead>
+                          <TableHead className="w-[80px] text-center bg-purple-500/10">Project (5)</TableHead>
+                        </>
+                      )}
                       <TableHead className="w-[80px] text-center bg-orange-500/10 font-bold">Internal (40)</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {editingGrades.map((g, idx) => {
-                      const calc = calculateDerived(g);
+                      const isLab = selectedSheet.courseType === "Lab";
+                      const calc = calculateDerived(g, isLab);
                       return (
                         <TableRow key={g.studentId}>
                           <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
                           <TableCell className="font-mono text-sm">{g.studentId}</TableCell>
-                          <TableCell className="bg-blue-500/5">
-                            <Input
-                              type="number"
-                              min={0}
-                              max={40}
-                              className="w-16 h-8 text-center"
-                              value={g.mid1 ?? ""}
-                              onChange={(e) => handleGradeChange(g.studentId, "mid1", e.target.value)}
-                            />
-                          </TableCell>
-                          <TableCell className="text-center text-sm bg-blue-500/5">
-                            {calc.mid1Conv?.toFixed(2) ?? "-"}
-                          </TableCell>
-                          <TableCell className="bg-green-500/5">
-                            <Input
-                              type="number"
-                              min={0}
-                              max={5}
-                              className="w-14 h-8 text-center"
-                              value={g.assignment1 ?? ""}
-                              onChange={(e) => handleGradeChange(g.studentId, "assignment1", e.target.value)}
-                            />
-                          </TableCell>
-                          <TableCell className="text-center font-medium bg-yellow-500/5">
-                            {calc.mid1Total?.toFixed(2) ?? "-"}
-                          </TableCell>
-                          <TableCell className="bg-blue-500/5">
-                            <Input
-                              type="number"
-                              min={0}
-                              max={40}
-                              className="w-16 h-8 text-center"
-                              value={g.mid2 ?? ""}
-                              onChange={(e) => handleGradeChange(g.studentId, "mid2", e.target.value)}
-                            />
-                          </TableCell>
-                          <TableCell className="text-center text-sm bg-blue-500/5">
-                            {calc.mid2Conv?.toFixed(2) ?? "-"}
-                          </TableCell>
-                          <TableCell className="bg-green-500/5">
-                            <Input
-                              type="number"
-                              min={0}
-                              max={5}
-                              className="w-14 h-8 text-center"
-                              value={g.assignment2 ?? ""}
-                              onChange={(e) => handleGradeChange(g.studentId, "assignment2", e.target.value)}
-                            />
-                          </TableCell>
-                          <TableCell className="text-center font-medium bg-yellow-500/5">
-                            {calc.mid2Total?.toFixed(2) ?? "-"}
-                          </TableCell>
-                          <TableCell className="bg-purple-500/5">
-                            <Input
-                              type="number"
-                              min={0}
-                              max={5}
-                              className="w-14 h-8 text-center"
-                              value={g.project ?? ""}
-                              onChange={(e) => handleGradeChange(g.studentId, "project", e.target.value)}
-                            />
-                          </TableCell>
+                          
+                          {isLab ? (
+                            <>
+                              <TableCell className="bg-blue-500/5">
+                                <Input
+                                  type="number" min={0} max={10} className="w-16 h-8 text-center"
+                                  value={g.labSecA ?? ""} onChange={(e) => handleGradeChange(g.studentId, "labSecA", e.target.value)}
+                                />
+                              </TableCell>
+                              <TableCell className="bg-blue-500/5">
+                                <Input
+                                  type="number" min={0} max={10} className="w-16 h-8 text-center"
+                                  value={g.labSecB ?? ""} onChange={(e) => handleGradeChange(g.studentId, "labSecB", e.target.value)}
+                                />
+                              </TableCell>
+                              <TableCell className="bg-blue-500/5">
+                                <Input
+                                  type="number" min={0} max={10} className="w-16 h-8 text-center"
+                                  value={g.labSecC ?? ""} onChange={(e) => handleGradeChange(g.studentId, "labSecC", e.target.value)}
+                                />
+                              </TableCell>
+                              <TableCell className="bg-blue-500/5">
+                                <Input
+                                  type="number" min={0} max={10} className="w-16 h-8 text-center"
+                                  value={g.labSecD ?? ""} onChange={(e) => handleGradeChange(g.studentId, "labSecD", e.target.value)}
+                                />
+                              </TableCell>
+                            </>
+                          ) : (
+                            <>
+                              <TableCell className="bg-blue-500/5">
+                                <Input type="number" min={0} max={40} className="w-16 h-8 text-center" value={g.mid1 ?? ""} onChange={(e) => handleGradeChange(g.studentId, "mid1", e.target.value)} />
+                              </TableCell>
+                              <TableCell className="text-center text-sm bg-blue-500/5">{calc.mid1Conv?.toFixed(2) ?? "-"}</TableCell>
+                              <TableCell className="bg-green-500/5">
+                                <Input type="number" min={0} max={5} className="w-14 h-8 text-center" value={g.assignment1 ?? ""} onChange={(e) => handleGradeChange(g.studentId, "assignment1", e.target.value)} />
+                              </TableCell>
+                              <TableCell className="text-center font-medium bg-yellow-500/5">{calc.mid1Total?.toFixed(2) ?? "-"}</TableCell>
+                              <TableCell className="bg-blue-500/5">
+                                <Input type="number" min={0} max={40} className="w-16 h-8 text-center" value={g.mid2 ?? ""} onChange={(e) => handleGradeChange(g.studentId, "mid2", e.target.value)} />
+                              </TableCell>
+                              <TableCell className="text-center text-sm bg-blue-500/5">{calc.mid2Conv?.toFixed(2) ?? "-"}</TableCell>
+                              <TableCell className="bg-green-500/5">
+                                <Input type="number" min={0} max={5} className="w-14 h-8 text-center" value={g.assignment2 ?? ""} onChange={(e) => handleGradeChange(g.studentId, "assignment2", e.target.value)} />
+                              </TableCell>
+                              <TableCell className="text-center font-medium bg-yellow-500/5">{calc.mid2Total?.toFixed(2) ?? "-"}</TableCell>
+                              <TableCell className="bg-purple-500/5">
+                                <Input type="number" min={0} max={5} className="w-14 h-8 text-center" value={g.project ?? ""} onChange={(e) => handleGradeChange(g.studentId, "project", e.target.value)} />
+                              </TableCell>
+                            </>
+                          )}
+                          
                           <TableCell className="text-center font-bold text-lg bg-orange-500/10">
                             {calc.internal?.toFixed(2) ?? "-"}
                           </TableCell>

@@ -168,7 +168,7 @@ const AdminResults = () => {
         if (!userData?.collegeId) return;
 
         const pendingSheets = filteredGradeSheets.filter(
-            (s) => s.status === "Submitted"
+            (s) => s.status === "Submitted" || s.status === "Modified"
         );
         if (pendingSheets.length === 0) {
             toast.info("No pending results to publish for this section.");
@@ -195,8 +195,14 @@ const AdminResults = () => {
     };
 
     // Calculate total and grade dynamically 
-    const calculateTotal = (g: StudentGrade, external: number | null) => {
-        const parsedInternal = calculateInternalMarks(g.mid1Total, g.mid2Total, g.project);
+    const calculateTotal = (g: StudentGrade, external: number | null, isLab = false) => {
+        let parsedInternal = null;
+        if (isLab) {
+            const internal = (g.labSecA || 0) + (g.labSecB || 0) + (g.labSecC || 0) + (g.labSecD || 0);
+            parsedInternal = g.labSecA !== null || g.labSecB !== null || g.labSecC !== null || g.labSecD !== null ? internal : null;
+        } else {
+            parsedInternal = calculateInternalMarks(g.mid1Total, g.mid2Total, g.project);
+        }
         if (parsedInternal === null || external === null) return null;
         return parsedInternal + external;
     };
@@ -207,29 +213,34 @@ const AdminResults = () => {
                 return <Badge className="bg-green-500 text-white">Published</Badge>;
             case "Submitted":
                 return <Badge className="bg-blue-500 text-white">Pending Review</Badge>;
+            case "Modified":
+                return <Badge className="bg-yellow-500 text-white">Modified</Badge>;
             default:
                 return <Badge className="bg-gray-500 text-white">Draft</Badge>;
         }
     };
 
+    const normalize = (val: string | undefined) => val?.replace(/-/g, " ").trim().toLowerCase();
+    
     const filteredGradeSheets = gradeSheets.filter(
         (sheet) =>
             (sheet.degree === filterDegree || (!sheet.degree && filterDegree === "Major")) &&
             sheet.year === filterYear &&
             sheet.branch === filterBranch &&
             sheet.section === filterSection &&
-            sheet.semester === filterSemester
+            normalize(sheet.semester) === normalize(filterSemester)
     );
 
     const getGradeBadge = (grade: string | null) => {
         if (!grade) return null;
         const colors: Record<string, string> = {
             "O": "bg-green-600",
+            "S": "bg-green-600",
             "A+": "bg-green-500",
             "A": "bg-blue-500",
             "B+": "bg-blue-400",
             "B": "bg-yellow-500",
-            "C": "bg-orange-500",
+            "P": "bg-orange-500",
             "F": "bg-red-500",
         };
         return (
@@ -298,7 +309,7 @@ const AdminResults = () => {
                                         Save Changes
                                     </Button>
                                 )}
-                                {!isEditing && selectedSheet.status === "Submitted" && (
+                                {!isEditing && (selectedSheet.status === "Submitted" || selectedSheet.status === "Modified" || selectedSheet.status === "Published") && (
                                     <Button
                                         onClick={handlePublish}
                                         disabled={publishing}
@@ -309,7 +320,7 @@ const AdminResults = () => {
                                         ) : (
                                             <CheckCircle2 className="w-4 h-4 mr-2" />
                                         )}
-                                        Publish Results
+                                        {selectedSheet.status === "Published" ? "Re-publish Results" : "Publish Results"}
                                     </Button>
                                 )}
                             </div>
@@ -321,9 +332,20 @@ const AdminResults = () => {
                                         <TableRow>
                                             <TableHead className="w-[50px]">#</TableHead>
                                             <TableHead className="w-[120px]">Roll No</TableHead>
-                                            <TableHead className="text-center bg-blue-500/10">Mid-1 Total (35)</TableHead>
-                                            <TableHead className="text-center bg-blue-500/10">Mid-2 Total (35)</TableHead>
-                                            <TableHead className="text-center bg-purple-500/10">Project (5)</TableHead>
+                                            {selectedSheet.courseType === "Lab" ? (
+                                                <>
+                                                    <TableHead className="w-[80px] text-center bg-blue-500/10">Sec A (10)</TableHead>
+                                                    <TableHead className="w-[80px] text-center bg-blue-500/10">Sec B (10)</TableHead>
+                                                    <TableHead className="w-[80px] text-center bg-blue-500/10">Sec C (10)</TableHead>
+                                                    <TableHead className="w-[80px] text-center bg-blue-500/10">Sec D (10)</TableHead>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <TableHead className="text-center bg-blue-500/10">Mid-1 Total (35)</TableHead>
+                                                    <TableHead className="text-center bg-blue-500/10">Mid-2 Total (35)</TableHead>
+                                                    <TableHead className="text-center bg-purple-500/10">Project (5)</TableHead>
+                                                </>
+                                            )}
                                             <TableHead className="text-center bg-orange-500/10 font-bold">Internal (40)</TableHead>
                                             <TableHead className="text-center bg-red-500/10 font-bold">External (60)</TableHead>
                                             <TableHead className="text-center bg-cyan-500/10 font-bold">Total (100)</TableHead>
@@ -332,27 +354,43 @@ const AdminResults = () => {
                                     </TableHeader>
                                     <TableBody>
                                         {editingGrades.map((g, idx) => {
+                                            const isLab = selectedSheet.courseType === "Lab";
                                             const external = editingGrades.find(
                                                 (e) => e.studentId === g.studentId
                                             )?.external ?? g.external;
-                                            const total = calculateTotal(g, external);
+                                            const total = calculateTotal(g, external, isLab);
                                             const gradeInfo = total ? calculateGrade(total) : null;
+
+                                            let internalVal = null;
+                                            if (isLab) {
+                                                const rawInternal = (g.labSecA || 0) + (g.labSecB || 0) + (g.labSecC || 0) + (g.labSecD || 0);
+                                                internalVal = (g.labSecA !== null || g.labSecB !== null || g.labSecC !== null || g.labSecD !== null) ? rawInternal : null;
+                                            } else {
+                                                internalVal = calculateInternalMarks(g.mid1Total, g.mid2Total, g.project);
+                                            }
 
                                             return (
                                                 <TableRow key={g.studentId}>
                                                     <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
                                                     <TableCell className="font-mono text-sm">{g.studentId}</TableCell>
-                                                    <TableCell className="text-center bg-blue-500/5">
-                                                        {g.mid1Total?.toFixed(2) ?? "-"}
-                                                    </TableCell>
-                                                    <TableCell className="text-center bg-blue-500/5">
-                                                        {g.mid2Total?.toFixed(2) ?? "-"}
-                                                    </TableCell>
-                                                    <TableCell className="text-center bg-purple-500/5">
-                                                        {g.project ?? "-"}
-                                                    </TableCell>
+                                                    
+                                                    {isLab ? (
+                                                        <>
+                                                            <TableCell className="text-center bg-blue-500/5">{g.labSecA ?? "-"}</TableCell>
+                                                            <TableCell className="text-center bg-blue-500/5">{g.labSecB ?? "-"}</TableCell>
+                                                            <TableCell className="text-center bg-blue-500/5">{g.labSecC ?? "-"}</TableCell>
+                                                            <TableCell className="text-center bg-blue-500/5">{g.labSecD ?? "-"}</TableCell>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <TableCell className="text-center bg-blue-500/5">{g.mid1Total?.toFixed(2) ?? "-"}</TableCell>
+                                                            <TableCell className="text-center bg-blue-500/5">{g.mid2Total?.toFixed(2) ?? "-"}</TableCell>
+                                                            <TableCell className="text-center bg-purple-500/5">{g.project ?? "-"}</TableCell>
+                                                        </>
+                                                    )}
+                                                    
                                                     <TableCell className="text-center font-bold bg-orange-500/10">
-                                                        {calculateInternalMarks(g.mid1Total, g.mid2Total, g.project)?.toFixed(2) ?? "-"}
+                                                        {internalVal?.toFixed(2) ?? "-"}
                                                     </TableCell>
                                                     <TableCell className="bg-red-500/5">
                                                         <Input

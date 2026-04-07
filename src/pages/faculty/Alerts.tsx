@@ -67,16 +67,20 @@ const FacultyAlerts = () => {
     const [categoryFilter, setCategoryFilter] = useState("all");
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
+    // Notification Form State (Matching Admin Alerts)
     const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isNotificationSubmitting, setIsNotificationSubmitting] = useState(false);
+    const [notificationForm, setNotificationForm] = useState({
+        title: "",
+        message: "",
+        urgency: "normal" as "normal" | "important" | "critical",
+        targetType: "all" as "all" | "students" | "faculty" | "custom",
+        category: "general" as "general" | "academic" | "placement" | "event" | "emergency",
+        branches: [] as string[],
+        sections: [] as string[],
+        years: [] as string[],
+    });
 
-    // Form logic
-    const [title, setTitle] = useState("");
-    const [message, setMessage] = useState("");
-    const [category, setCategory] = useState<"general" | "academic" | "placement" | "event" | "emergency">("academic");
-    const [selectedCourseStr, setSelectedCourseStr] = useState(""); 
-    const [selectedSection, setSelectedSection] = useState("");
-    
     const [facultyCourses, setFacultyCourses] = useState<FacultyCourseAssignment[]>([]);
 
     useEffect(() => {
@@ -99,50 +103,56 @@ const FacultyAlerts = () => {
         }
     };
 
-    const handleSendAlert = async () => {
-        if (!title.trim() || !message.trim() || !selectedCourseStr || !selectedSection) {
+    const handleNotificationSubmit = async () => {
+        if (!notificationForm.title.trim() || !notificationForm.message.trim()) {
             toast({
                 title: "Missing Fields",
-                description: "Please fill all required fields.",
-                variant: "destructive"
+                description: "Please fill in Title and Message.",
+                variant: "destructive",
             });
             return;
         }
 
-        const selectedCourse = facultyCourses.find(c => c.courseCode === selectedCourseStr);
-        if (!selectedCourse) return;
-
-        setIsSubmitting(true);
         try {
+            setIsNotificationSubmitting(true);
+            const targetAudience: any = { type: notificationForm.targetType };
+            
+            if (notificationForm.targetType === 'custom') {
+                if (notificationForm.branches.length > 0) targetAudience.branches = notificationForm.branches;
+                if (notificationForm.sections.length > 0) targetAudience.sections = notificationForm.sections;
+                if (notificationForm.years.length > 0) targetAudience.years = notificationForm.years;
+            }
+
             await sendNotification({
-                title,
-                message,
-                urgency: "important",
-                category,
-                targetAudience: {
-                    type: "faculty_alert",
-                    courseCode: selectedCourse.courseCode,
-                    sections: [selectedSection],
-                    years: [selectedCourse.year],
-                    semester: selectedCourse.semester,
-                }
+                title: notificationForm.title,
+                message: notificationForm.message,
+                urgency: notificationForm.urgency,
+                targetAudience,
+                category: notificationForm.category,
             });
 
             toast({ title: "Alert Sent Successfully!" });
             
-            setTitle("");
-            setMessage("");
-            setSelectedCourseStr("");
-            setSelectedSection("");
+            setNotificationForm({
+                title: "",
+                message: "",
+                urgency: "normal",
+                targetType: "all",
+                category: "general",
+                branches: [],
+                sections: [],
+                years: [],
+            });
             setIsAlertModalOpen(false);
             fetchNotifications();
-        } catch (error) {
+        } catch (error: any) {
             toast({
-                title: "Error sending alert",
+                title: "Error",
+                description: error.message || "Failed to send alert.",
                 variant: "destructive"
             });
         } finally {
-             setIsSubmitting(false);
+             setIsNotificationSubmitting(false);
         }
     };
 
@@ -216,78 +226,157 @@ const FacultyAlerts = () => {
                         </p>
                     </div>
                     <div className="flex gap-3">
-                        <Button
-                            variant="outline"
-                            onClick={fetchNotifications}
-                            disabled={loading}
-                            className="flex items-center gap-2"
-                        >
-                            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                            Refresh
-                        </Button>
+
                         <Dialog open={isAlertModalOpen} onOpenChange={setIsAlertModalOpen}>
                             <DialogTrigger asChild>
                                 <Button className="flex gap-2">
                                     <Send className="w-4 h-4" /> Send Alert
                                 </Button>
                             </DialogTrigger>
-                            <DialogContent className="max-w-xl">
+                            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                                 <DialogHeader>
                                     <DialogTitle className="flex gap-2 items-center text-xl">
-                                        <Bell className="w-5 h-5 text-primary" /> Send Class Alert
+                                        <Bell className="w-5 h-5 text-primary" /> Send Alert
                                     </DialogTitle>
                                 </DialogHeader>
                                 
                                 <div className="space-y-4 py-4">
                                     <div className="space-y-2">
                                         <Label>Title <span className="text-destructive">*</span></Label>
-                                        <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Test Cancelled" />
+                                        <Input
+                                            value={notificationForm.title}
+                                            onChange={(e) => setNotificationForm({ ...notificationForm, title: e.target.value })}
+                                            placeholder="e.g. Test Cancelled" 
+                                        />
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Message <span className="text-destructive">*</span></Label>
-                                        <Textarea value={message} onChange={e => setMessage(e.target.value)} placeholder="Details..." />
+                                        <Textarea
+                                            value={notificationForm.message}
+                                            onChange={(e) => setNotificationForm({ ...notificationForm, message: e.target.value })}
+                                            placeholder="Enter your notification message..."
+                                            rows={4}
+                                        />
                                     </div>
+                                    
                                     <div className="space-y-2">
-                                        <Label>Category</Label>
-                                        <Select value={category} onValueChange={(v: any) => setCategory(v)}>
+                                        <Label>Urgency</Label>
+                                        <Select
+                                            value={notificationForm.urgency}
+                                            onValueChange={(value: "normal" | "important" | "critical") => setNotificationForm({ ...notificationForm, urgency: value })}
+                                        >
                                             <SelectTrigger><SelectValue /></SelectTrigger>
                                             <SelectContent>
+                                                <SelectItem value="normal">Normal</SelectItem>
+                                                <SelectItem value="important">Important</SelectItem>
+                                                <SelectItem value="critical">Critical</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>Category</Label>
+                                        <Select
+                                            value={notificationForm.category}
+                                            onValueChange={(value: "general" | "academic" | "placement" | "event" | "emergency") => setNotificationForm({ ...notificationForm, category: value })}
+                                        >
+                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="general">General</SelectItem>
                                                 <SelectItem value="academic">Academic</SelectItem>
+                                                <SelectItem value="placement">Placement</SelectItem>
                                                 <SelectItem value="event">Event</SelectItem>
                                                 <SelectItem value="emergency">Emergency</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label>Course <span className="text-destructive">*</span></Label>
-                                            <Select value={selectedCourseStr} onValueChange={(v) => { setSelectedCourseStr(v); setSelectedSection(""); }}>
-                                                <SelectTrigger><SelectValue placeholder="Select Course" /></SelectTrigger>
-                                                <SelectContent>
-                                                    {facultyCourses.map(c => (
-                                                        <SelectItem key={c.courseCode} value={c.courseCode}>{c.courseName} ({c.courseCode})</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Section <span className="text-destructive">*</span></Label>
-                                            <Select value={selectedSection} onValueChange={setSelectedSection} disabled={!selectedCourseStr}>
-                                                <SelectTrigger><SelectValue placeholder="Select Section" /></SelectTrigger>
-                                                <SelectContent>
-                                                    {facultyCourses.find(c => c.courseCode === selectedCourseStr)?.sections.map(s => (
-                                                        <SelectItem key={s} value={s}>Section {s}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
+                                    {/* Target Audience */}
+                                    <div className="space-y-2">
+                                        <Label className="text-sm font-semibold">Target Audience</Label>
+                                        <Select
+                                            value={notificationForm.targetType}
+                                            onValueChange={(value: "all" | "students" | "faculty" | "custom") =>
+                                                setNotificationForm({ ...notificationForm, targetType: value })
+                                            }
+                                        >
+                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">All Users</SelectItem>
+                                                <SelectItem value="students">All Students</SelectItem>
+                                                <SelectItem value="faculty">All Faculty</SelectItem>
+                                                <SelectItem value="custom">Custom (Specific Branches/Sections)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </div>
+
+                                    {/* Custom Targeting Options */}
+                                    {notificationForm.targetType === "custom" && (
+                                        <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/20">
+                                            <p className="text-sm font-medium text-foreground">Custom Targeting Options</p>
+
+                                            <div className="space-y-2">
+                                                <Label className="text-sm">Branches (comma-separated)</Label>
+                                                <Input
+                                                    value={notificationForm.branches.join(", ")}
+                                                    onChange={(e) =>
+                                                        setNotificationForm({
+                                                            ...notificationForm,
+                                                            branches: e.target.value.split(",").map((b) => b.trim()).filter((b) => b),
+                                                        })
+                                                    }
+                                                    placeholder="e.g., CSE, ECE"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label className="text-sm">Sections (comma-separated)</Label>
+                                                <Input
+                                                    value={notificationForm.sections.join(", ")}
+                                                    onChange={(e) =>
+                                                        setNotificationForm({
+                                                            ...notificationForm,
+                                                            sections: e.target.value.split(",").map((s) => s.trim()).filter((s) => s),
+                                                        })
+                                                    }
+                                                    placeholder="e.g., A, B"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label className="text-sm">Years (comma-separated)</Label>
+                                                <Input
+                                                    value={notificationForm.years.join(", ")}
+                                                    onChange={(e) =>
+                                                        setNotificationForm({
+                                                            ...notificationForm,
+                                                            years: e.target.value.split(",").map((y) => y.trim()).filter((y) => y),
+                                                        })
+                                                    }
+                                                    placeholder="e.g., 1, 2, 3, 4"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
 
                                     <div className="flex justify-end gap-3 mt-4 pt-4 border-t">
                                         <Button variant="outline" onClick={() => setIsAlertModalOpen(false)}>Cancel</Button>
-                                        <Button onClick={handleSendAlert} disabled={isSubmitting}>
-                                            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Send"}
+                                        <Button
+                                            onClick={handleNotificationSubmit}
+                                            disabled={isNotificationSubmitting}
+                                            className="min-w-[140px] bg-blue-600 hover:bg-blue-700 rounded-xl"
+                                        >
+                                            {isNotificationSubmitting ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                    Sending...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Send className="w-4 h-4 mr-2" />
+                                                    Send Alert
+                                                </>
+                                            )}
                                         </Button>
                                     </div>
                                 </div>
